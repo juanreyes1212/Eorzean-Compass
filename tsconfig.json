@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "es6"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -21,8 +21,11 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["bun-types"]
+    "types": ["bun-types"],
   },
+  "references": [
+    { "path": "./cypress" }
+  ],
   "include": [
     "next-env.d.ts",
     "**/*.ts",
@@ -30,10 +33,6 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    ".next",
-    "out",
-    "dist",
-    "cypress"
+    "node_modules"
   ]
 }

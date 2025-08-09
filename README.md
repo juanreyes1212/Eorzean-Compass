@@ -52,7 +52,7 @@ Our unique **Time-Skill-RNG-Group** scoring system rates every achievement:
    \`\`\`bash
    git clone https://github.com/your-username/eorzean-compass.git
    cd eorzean-compass
-   bun run scripts/netlify-setup.ts
+   bun run setup
    \`\`\`
 
 3. **Start development server**
@@ -79,15 +79,6 @@ Our unique **Time-Skill-RNG-Group** scoring system rates every achievement:
    NEXT_PUBLIC_BASE_URL=https://your-site.netlify.app
    \`\`\`
 6. Deploy automatically on every push to main branch
-
-#### Option 2: Manual Deploy
-\`\`\`bash
-# Build the project
-bun run netlify:build
-
-# Deploy to Netlify
-netlify deploy --prod
-\`\`\`
 
 ## ⚡ Why Bun + Netlify?
 
@@ -127,13 +118,12 @@ eorzean-compass/
 ├── lib/                         # Utility libraries
 │   ├── tsrg-matrix.ts          # TSR-G scoring algorithm
 │   ├── recommendations.ts       # Recommendation engine
-│   ├── storage.ts              # Local storage utilities
-│   ├── types/                  # TypeScript type definitions
-│   ├── constants.ts            # Application constants
-│   └── utils/                  # Helper utilities
-├── scripts/                     # Bun utility scripts
-│   ├── netlify-setup.ts        # Netlify deployment setup
-│   └── performance-check.ts     # Performance analysis
+│   │   ├── storage.ts              # Local storage utilities,
+│   │   ├── types/                  # TypeScript type definitions,
+│   │   ├── constants.ts            # Application constants,
+│   │   └── utils/                  # Helper utilities,
+├── scripts/                     # Bun utility scripts,
+│   └── setup.ts                # Project setup script
 ├── cypress/                     # E2E tests
 ├── netlify.toml                # Netlify configuration
 ├── bunfig.toml                 # Bun configuration
@@ -153,11 +143,6 @@ netlify dev
 # Type checking
 bun run type-check
 
-# Linting
-bun run lint
-
-# Clean build artifacts
-bun run clean
 \`\`\`
 
 ### Building & Testing
@@ -168,8 +153,8 @@ bun run build
 # Build for Netlify
 bun run netlify:build
 
-# Run E2E tests
-bun run test:e2e
+# Run E2E tests (for CI)
+bun test
 
 # Open Cypress UI
 bun run test:e2e:dev
@@ -315,14 +300,11 @@ Set these in your Netlify dashboard under Site Settings > Environment Variables:
 
 ### Running Tests
 \`\`\`bash
-# E2E tests with Cypress
-bun run test:e2e
+# Run all E2E tests (for CI)
+bun test
 
-# Open Cypress UI
-bun run cypress:open
-
-# Run tests in CI mode
-bun run cypress:run
+# Open Cypress UI for development
+bun run test:e2e:dev
 \`\`\`
 
 ### Test Coverage
@@ -338,9 +320,6 @@ bun run cypress:run
 
 ### Built-in Performance Tools
 \`\`\`bash
-# Memory usage analysis
-bun run scripts/performance-check.ts
-
 # Bundle size analysis
 ANALYZE=true bun run build
 
@@ -410,10 +389,10 @@ Set `NODE_ENV=development` to enable:
 ### Development Workflow
 1. Fork the repository
 2. Install Bun: `curl -fsSL https://bun.sh/install | bash`
-3. Clone and setup: `bun run scripts/netlify-setup.ts`
+3. Clone and setup: `bun run setup`
 4. Create feature branch: `git checkout -b feature/amazing-feature`
 5. Make changes and test: `netlify dev`
-6. Run tests: `bun run test:e2e`
+6. Run tests: `bun test`
 7. Commit and push: Standard git workflow
 8. Open Pull Request
 

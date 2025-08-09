@@ -36,16 +36,6 @@ console.log("📦 Installing dependencies with Bun...");
 await $`bun install`;
 console.log("✅ Dependencies installed\n");
 
-// Check if Netlify CLI is available
-try {
-  await $`netlify --version`;
-  console.log("✅ Netlify CLI is available\n");
-} catch (error) {
-  console.log("⚠️  Netlify CLI not found. Installing globally...");
-  await $`bun add -g netlify-cli`;
-  console.log("✅ Netlify CLI installed\n");
-}
-
 // Run type check
 console.log("🔍 Running type check...");
 try {

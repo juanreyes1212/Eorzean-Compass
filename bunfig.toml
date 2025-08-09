@@ -22,12 +22,7 @@ registry = "https://registry.npmjs.org"
 env = "development"
 
 # Shell to use for scripts
-shell = "bash"
-
-[test]
-# Test runner configuration
-preload = ["./test/setup.ts"]
-coverage = true
+shell = "system"
 
 [build]
 # Build configuration
