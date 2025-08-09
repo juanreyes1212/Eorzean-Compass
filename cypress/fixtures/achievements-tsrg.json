@@ -1,0 +1,128 @@
+[
+  {
+    "id": 1,
+    "name": "Warrior of Light",
+    "description": "Complete the main scenario quest \"The Ultimate Weapon.\"",
+    "category": "Quests",
+    "points": 10,
+    "patch": "2.0",
+    "isObtainable": true,
+    "rarity": 96.5,
+    "tsrg": {
+      "time": 2,
+      "skill": 1,
+      "rng": 1,
+      "group": 1,
+      "composite": 5,
+      "tier": 1
+    }
+  },
+  {
+    "id": 100,
+    "name": "Mastering War V",
+    "description": "Achieve level 90 in all Disciples of War classes.",
+    "category": "Character",
+    "points": 20,
+    "patch": "6.0",
+    "isObtainable": true,
+    "rarity": 28.3,
+    "tsrg": {
+      "time": 7,
+      "skill": 2,
+      "rng": 1,
+      "group": 1,
+      "composite": 11,
+      "tier": 2
+    }
+  },
+  {
+    "id": 1000,
+    "name": "The Necromancer",
+    "description": "Clear floors 1-200 of the Palace of the Dead solo.",
+    "category": "Battle",
+    "points": 50,
+    "patch": "3.35",
+    "isObtainable": true,
+    "rarity": 0.1,
+    "tsrg": {
+      "time": 9,
+      "skill": 10,
+      "rng": 8,
+      "group": 1,
+      "composite": 28,
+      "tier": 4
+    }
+  },
+  {
+    "id": 1001,
+    "name": "Leader of the Pack",
+    "description": "Win 5,000 PvP matches in Crystalline Conflict.",
+    "category": "PvP",
+    "points": 50,
+    "patch": "6.1",
+    "isObtainable": true,
+    "rarity": 0.13,
+    "tsrg": {
+      "time": 10,
+      "skill": 6,
+      "rng": 1,
+      "group": 8,
+      "composite": 25,
+      "tier": 4
+    }
+  },
+  {
+    "id": 1002,
+    "name": "The Luckiest of Ladies",
+    "description": "Raid the deepest sluice in the Hidden Canals of Uznair 20 times.",
+    "category": "Battle",
+    "points": 30,
+    "patch": "4.0",
+    "isObtainable": true,
+    "rarity": 0.18,
+    "tsrg": {
+      "time": 8,
+      "skill": 3,
+      "rng": 10,
+      "group": 7,
+      "composite": 28,
+      "tier": 4
+    }
+  },
+  {
+    "id": 500,
+    "name": "Zodiac Weapon Master",
+    "description": "Complete a Zodiac weapon for any class.",
+    "category": "Battle",
+    "points": 30,
+    "patch": "2.28",
+    "isObtainable": true,
+    "rarity": 15.2,
+    "tsrg": {
+      "time": 8,
+      "skill": 4,
+      "rng": 2,
+      "group": 3,
+      "composite": 17,
+      "tier": 3
+    }
+  },
+  {
+    "id": 600,
+    "name": "Destiny's Child",
+    "description": "Complete 3,000 FATEs.",
+    "category": "Battle",
+    "points": 20,
+    "patch": "2.0",
+    "isObtainable": true,
+    "rarity": 5.7,
+    "tsrg": {
+      "time": 9,
+      "skill": 3,
+      "rng": 1,
+      "group": 1,
+      "composite": 14,
+      "tier": 2
+    }
+  }
+]
