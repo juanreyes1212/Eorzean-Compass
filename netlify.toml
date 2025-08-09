@@ -1,0 +1,82 @@
+[build]
+  publish = ".next"
+  command = "bun run netlify:build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  BUN_VERSION = "1.0.0"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Netlify Functions (for API routes)
+[functions]
+  directory = ".netlify/functions"
+  node_bundler = "esbuild"
+
+# Headers for better performance and security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "public, s-maxage=300, stale-while-revalidate=600"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Redirects
+[[redirects]]
+  from = "/character"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/character/*"
+  to = "/"
+  status = 301
+
+# SPA fallback for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+# Environment-specific redirects
+[context.production]
+  [context.production.environment]
+    NEXT_PUBLIC_BASE_URL = "https://eorzean-compass.netlify.app"
+
+[context.deploy-preview]
+  [context.deploy-preview.environment]
+    NEXT_PUBLIC_BASE_URL = "https://deploy-preview-$REVIEW_ID--eorzean-compass.netlify.app"
+
+[context.branch-deploy]
+  [context.branch-deploy.environment]
+    NEXT_PUBLIC_BASE_URL = "https://$BRANCH--eorzean-compass.netlify.app"
+
+# Edge Functions (future implementation)
+[[edge_functions]]
+  function = "geolocation"
+  path = "/api/geo/*"
+
+# Plugin configuration
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  
+  [plugins.inputs]
+    # Enable ISR (Incremental Static Regeneration)
+    revalidate = 3600

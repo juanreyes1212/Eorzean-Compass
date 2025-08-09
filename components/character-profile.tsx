@@ -1,0 +1,110 @@
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
+
+interface CharacterProfileProps {
+  character: {
+    id: string;
+    name: string;
+    server: string;
+    avatar: string;
+    achievementPoints: number;
+    achievementsCompleted: number;
+    totalAchievements: number;
+  };
+  actualStats?: {
+    completed: number;
+    total: number;
+    obtainable: number;
+    completionRate: number;
+  };
+  isLoading?: boolean;
+}
+
+export function CharacterProfile({ character, actualStats, isLoading = false }: CharacterProfileProps) {
+  // Use actual stats if available, otherwise fall back to character data
+  const stats = actualStats || {
+    completed: character.achievementsCompleted,
+    total: character.totalAchievements,
+    obtainable: character.totalAchievements,
+    completionRate: Math.round((character.achievementsCompleted / character.totalAchievements) * 100)
+  };
+  
+  return (
+    <Card className="bg-slate-800 border-slate-700 p-6">
+      <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+        <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-blue-500 flex-shrink-0 bg-slate-700">
+          <Image
+            src={character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar"}
+            alt={character.name}
+            fill
+            className="object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/placeholder.svg?height=96&width=96&text=Avatar";
+            }}
+          />
+        </div>
+        
+        <div className="flex-1 text-center md:text-left w-full">
+          <h1 className="text-2xl font-bold text-white">{character.name}</h1>
+          <p className="text-slate-300 mb-4">{character.server}</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <Stat 
+              label="Achievement Points" 
+              value={character.achievementPoints.toLocaleString()} 
+              isLoading={isLoading}
+            />
+            <Stat 
+              label="Achievements Completed" 
+              value={stats.completed.toLocaleString()} 
+              isLoading={isLoading}
+            />
+            <Stat 
+              label="Completion Rate" 
+              value={`${stats.completionRate}%`} 
+              isLoading={isLoading}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-slate-300">
+              <span>Progress</span>
+              {isLoading ? (
+                <Skeleton className="h-4 w-16" />
+              ) : (
+                <span>{stats.completed} / {stats.total}</span>
+              )}
+            </div>
+            {isLoading ? (
+              <Skeleton className="h-2 w-full" />
+            ) : (
+              <Progress value={stats.completionRate} className="h-2" />
+            )}
+          </div>
+
+          {actualStats && (
+            <div className="mt-3 text-xs text-slate-400">
+              <span>{stats.obtainable} obtainable achievements available</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function Stat({ label, value, isLoading }: { label: string; value: string; isLoading: boolean }) {
+  return (
+    <div className="bg-slate-700 rounded-lg p-3 text-center">
+      <p className="text-sm text-slate-300">{label}</p>
+      {isLoading ? (
+        <Skeleton className="h-6 w-16 mx-auto mt-1" />
+      ) : (
+        <p className="text-xl font-bold text-white">{value}</p>
+      )}
+    </div>
+  );
+}

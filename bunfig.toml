@@ -1,0 +1,36 @@
+# Bun configuration file
+
+[install]
+# Equivalent to npm's package-lock.json
+lockfile = true
+
+# Install exact versions (no caret/tilde ranges)
+exact = false
+
+# Cache directory
+cache = "node_modules/.cache/bun"
+
+# Registry configuration
+registry = "https://registry.npmjs.org"
+
+# Scoped registries
+[install.scopes]
+# Example: "@company" = "https://npm.company.com"
+
+[run]
+# Environment variables for bun run
+env = "development"
+
+# Shell to use for scripts
+shell = "bash"
+
+[test]
+# Test runner configuration
+preload = ["./test/setup.ts"]
+coverage = true
+
+[build]
+# Build configuration
+target = "bun"
+format = "esm"
+splitting = true

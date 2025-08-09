@@ -1,0 +1,265 @@
+// Local storage utilities for caching and preferences
+
+export interface StoredCharacter {
+  id: string;
+  name: string;
+  server: string;
+  avatar: string;
+  achievementPoints: number;
+  achievementsCompleted: number;
+  totalAchievements: number;
+  completedAchievements: Array<{ id: number; completionDate: string }>;
+  lastUpdated: string;
+}
+
+export interface StoredPreferences {
+  maxTimeScore: number;
+  maxSkillScore: number;
+  maxRngScore: number;
+  maxGroupScore: number;
+  hideCompleted: boolean;
+  hideUnobtainable: boolean;
+  selectedTiers: number[];
+  preferredCategories: string[];
+  excludedCategories: string[];
+}
+
+export interface StoredAchievements {
+  data: any[];
+  timestamp: number;
+}
+
+const STORAGE_KEYS = {
+  CHARACTERS: 'eorzean_compass_characters',
+  PREFERENCES: 'eorzean_compass_preferences',
+  ACHIEVEMENTS: 'eorzean_compass_achievements',
+  RECENT_SEARCHES: 'eorzean_compass_recent_searches',
+} as const;
+
+// Cache duration: 1 hour for achievements, 30 minutes for characters
+const CACHE_DURATION = {
+  ACHIEVEMENTS: 60 * 60 * 1000, // 1 hour
+  CHARACTERS: 30 * 60 * 1000,   // 30 minutes
+} as const;
+
+// Safe localStorage operations with error handling
+function safeGetItem(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn(`Failed to get item from localStorage: ${key}`, error);
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn(`Failed to set item in localStorage: ${key}`, error);
+    return false;
+  }
+}
+
+function safeRemoveItem(key: string): boolean {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (error) {
+    console.warn(`Failed to remove item from localStorage: ${key}`, error);
+    return false;
+  }
+}
+
+// Character storage
+export function getStoredCharacter(name: string, server: string): StoredCharacter | null {
+  const stored = safeGetItem(STORAGE_KEYS.CHARACTERS);
+  if (!stored) return null;
+
+  try {
+    const characters: Record<string, StoredCharacter> = JSON.parse(stored);
+    const key = `${name.toLowerCase()}_${server.toLowerCase()}`;
+    const character = characters[key];
+    
+    if (!character) return null;
+    
+    // Check if cache is still valid
+    const lastUpdated = new Date(character.lastUpdated).getTime();
+    const now = Date.now();
+    
+    if (now - lastUpdated > CACHE_DURATION.CHARACTERS) {
+      return null; // Cache expired
+    }
+    
+    return character;
+  } catch (error) {
+    console.warn('Failed to parse stored characters', error);
+    return null;
+  }
+}
+
+export function storeCharacter(character: StoredCharacter): boolean {
+  const stored = safeGetItem(STORAGE_KEYS.CHARACTERS);
+  let characters: Record<string, StoredCharacter> = {};
+  
+  if (stored) {
+    try {
+      characters = JSON.parse(stored);
+    } catch (error) {
+      console.warn('Failed to parse existing characters, starting fresh', error);
+    }
+  }
+  
+  const key = `${character.name.toLowerCase()}_${character.server.toLowerCase()}`;
+  characters[key] = {
+    ...character,
+    lastUpdated: new Date().toISOString(),
+  };
+  
+  // Limit storage to last 10 characters
+  const entries = Object.entries(characters);
+  if (entries.length > 10) {
+    const sorted = entries.sort((a, b) => 
+      new Date(b[1].lastUpdated).getTime() - new Date(a[1].lastUpdated).getTime()
+    );
+    characters = Object.fromEntries(sorted.slice(0, 10));
+  }
+  
+  return safeSetItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(characters));
+}
+
+// Preferences storage
+export function getStoredPreferences(): StoredPreferences | null {
+  const stored = safeGetItem(STORAGE_KEYS.PREFERENCES);
+  if (!stored) return null;
+  
+  try {
+    return JSON.parse(stored);
+  } catch (error) {
+    console.warn('Failed to parse stored preferences', error);
+    return null;
+  }
+}
+
+export function storePreferences(preferences: StoredPreferences): boolean {
+  return safeSetItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences));
+}
+
+// Achievements cache
+export function getStoredAchievements(): any[] | null {
+  const stored = safeGetItem(STORAGE_KEYS.ACHIEVEMENTS);
+  if (!stored) return null;
+  
+  try {
+    const data: StoredAchievements = JSON.parse(stored);
+    const now = Date.now();
+    
+    // Check if cache is still valid
+    if (now - data.timestamp > CACHE_DURATION.ACHIEVEMENTS) {
+      return null; // Cache expired
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.warn('Failed to parse stored achievements', error);
+    return null;
+  }
+}
+
+export function storeAchievements(achievements: any[]): boolean {
+  const data: StoredAchievements = {
+    data: achievements,
+    timestamp: Date.now(),
+  };
+  
+  return safeSetItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(data));
+}
+
+// Recent searches
+export function getRecentSearches(): Array<{ name: string; server: string; timestamp: string }> {
+  const stored = safeGetItem(STORAGE_KEYS.RECENT_SEARCHES);
+  if (!stored) return [];
+  
+  try {
+    return JSON.parse(stored);
+  } catch (error) {
+    console.warn('Failed to parse recent searches', error);
+    return [];
+  }
+}
+
+export function addRecentSearch(name: string, server: string): boolean {
+  const recent = getRecentSearches();
+  const newSearch = {
+    name,
+    server,
+    timestamp: new Date().toISOString(),
+  };
+  
+  // Remove duplicates and add to front
+  const filtered = recent.filter(
+    search => !(search.name.toLowerCase() === name.toLowerCase() && 
+                search.server.toLowerCase() === server.toLowerCase())
+  );
+  
+  const updated = [newSearch, ...filtered].slice(0, 5); // Keep last 5 searches
+  
+  return safeSetItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(updated));
+}
+
+// Clear all stored data
+export function clearAllStoredData(): boolean {
+  const keys = Object.values(STORAGE_KEYS);
+  let success = true;
+  
+  keys.forEach(key => {
+    if (!safeRemoveItem(key)) {
+      success = false;
+    }
+  });
+  
+  return success;
+}
+
+// Get storage usage info
+export function getStorageInfo(): {
+  used: number;
+  available: number;
+  characters: number;
+  hasAchievements: boolean;
+  hasPreferences: boolean;
+} {
+  let used = 0;
+  let characters = 0;
+  
+  try {
+    // Calculate approximate storage usage
+    Object.values(STORAGE_KEYS).forEach(key => {
+      const item = safeGetItem(key);
+      if (item) {
+        used += item.length;
+      }
+    });
+    
+    // Count stored characters
+    const storedChars = safeGetItem(STORAGE_KEYS.CHARACTERS);
+    if (storedChars) {
+      try {
+        characters = Object.keys(JSON.parse(storedChars)).length;
+      } catch (error) {
+        // Ignore parsing errors
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to calculate storage info', error);
+  }
+  
+  return {
+    used,
+    available: 5 * 1024 * 1024 - used, // Assume 5MB localStorage limit
+    characters,
+    hasAchievements: !!safeGetItem(STORAGE_KEYS.ACHIEVEMENTS),
+    hasPreferences: !!safeGetItem(STORAGE_KEYS.PREFERENCES),
+  };
+}

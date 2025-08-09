@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Eorzean Compass Theme Colors */
+:root {
+  /* Deep compass blues - primary navigation and backgrounds */
+  --compass-50: #f0f4f8;
+  --compass-100: #d9e2ec;
+  --compass-200: #bcccdc;
+  --compass-300: #9fb3c8;
+  --compass-400: #829ab1;
+  --compass-500: #627d98;
+  --compass-600: #486581;
+  --compass-700: #334e68;
+  --compass-800: #243b53;
+  --compass-900: #102a43;
+  --compass-950: #0a1929;
+
+  /* Warm gold - accents and highlights */
+  --gold-50: #fffbeb;
+  --gold-100: #fef3c7;
+  --gold-200: #fde68a;
+  --gold-300: #fcd34d;
+  --gold-400: #fbbf24;
+  --gold-500: #f59e0b;
+  --gold-600: #d97706;
+  --gold-700: #b45309;
+  --gold-800: #92400e;
+  --gold-900: #78350f;
+  --gold-950: #451a03;
+
+  /* Earth tones - secondary elements */
+  --earth-50: #fafaf9;
+  --earth-100: #f5f5f4;
+  --earth-200: #e7e5e4;
+  --earth-300: #d6d3d1;
+  --earth-400: #a8a29e;
+  --earth-500: #78716c;
+  --earth-600: #57534e;
+  --earth-700: #44403c;
+  --earth-800: #292524;
+  --earth-900: #1c1917;
+  --earth-950: #0c0a09;
+
+  /* Silver - neutral highlights */
+  --silver-50: #f8fafc;
+  --silver-100: #f1f5f9;
+  --silver-200: #e2e8f0;
+  --silver-300: #cbd5e1;
+  --silver-400: #94a3b8;
+  --silver-500: #64748b;
+  --silver-600: #475569;
+  --silver-700: #334155;
+  --silver-800: #1e293b;
+  --silver-900: #0f172a;
+  --silver-950: #020617;
+}
+
+/* Z-Index Management */
+.z-dropdown {
+  z-index: 1000;
+}
+
+.z-modal {
+  z-index: 1050;
+}
+
+.z-tooltip {
+  z-index: 1100;
+}
+
+.z-overlay {
+  z-index: 1200;
+}
+
+/* Radix UI Component Z-Index Overrides */
+[data-radix-popper-content-wrapper] {
+  z-index: 1100 !important;
+}
+
+[data-radix-select-content] {
+  z-index: 1000 !important;
+}
+
+[data-radix-dialog-overlay] {
+  z-index: 1050 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 1051 !important;
+}
+
+[data-radix-tooltip-content] {
+  z-index: 1100 !important;
+}
+
+/* Compass Card Component */
+.compass-card {
+  @apply bg-compass-800/50 border border-compass-700 rounded-lg backdrop-blur-sm;
+}
+
+.compass-card:hover {
+  @apply border-compass-600 bg-compass-800/70;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-compass-800;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-compass-600 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-compass-500;
+}
+
+/* Performance Optimizations */
+.slider-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.slider-optimized [role="slider"] {
+  transition: none !important;
+}
+
+/* Achievement Completion Highlight */
+.achievement-completed {
+  @apply bg-gradient-to-r from-gold-900/20 to-compass-900/20 border-l-4 border-l-gold-500;
+}
+
+.achievement-completed:hover {
+  @apply from-gold-800/30 to-compass-800/30;
+}
+
+/* Smooth transitions for non-performance critical elements */
+.smooth-transition {
+  @apply transition-colors duration-200 ease-in-out;
+}
+
+/* Focus states for accessibility */
+.focus-visible:focus-visible {
+  @apply outline-2 outline-offset-2 outline-gold-400;
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(var(--compass-800), 0.2) 25%, 
+    rgba(var(--compass-700), 0.4) 50%, 
+    rgba(var(--compass-800), 0.2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Text selection */
+::selection {
+  @apply bg-gold-500/30 text-gold-100;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

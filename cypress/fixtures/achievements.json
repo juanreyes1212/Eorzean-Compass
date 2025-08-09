@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Test Achievement 1",
+    "description": "This is a test achievement for Battle category",
+    "category": "Battle",
+    "points": 10,
+    "patch": "6.0",
+    "isObtainable": true
+  },
+  {
+    "id": 2,
+    "name": "Test Achievement 2",
+    "description": "This is a test achievement for Character category",
+    "category": "Character",
+    "points": 5,
+    "patch": "6.1",
+    "isObtainable": true
+  },
+  {
+    "id": 3,
+    "name": "Legacy Achievement",
+    "description": "This is a legacy achievement that is no longer obtainable",
+    "category": "Legacy",
+    "points": 20,
+    "patch": "2.0",
+    "isObtainable": false
+  }
+]
