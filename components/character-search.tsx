@@ -39,7 +39,11 @@ const servers = [
   { name: "Ultros", datacenter: "Primal" },
 ];
 
-export function CharacterSearch() {
+interface CharacterSearchProps {
+  onSearchStart: () => void;
+}
+
+export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState("");
   const [server, setServer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -77,6 +81,7 @@ export function CharacterSearch() {
       return;
     }
     
+    onSearchStart();
     setIsLoading(true);
     setError(null);
     setWarning(null);
