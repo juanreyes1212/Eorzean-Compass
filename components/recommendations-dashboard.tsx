@@ -8,13 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TrendingUp, Clock, Star, Target, Lightbulb, Trophy, Users, Zap, Dice6, ChevronRight, Info } from 'lucide-react';
-import { 
-  generateRecommendations, 
+import {
+  generateRecommendations,
   generateAchievementProjects,
   analyzeUserSkillProfile,
   type AchievementRecommendation,
   type AchievementProject,
-  type UserPreferences 
+  type UserPreferences
 } from "@/lib/recommendations";
 import { AchievementWithTSRG, getTierName, getTierColor } from "@/lib/tsrg-matrix";
 import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement-icon";
@@ -46,13 +46,13 @@ export function RecommendationsDashboard({
     return generateAchievementProjects(allAchievements, completedIds);
   }, [allAchievements, completedAchievements]);
 
-  const userProfile = useMemo(() => 
+  const userProfile = useMemo(() =>
     analyzeUserSkillProfile(completedAchievements),
     [completedAchievements]
   );
 
   // Get top incomplete projects
-  const topProjects = useMemo(() => 
+  const topProjects = useMemo(() =>
     projects.filter(p => !p.isCompleted).slice(0, 6),
     [projects]
   );
@@ -102,7 +102,7 @@ export function RecommendationsDashboard({
           <TrendingUp className="h-5 w-5 text-blue-400" />
           Your Achievement Profile
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-white">{userProfile.preferredDifficulty}</div>
@@ -162,8 +162,8 @@ export function RecommendationsDashboard({
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {recommendations.map((rec) => (
-                <Card 
-                  key={rec.achievement.id} 
+                <Card
+                  key={rec.achievement.id}
                   className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors cursor-pointer"
                   onClick={() => onAchievementClick?.(rec.achievement)}
                   data-testid="recommendation-card"
@@ -242,8 +242,8 @@ export function RecommendationsDashboard({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {topProjects.map((project) => (
-                <Card 
-                  key={project.id} 
+                <Card
+                  key={project.id}
                   className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors cursor-pointer"
                   onClick={() => setSelectedProject(project)}
                   data-testid="project-card"
@@ -296,9 +296,9 @@ export function RecommendationsDashboard({
               <h3 className="text-xl font-bold text-white">{selectedProject.name}</h3>
               <p className="text-slate-300 mt-1">{selectedProject.description}</p>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setSelectedProject(null)}
               className="text-slate-400 hover:text-white"
             >
@@ -324,7 +324,7 @@ export function RecommendationsDashboard({
           <div className="space-y-2">
             <h4 className="font-medium text-white mb-3">Achievements in this project:</h4>
             {selectedProject.achievements.map((achievement) => (
-              <div 
+              <div
                 key={achievement.id}
                 className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 cursor-pointer"
                 onClick={() => onAchievementClick?.(achievement)}
