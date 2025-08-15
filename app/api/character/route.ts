@@ -139,7 +139,8 @@ export async function POST(request: Request) {
     // Try XIVAPI first for ALL characters (not just test ones)
     try {
       // Step 1: Search for character to get Lodestone ID
-      const searchUrl = `https://xivapi.com/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
+      const apiKey = process.env.XIVAPI_KEY ? `&key=${process.env.XIVAPI_KEY}` : '';
+      const searchUrl = `https://xivapi.com/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}${apiKey}`;
       
       console.log(`Calling XIVAPI search: ${searchUrl}`);
       
@@ -187,7 +188,7 @@ export async function POST(request: Request) {
       console.log(`Found character: ${character.Name} (ID: ${character.ID})`);
 
       // Step 2: Fetch character's achievement data
-      const characterUrl = `https://xivapi.com/character/${character.ID}?data=AC`;
+      const characterUrl = `https://xivapi.com/character/${character.ID}?data=AC${apiKey}`;
       
       console.log(`Calling XIVAPI character: ${characterUrl}`);
       
