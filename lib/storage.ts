@@ -44,6 +44,7 @@ const CACHE_DURATION = {
 
 // Safe localStorage operations with error handling
 function safeGetItem(key: string): string | null {
+  if (typeof window === 'undefined') return null;
   try {
     return localStorage.getItem(key);
   } catch (error) {
@@ -53,6 +54,7 @@ function safeGetItem(key: string): string | null {
 }
 
 function safeSetItem(key: string, value: string): boolean {
+  if (typeof window === 'undefined') return false;
   try {
     localStorage.setItem(key, value);
     return true;
@@ -63,6 +65,7 @@ function safeSetItem(key: string, value: string): boolean {
 }
 
 function safeRemoveItem(key: string): boolean {
+  if (typeof window === 'undefined') return false;
   try {
     localStorage.removeItem(key);
     return true;
