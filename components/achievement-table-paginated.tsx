@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp } from 'lucide-react';
