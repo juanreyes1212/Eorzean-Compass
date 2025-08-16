@@ -69,6 +69,20 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const [usingCache, setUsingCache] = useState(false);
   const { toast } = useToast(); // Initialize useToast
 
+  // Initialize storageInfo with a default, server-safe value
+  const [storageInfo, setStorageInfo] = useState({
+    used: 0,
+    available: 0,
+    characters: 0,
+    hasAchievements: false,
+    hasPreferences: false,
+  });
+
+  // Update storageInfo after the component mounts on the client
+  useEffect(() => {
+    setStorageInfo(getStorageInfo());
+  }, []);
+
   // Calculate actual stats from loaded achievements
   const actualStats = useMemo(() => {
     if (allAchievements.length === 0 || !characterData) {
@@ -378,8 +392,6 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const handleRetry = () => {
     fetchCharacterData(true);
   };
-
-  const storageInfo = getStorageInfo();
 
   if (loading) {
     return (
