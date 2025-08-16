@@ -28,6 +28,7 @@ import {
 } from "@/lib/storage";
 import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/lib/constants"; // Import from constants
 import { UserPreferences, StoredCharacter, StoredPreferences } from "@/lib/types"; // Import types from centralized location
+import React from "react"; // Import React for React.Fragment
 
 interface Character {
   id: string;
@@ -496,31 +497,33 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
             </TabsContent>
 
             <TabsContent value="achievements">
-              <div className="compass-card p-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                  <h2 className="text-2xl font-bold text-compass-100">All Achievements with TSR-G Analysis</h2>
-                  <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                    <CategoryFilter />
-                    <SearchFilter />
+              <React.Fragment>
+                <div className="compass-card p-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <h2 className="text-2xl font-bold text-compass-100">All Achievements with TSR-G Analysis</h2>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                      <CategoryFilter />
+                      <SearchFilter />
+                    </div>
                   </div>
-                </div>
-                
-                {/* TSR-G Filters Component rendered here, controlling preferences */}
-                <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+                  
+                  {/* TSR-G Filters Component rendered here, controlling preferences */}
+                  <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
 
-                {achievementsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-compass-100">Loading achievements...</div>
-                  </div>
-                ) : (
-                  <AchievementTablePaginated 
-                    characterId={characterData.character.id} 
-                    completedAchievements={characterData.completedAchievements || []}
-                    allAchievements={allAchievements}
-                    preferences={preferences} {/* Pass preferences to the table */}
-                  />
-                )}
-              </div>
+                  {achievementsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-compass-100">Loading achievements...</div>
+                    </div>
+                  ) : (
+                    <AchievementTablePaginated 
+                      characterId={characterData.character.id} 
+                      completedAchievements={characterData.completedAchievements || []}
+                      allAchievements={allAchievements}
+                      preferences={preferences} {/* Pass preferences to the table */}
+                    />
+                  )}
+                </div>
+              </React.Fragment>
             </TabsContent>
           </Tabs>
         </div>
