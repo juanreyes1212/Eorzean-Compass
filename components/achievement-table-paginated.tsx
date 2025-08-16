@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, RefreshCw, TrendingUp, Clock, Zap, Dice6, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertCircle, RefreshCw, TrendingUp, Clock, Zap, Dice6, Users, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { calculateTSRGScore, getTierName, getTierColor, type AchievementWithTSRG } from "@/lib/tsrg-matrix";
 import { type UserPreferences } from "@/lib/recommendations"; // Import UserPreferences
 import { DEFAULT_PREFERENCES, PAGINATION } from "@/lib/constants"; // Import from constants
@@ -18,6 +18,9 @@ interface AchievementTablePaginatedProps {
   allAchievements: AchievementWithTSRG[]; // Now receives all achievements
   preferences: UserPreferences; // Now receives preferences as a prop
 }
+
+type SortColumn = 'name' | 'category' | 'points' | 'tsrgComposite' | null;
+type SortDirection = 'asc' | 'desc';
 
 // Format date without external dependency
 function formatDate(dateString: string): string {
@@ -46,12 +49,14 @@ export function AchievementTablePaginated({
   const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE);
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Get filter parameters from URL
   const categoryFilter = searchParams.get("category") || "all";
   const searchQuery = searchParams.get("query") || "";
   
-  // Apply filters to get filtered achievements
+  // Apply filters and sorting to get filtered achievements
   const filteredAchievements = useMemo(() => {
     let filtered = [...allAchievements];
     
@@ -67,7 +72,6 @@ export function AchievementTablePaginated({
       
       // Check tier selection (preferences.selectedTiers is not used in current preferences type,
       // assuming it's handled by max scores or will be added)
-      // For now, if selectedTiers is part of preferences, it should be used here.
       // Assuming preferences.selectedTiers is an array of numbers, similar to TSRGFilters
       if (preferences.selectedTiers && !preferences.selectedTiers.includes(tsrg.tier)) return false;
       
@@ -100,9 +104,42 @@ export function AchievementTablePaginated({
           achievement.description.toLowerCase().includes(query)
       );
     }
+
+    // Apply sorting
+    if (sortColumn) {
+      filtered.sort((a, b) => {
+        let valA: any;
+        let valB: any;
+
+        switch (sortColumn) {
+          case 'name':
+            valA = a.name.toLowerCase();
+            valB = b.name.toLowerCase();
+            break;
+          case 'category':
+            valA = a.category.toLowerCase();
+            valB = b.category.toLowerCase();
+            break;
+          case 'points':
+            valA = a.points;
+            valB = b.points;
+            break;
+          case 'tsrgComposite':
+            valA = a.tsrg.composite;
+            valB = b.tsrg.composite;
+            break;
+          default:
+            return 0;
+        }
+
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
     
     return filtered;
-  }, [allAchievements, preferences, categoryFilter, searchQuery]); // Depend on preferences
+  }, [allAchievements, preferences, categoryFilter, searchQuery, sortColumn, sortDirection]); // Depend on preferences, sortColumn, sortDirection
   
   // Calculate pagination
   const totalPages = Math.ceil(filteredAchievements.length / pageSize);
@@ -110,10 +147,10 @@ export function AchievementTablePaginated({
   const endIndex = startIndex + pageSize;
   const currentPageAchievements = filteredAchievements.slice(startIndex, endIndex);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters or sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [preferences, categoryFilter, searchQuery, pageSize]);
+  }, [preferences, categoryFilter, searchQuery, pageSize, sortColumn, sortDirection]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -145,6 +182,15 @@ export function AchievementTablePaginated({
   const handlePageSizeChange = (newPageSize: string) => {
     setPageSize(parseInt(newPageSize));
     setCurrentPage(1);
+  };
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
   };
 
   if (allAchievements.length === 0) {
@@ -278,11 +324,51 @@ export function AchievementTablePaginated({
           <TableHeader>
             <TableRow className="bg-compass-800 hover:bg-compass-800 border-compass-700">
               <TableHead className="text-compass-100 w-12">Icon</TableHead>
-              <TableHead className="text-compass-100">Achievement</TableHead>
-              <TableHead className="text-compass-100">Category</TableHead>
-              <TableHead className="text-compass-100">TSR-G Scores</TableHead>
+              <TableHead 
+                className="text-compass-100 cursor-pointer hover:text-gold-400 transition-colors"
+                onClick={() => handleSort('name')}
+              >
+                <div className="flex items-center gap-1">
+                  Achievement
+                  {sortColumn === 'name' && (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-compass-100 cursor-pointer hover:text-gold-400 transition-colors"
+                onClick={() => handleSort('category')}
+              >
+                <div className="flex items-center gap-1">
+                  Category
+                  {sortColumn === 'category' && (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="text-compass-100 cursor-pointer hover:text-gold-400 transition-colors"
+                onClick={() => handleSort('tsrgComposite')}
+              >
+                <div className="flex items-center gap-1">
+                  TSR-G Scores
+                  {sortColumn === 'tsrgComposite' && (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </div>
+              </TableHead>
               <TableHead className="text-compass-100">Tier</TableHead>
-              <TableHead className="text-compass-100">Points</TableHead>
+              <TableHead 
+                className="text-compass-100 cursor-pointer hover:text-gold-400 transition-colors"
+                onClick={() => handleSort('points')}
+              >
+                <div className="flex items-center gap-1">
+                  Points
+                  {sortColumn === 'points' && (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                  )}
+                </div>
+              </TableHead>
               <TableHead className="text-compass-100">Status</TableHead>
               <TableHead className="text-compass-100">Completion Date</TableHead>
             </TableRow>
