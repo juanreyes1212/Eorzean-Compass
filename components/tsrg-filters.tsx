@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from 'lucide-react';
+import { UserPreferences } from "@/lib/types"; // Import UserPreferences
+import { DEFAULT_PREFERENCES } from "@/lib/constants"; // Import DEFAULT_PREFERENCES
 
-export interface TSRGFilters {
+export interface TSRGFilters { // This interface is now redundant if UserPreferences is used directly
   maxTime: number;
   maxSkill: number;
   maxRng: number;
@@ -22,23 +24,13 @@ export interface TSRGFilters {
 }
 
 interface TSRGFiltersProps {
-  filters: TSRGFilters;
-  onFiltersChange: (filters: TSRGFilters) => void;
+  filters: UserPreferences; // Use UserPreferences for filters
+  onFiltersChange: (filters: UserPreferences) => void;
 }
-
-const DEFAULT_FILTERS: TSRGFilters = {
-  maxTime: 10,
-  maxSkill: 10,
-  maxRng: 10,
-  maxGroup: 10,
-  hideCompleted: false,
-  hideUnobtainable: true,
-  selectedTiers: [1, 2, 3, 4],
-};
 
 export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersProps) {
   // Optimized slider change handler with useCallback
-  const handleSliderChange = useCallback((key: keyof TSRGFilters, value: number[]) => {
+  const handleSliderChange = useCallback((key: 'maxTimeScore' | 'maxSkillScore' | 'maxRngScore' | 'maxGroupScore', value: number[]) => {
     onFiltersChange({
       ...filters,
       [key]: value[0],
@@ -46,7 +38,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
   }, [filters, onFiltersChange]);
 
   // Optimized switch change handler
-  const handleSwitchChange = useCallback((key: keyof TSRGFilters, checked: boolean) => {
+  const handleSwitchChange = useCallback((key: 'hideCompleted' | 'hideUnobtainable', checked: boolean) => {
     onFiltersChange({
       ...filters,
       [key]: checked,
@@ -57,7 +49,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
   const handleTierToggle = useCallback((tier: number) => {
     const newTiers = filters.selectedTiers.includes(tier)
       ? filters.selectedTiers.filter(t => t !== tier)
-      : [...filters.selectedTiers, tier].sort();
+      : [...filters.selectedTiers, tier].sort((a, b) => a - b); // Ensure sorted
     
     onFiltersChange({
       ...filters,
@@ -66,7 +58,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
   }, [filters, onFiltersChange]);
 
   const resetFilters = useCallback(() => {
-    onFiltersChange(DEFAULT_FILTERS);
+    onFiltersChange(DEFAULT_PREFERENCES);
   }, [onFiltersChange]);
 
   // Memoized tier utilities
@@ -82,16 +74,16 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
 
   const getTierColor = useMemo(() => (tier: number) => {
     switch (tier) {
-      case 1: return 'bg-earth-600 hover:bg-earth-700 border-earth-500';
-      case 2: return 'bg-compass-600 hover:bg-compass-700 border-compass-500';
-      case 3: return 'bg-gold-600 hover:bg-gold-700 border-gold-500';
-      case 4: return 'bg-gradient-to-r from-gold-500 to-compass-600 hover:from-gold-600 hover:to-compass-700 border-gold-500';
+      case 1: return 'tier-foundational';
+      case 2: return 'tier-systematic';
+      case 3: return 'tier-dedicated';
+      case 4: return 'tier-apex';
       default: return 'bg-silver-500 hover:bg-silver-600 border-silver-400';
     }
   }, []);
 
   return (
-    <Card className="p-6 compass-card">
+    <Card className="p-6 compass-card mb-6"> {/* Added mb-6 for spacing */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-compass-100">TSR-G Difficulty Filters</h3>
         <Button
@@ -111,7 +103,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
           <div className="space-y-2">
             <Label className="text-compass-100 flex items-center gap-2">
               <span className="w-3 h-3 bg-gold-500 rounded"></span>
-              Time/Grind (Max: {filters.maxTime})
+              Time/Grind (Max: {filters.maxTimeScore})
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -124,8 +116,8 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
               </TooltipProvider>
             </Label>
             <Slider
-              value={[filters.maxTime]}
-              onValueChange={(value) => handleSliderChange('maxTime', value)}
+              value={[filters.maxTimeScore]}
+              onValueChange={(value) => handleSliderChange('maxTimeScore', value)}
               max={10}
               min={1}
               step={1}
@@ -137,7 +129,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
           <div className="space-y-2">
             <Label className="text-compass-100 flex items-center gap-2">
               <span className="w-3 h-3 bg-compass-500 rounded"></span>
-              Skill (Max: {filters.maxSkill})
+              Skill (Max: {filters.maxSkillScore})
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -150,8 +142,8 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
               </TooltipProvider>
             </Label>
             <Slider
-              value={[filters.maxSkill]}
-              onValueChange={(value) => handleSliderChange('maxSkill', value)}
+              value={[filters.maxSkillScore]}
+              onValueChange={(value) => handleSliderChange('maxSkillScore', value)}
               max={10}
               min={1}
               step={1}
@@ -163,7 +155,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
           <div className="space-y-2">
             <Label className="text-compass-100 flex items-center gap-2">
               <span className="w-3 h-3 bg-earth-500 rounded"></span>
-              RNG (Max: {filters.maxRng})
+              RNG (Max: {filters.maxRngScore})
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -176,8 +168,8 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
               </TooltipProvider>
             </Label>
             <Slider
-              value={[filters.maxRng]}
-              onValueChange={(value) => handleSliderChange('maxRng', value)}
+              value={[filters.maxRngScore]}
+              onValueChange={(value) => handleSliderChange('maxRngScore', value)}
               max={10}
               min={1}
               step={1}
@@ -189,7 +181,7 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
           <div className="space-y-2">
             <Label className="text-compass-100 flex items-center gap-2">
               <span className="w-3 h-3 bg-silver-500 rounded"></span>
-              Group (Max: {filters.maxGroup})
+              Group (Max: {filters.maxGroupScore})
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -202,8 +194,8 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
               </TooltipProvider>
             </Label>
             <Slider
-              value={[filters.maxGroup]}
-              onValueChange={(value) => handleSliderChange('maxGroup', value)}
+              value={[filters.maxGroupScore]}
+              onValueChange={(value) => handleSliderChange('maxGroupScore', value)}
               max={10}
               min={1}
               step={1}

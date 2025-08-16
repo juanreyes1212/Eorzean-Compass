@@ -1,29 +1,7 @@
 // TSR-G Difficulty Matrix Implementation
 // Time, Skill, RNG, Group Dependency scoring system
 
-export interface TSRGScore {
-  time: number;      // 1-10: Time/Grind investment
-  skill: number;     // 1-10: Mechanical skill required  
-  rng: number;       // 1-10: RNG dependency
-  group: number;     // 1-10: Group coordination needed
-  composite: number; // Sum of all scores
-  tier: number;      // 1-4 difficulty tier
-}
-
-export interface AchievementWithTSRG {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  points: number;
-  patch: string;
-  isObtainable: boolean;
-  isCompleted: boolean;
-  completionDate: string | null;
-  rarity?: number;
-  icon?: string;
-  tsrg: TSRGScore;
-}
+import { TSRGScore, AchievementWithTSRG } from './types'; // Import types from centralized location
 
 // Manual scores for key achievements based on the document
 const MANUAL_SCORES: Record<number, Omit<TSRGScore, 'composite' | 'tier'>> = {

@@ -220,3 +220,20 @@
     display: none !important;
   }
 }
+
+/* TSR-G Tier Colors */
+.tier-foundational {
+  @apply bg-earth-600 hover:bg-earth-700 border-earth-500;
+}
+
+.tier-systematic {
+  @apply bg-compass-600 hover:bg-compass-700 border-compass-500;
+}
+
+.tier-dedicated {
+  @apply bg-gold-600 hover:bg-gold-700 border-gold-500;
+}
+
+.tier-apex {
+  @apply bg-gradient-to-r from-gold-500 to-compass-600 hover:from-gold-600 hover:to-compass-700 border-gold-500;
+}

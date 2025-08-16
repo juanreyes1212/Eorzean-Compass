@@ -6,6 +6,7 @@ import { CategoryFilter } from "@/components/category-filter";
 import { SearchFilter } from "@/components/search-filter";
 import { CharacterProfile } from "@/components/character-profile";
 import { RecommendationsDashboard } from "@/components/recommendations-dashboard";
+import { TSRGFiltersComponent } from "@/components/tsrg-filters"; // Import TSRGFiltersComponent
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Info, AlertCircle, RefreshCw, Database, HardDrive, CheckCircle, Wifi, WifiOff } from 'lucide-react';
 import { AchievementWithTSRG } from "@/lib/tsrg-matrix";
-import { UserPreferences } from "@/lib/recommendations";
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
 import { 
   getStoredCharacter, 
@@ -25,9 +25,9 @@ import {
   storeAchievements,
   addRecentSearch,
   getStorageInfo,
-  type StoredCharacter,
-  type StoredPreferences 
 } from "@/lib/storage";
+import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/lib/constants"; // Import from constants
+import { UserPreferences, StoredCharacter, StoredPreferences } from "@/lib/types"; // Import types from centralized location
 
 interface Character {
   id: string;
@@ -56,19 +56,6 @@ interface ClientAchievementsPageProps {
   name: string;
   server: string;
 }
-
-const DEFAULT_PREFERENCES: UserPreferences = {
-  maxTimeScore: 10,
-  maxSkillScore: 10,
-  maxRngScore: 10,
-  maxGroupScore: 10,
-  preferredCategories: [],
-  excludedCategories: [],
-  hideCompleted: false,
-  hideUnobtainable: true,
-  prioritizeRareAchievements: false,
-  prioritizeHighPoints: true,
-};
 
 export function ClientAchievementsPage({ name, server }: ClientAchievementsPageProps) {
   const [characterData, setCharacterData] = useState<CharacterData | null>(null);
@@ -127,7 +114,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       maxGroupScore: preferences.maxGroupScore,
       hideCompleted: preferences.hideCompleted,
       hideUnobtainable: preferences.hideUnobtainable,
-      selectedTiers: [],
+      selectedTiers: preferences.selectedTiers, // Ensure selectedTiers is saved
       preferredCategories: preferences.preferredCategories,
       excludedCategories: preferences.excludedCategories,
     };
@@ -353,10 +340,10 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900">
+      <div className="min-h-screen bg-compass-950">
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-32 w-full mb-8" />
-          <div className="bg-slate-800 rounded-lg p-6">
+          <div className="compass-card p-6">
             <Skeleton className="h-8 w-48 mb-6" />
             <div className="flex gap-4 mb-6">
               <Skeleton className="h-10 w-48" />
@@ -371,14 +358,14 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
   if (error && !characterData) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-compass-950 flex items-center justify-center">
         <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-white">Error Loading Character</h1>
+          <h1 className="text-3xl font-bold mb-4 text-compass-100">Error Loading Character</h1>
           <Alert variant="destructive" className="mb-6 max-w-md mx-auto">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <p className="mb-8 text-slate-300">
+          <p className="mb-8 text-compass-300">
             This might be due to XIVAPI being temporarily unavailable or network issues.
           </p>
           <div className="space-x-4">
@@ -397,10 +384,10 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
   if (!characterData) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-compass-950 flex items-center justify-center">
         <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-white">No Character Data</h1>
-          <p className="mb-8 text-slate-300">Unable to load character information.</p>
+          <h1 className="text-3xl font-bold mb-4 text-compass-100">No Character Data</h1>
+          <p className="mb-8 text-compass-300">Unable to load character information.</p>
           <Link href="/">
             <Button>Return Home</Button>
           </Link>
@@ -412,7 +399,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const completedAchievementsWithTSRG = allAchievements.filter(a => a.isCompleted);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-compass-950">
       <div className="container mx-auto px-4 py-8">
         {/* Real Data Success Banner */}
         {characterData._isRealData && (
@@ -429,11 +416,11 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
         {/* Cache Status */}
         {usingCache && !characterData._isRealData && (
-          <Alert className="mb-6">
-            <HardDrive className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="mb-6 compass-card">
+            <HardDrive className="h-4 w-4 text-compass-400" />
+            <AlertDescription className="text-compass-300">
               Using cached data for faster loading. Data cached locally in your browser.
-              <Button onClick={handleRetry} variant="ghost" size="sm" className="ml-2">
+              <Button onClick={handleRetry} variant="ghost" size="sm" className="ml-2 text-compass-200 hover:text-compass-100">
                 Refresh
               </Button>
             </AlertDescription>
@@ -442,9 +429,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
         {/* Mock Data Warning */}
         {characterData._isMockData && (
-          <Alert className="mb-6 border-yellow-600 bg-yellow-900/20">
-            <WifiOff className="h-4 w-4 text-yellow-400" />
-            <AlertDescription className="text-yellow-300">
+          <Alert className="mb-6 border-gold-600 bg-gold-900/20">
+            <WifiOff className="h-4 w-4 text-gold-400" />
+            <AlertDescription className="text-gold-300">
               {characterData._error || 'Currently showing demo data - XIVAPI may be temporarily unavailable'}
             </AlertDescription>
           </Alert>
@@ -464,7 +451,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         )}
 
         {/* Storage Info */}
-        <div className="mb-6 text-xs text-slate-400 flex items-center gap-4">
+        <div className="mb-6 text-xs text-compass-400 flex items-center gap-4">
           <div className="flex items-center gap-1">
             <Database className="h-3 w-3" />
             <span>Storage: {Math.round(storageInfo.used / 1024)}KB used</span>
@@ -482,20 +469,20 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         
         <div className="mt-8">
           <Tabs defaultValue="recommendations" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800 border-slate-700 mb-6">
-              <TabsTrigger value="recommendations" className="data-[state=active]:bg-slate-700">
+            <TabsList className="grid w-full grid-cols-2 bg-compass-800 border-compass-700 mb-6">
+              <TabsTrigger value="recommendations" className="data-[state=active]:bg-compass-700 text-compass-100">
                 Recommendations & Projects
               </TabsTrigger>
-              <TabsTrigger value="achievements" className="data-[state=active]:bg-slate-700">
+              <TabsTrigger value="achievements" className="data-[state=active]:bg-compass-700 text-compass-100">
                 All Achievements ({allAchievements.length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="recommendations">
               {achievementsLoading ? (
-                <Card className="p-6 bg-slate-800 border-slate-700">
+                <Card className="p-6 compass-card">
                   <div className="flex items-center justify-center py-8">
-                    <div className="text-white">Loading achievements and generating recommendations...</div>
+                    <div className="text-compass-100">Loading achievements and generating recommendations...</div>
                   </div>
                 </Card>
               ) : (
@@ -509,24 +496,28 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
             </TabsContent>
 
             <TabsContent value="achievements">
-              <div className="bg-slate-800 rounded-lg p-6">
+              <div className="compass-card p-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                  <h2 className="text-2xl font-bold text-white">All Achievements with TSR-G Analysis</h2>
+                  <h2 className="text-2xl font-bold text-compass-100">All Achievements with TSR-G Analysis</h2>
                   <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                     <CategoryFilter />
                     <SearchFilter />
                   </div>
                 </div>
                 
+                {/* TSR-G Filters Component rendered here, controlling preferences */}
+                <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+
                 {achievementsLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="text-white">Loading achievements...</div>
+                    <div className="text-compass-100">Loading achievements...</div>
                   </div>
                 ) : (
                   <AchievementTablePaginated 
                     characterId={characterData.character.id} 
                     completedAchievements={characterData.completedAchievements || []}
                     allAchievements={allAchievements}
+                    preferences={preferences} {/* Pass preferences to the table */}
                   />
                 )}
               </div>

@@ -81,6 +81,7 @@ export interface UserPreferences {
   hideUnobtainable: boolean;
   prioritizeRareAchievements: boolean;
   prioritizeHighPoints: boolean;
+  selectedTiers: number[]; // Added to preferences
 }
 
 // Storage Types

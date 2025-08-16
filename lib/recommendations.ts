@@ -1,4 +1,4 @@
-import { AchievementWithTSRG, TSRGScore } from './tsrg-matrix';
+import { AchievementWithTSRG, TSRGScore, UserPreferences } from './types'; // Import types from centralized location
 
 export interface RecommendationReason {
   type: 'completion_rate' | 'similar_achievements' | 'time_efficient' | 'skill_match' | 'category_preference' | 'rarity' | 'points_efficient';
@@ -12,19 +12,6 @@ export interface AchievementRecommendation {
   reasons: RecommendationReason[];
   estimatedTimeToComplete?: string;
   prerequisites?: string[];
-}
-
-export interface UserPreferences {
-  maxTimeScore: number;
-  maxSkillScore: number;
-  maxRngScore: number;
-  maxGroupScore: number;
-  preferredCategories: string[];
-  excludedCategories: string[];
-  hideCompleted: boolean;
-  hideUnobtainable: boolean;
-  prioritizeRareAchievements: boolean;
-  prioritizeHighPoints: boolean;
 }
 
 export interface UserProgress {
@@ -102,7 +89,7 @@ export function generateRecommendations(
   // Filter available achievements
   const availableAchievements = allAchievements.filter(achievement => {
     // Skip completed achievements
-    if (completedIds.has(achievement.id)) return false;
+    if (preferences.hideCompleted && completedIds.has(achievement.id)) return false;
     
     // Skip unobtainable if preference is set
     if (preferences.hideUnobtainable && !achievement.isObtainable) return false;
@@ -115,6 +102,9 @@ export function generateRecommendations(
     if (achievement.tsrg.skill > preferences.maxSkillScore) return false;
     if (achievement.tsrg.rng > preferences.maxRngScore) return false;
     if (achievement.tsrg.group > preferences.maxGroupScore) return false;
+
+    // Check selected tiers
+    if (preferences.selectedTiers && !preferences.selectedTiers.includes(achievement.tsrg.tier)) return false;
     
     return true;
   });
@@ -179,7 +169,7 @@ export function generateRecommendations(
     }
 
     // Points efficiency bonus
-    if (achievement.points >= 20) {
+    if (preferences.prioritizeHighPoints && achievement.points >= 20) {
       score += 8;
       reasons.push({
         type: 'points_efficient',
@@ -189,14 +179,14 @@ export function generateRecommendations(
     }
 
     // Rarity bonus
-    if (achievement.rarity && achievement.rarity < 5) {
+    if (preferences.prioritizeRareAchievements && achievement.rarity && achievement.rarity < 5) {
       score += 15;
       reasons.push({
         type: 'rarity',
         description: `Very rare achievement (${achievement.rarity.toFixed(1)}% completion rate)`,
         weight: 15,
       });
-    } else if (achievement.rarity && achievement.rarity < 15) {
+    } else if (preferences.prioritizeRareAchievements && achievement.rarity && achievement.rarity < 15) {
       score += 8;
       reasons.push({
         type: 'rarity',

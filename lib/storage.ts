@@ -1,46 +1,7 @@
 // Local storage utilities for caching and preferences
 
-export interface StoredCharacter {
-  id: string;
-  name: string;
-  server: string;
-  avatar: string;
-  achievementPoints: number;
-  achievementsCompleted: number;
-  totalAchievements: number;
-  completedAchievements: Array<{ id: number; completionDate: string }>;
-  lastUpdated: string;
-}
-
-export interface StoredPreferences {
-  maxTimeScore: number;
-  maxSkillScore: number;
-  maxRngScore: number;
-  maxGroupScore: number;
-  hideCompleted: boolean;
-  hideUnobtainable: boolean;
-  selectedTiers: number[];
-  preferredCategories: string[];
-  excludedCategories: string[];
-}
-
-export interface StoredAchievements {
-  data: any[];
-  timestamp: number;
-}
-
-const STORAGE_KEYS = {
-  CHARACTERS: 'eorzean_compass_characters',
-  PREFERENCES: 'eorzean_compass_preferences',
-  ACHIEVEMENTS: 'eorzean_compass_achievements',
-  RECENT_SEARCHES: 'eorzean_compass_recent_searches',
-} as const;
-
-// Cache duration: 1 hour for achievements, 30 minutes for characters
-const CACHE_DURATION = {
-  ACHIEVEMENTS: 60 * 60 * 1000, // 1 hour
-  CHARACTERS: 30 * 60 * 1000,   // 30 minutes
-} as const;
+import { STORAGE_KEYS, CACHE_DURATION, DEFAULT_PREFERENCES } from './constants';
+import { StoredCharacter, StoredPreferences } from './types'; // Import types from centralized location
 
 // Safe localStorage operations with error handling
 function safeGetItem(key: string): string | null {
@@ -152,7 +113,7 @@ export function getStoredAchievements(): any[] | null {
   if (!stored) return null;
   
   try {
-    const data: StoredAchievements = JSON.parse(stored);
+    const data: { data: any[]; timestamp: number } = JSON.parse(stored);
     const now = Date.now();
     
     // Check if cache is still valid
@@ -168,7 +129,7 @@ export function getStoredAchievements(): any[] | null {
 }
 
 export function storeAchievements(achievements: any[]): boolean {
-  const data: StoredAchievements = {
+  const data: { data: any[]; timestamp: number } = {
     data: achievements,
     timestamp: Date.now(),
   };

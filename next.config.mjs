@@ -10,12 +10,28 @@ const nextConfig = {
   
   // Image optimization for Netlify with FFXIV icon support
   images: {
-    domains: [
-      'xivapi.com', 
-      'img2.finalfantasyxiv.com',
-      'ffxivcollect.com'
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'xivapi.com',
+        port: '',
+        pathname: '/i/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img2.finalfantasyxiv.com',
+        port: '',
+        pathname: '/f/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ffxivcollect.com',
+        port: '',
+        pathname: '/images/**',
+      },
     ],
-    formats: ['image/webp', 'image/avif'],
+    dangerouslyAllowSVG: true, // Allow SVG from remote patterns if needed
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;", // Strict CSP
   },
   
   // Performance optimizations

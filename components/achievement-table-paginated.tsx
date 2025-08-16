@@ -9,27 +9,15 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, RefreshCw, TrendingUp, Clock, Zap, Dice6, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { calculateTSRGScore, getTierName, getTierColor, type AchievementWithTSRG } from "@/lib/tsrg-matrix";
-import { TSRGFiltersComponent, type TSRGFilters } from "@/components/tsrg-filters";
-import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement-icon";
+import { type UserPreferences } from "@/lib/recommendations"; // Import UserPreferences
+import { DEFAULT_PREFERENCES, PAGINATION } from "@/lib/constants"; // Import from constants
 
 interface AchievementTablePaginatedProps {
   characterId: string;
   completedAchievements?: Array<{ id: number; completionDate: string }>;
-  allAchievements?: AchievementWithTSRG[];
+  allAchievements: AchievementWithTSRG[]; // Now receives all achievements
+  preferences: UserPreferences; // Now receives preferences as a prop
 }
-
-const DEFAULT_FILTERS: TSRGFilters = {
-  maxTime: 10,
-  maxSkill: 10,
-  maxRng: 10,
-  maxGroup: 10,
-  hideCompleted: false,
-  hideUnobtainable: true,
-  selectedTiers: [1, 2, 3, 4],
-};
-
-const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
-const DEFAULT_PAGE_SIZE = 50;
 
 // Format date without external dependency
 function formatDate(dateString: string): string {
@@ -52,13 +40,12 @@ function formatDate(dateString: string): string {
 export function AchievementTablePaginated({ 
   characterId, 
   completedAchievements = [],
-  allAchievements = []
+  allAchievements = [],
+  preferences // Use preferences prop
 }: AchievementTablePaginatedProps) {
   const searchParams = useSearchParams();
-  const [filters, setFilters] = useState<TSRGFilters>(DEFAULT_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [loading, setLoading] = useState(false);
+  const [pageSize, setPageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE);
   
   // Get filter parameters from URL
   const categoryFilter = searchParams.get("category") || "all";
@@ -68,29 +55,32 @@ export function AchievementTablePaginated({
   const filteredAchievements = useMemo(() => {
     let filtered = [...allAchievements];
     
-    // Apply TSR-G filters
+    // Apply TSR-G filters using preferences
     filtered = filtered.filter(achievement => {
       const { tsrg } = achievement;
       
       // Check TSR-G vector limits
-      if (tsrg.time > filters.maxTime) return false;
-      if (tsrg.skill > filters.maxSkill) return false;
-      if (tsrg.rng > filters.maxRng) return false;
-      if (tsrg.group > filters.maxGroup) return false;
+      if (tsrg.time > preferences.maxTimeScore) return false;
+      if (tsrg.skill > preferences.maxSkillScore) return false;
+      if (tsrg.rng > preferences.maxRngScore) return false;
+      if (tsrg.group > preferences.maxGroupScore) return false;
       
-      // Check tier selection
-      if (!filters.selectedTiers.includes(tsrg.tier)) return false;
+      // Check tier selection (preferences.selectedTiers is not used in current preferences type,
+      // assuming it's handled by max scores or will be added)
+      // For now, if selectedTiers is part of preferences, it should be used here.
+      // Assuming preferences.selectedTiers is an array of numbers, similar to TSRGFilters
+      if (preferences.selectedTiers && !preferences.selectedTiers.includes(tsrg.tier)) return false;
       
       return true;
     });
     
     // Apply completion filter
-    if (filters.hideCompleted) {
+    if (preferences.hideCompleted) {
       filtered = filtered.filter(achievement => !achievement.isCompleted);
     }
     
     // Apply obtainable filter
-    if (filters.hideUnobtainable) {
+    if (preferences.hideUnobtainable) {
       filtered = filtered.filter(achievement => achievement.isObtainable);
     }
     
@@ -112,8 +102,8 @@ export function AchievementTablePaginated({
     }
     
     return filtered;
-  }, [allAchievements, filters, categoryFilter, searchQuery]);
-
+  }, [allAchievements, preferences, categoryFilter, searchQuery]); // Depend on preferences
+  
   // Calculate pagination
   const totalPages = Math.ceil(filteredAchievements.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -123,7 +113,7 @@ export function AchievementTablePaginated({
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, categoryFilter, searchQuery, pageSize]);
+  }, [preferences, categoryFilter, searchQuery, pageSize]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -160,7 +150,7 @@ export function AchievementTablePaginated({
   if (allAchievements.length === 0) {
     return (
       <div className="space-y-6">
-        <TSRGFiltersComponent filters={filters} onFiltersChange={setFilters} />
+        {/* TSRGFiltersComponent is now rendered in parent */}
         <div className="flex items-center justify-center py-8">
           <div className="text-white">Loading achievements...</div>
         </div>
@@ -172,51 +162,50 @@ export function AchievementTablePaginated({
     <div className="space-y-6">
       {/* Statistics Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div className="compass-card p-4">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-green-400" />
-            <span className="text-sm text-slate-300">Completion Rate</span>
+            <TrendingUp className="h-4 w-4 text-gold-400" />
+            <span className="text-sm text-compass-300">Completion Rate</span>
           </div>
-          <div className="text-2xl font-bold text-white">{stats.completionRate}%</div>
+          <div className="text-2xl font-bold text-compass-100">{stats.completionRate}%</div>
           <Progress value={stats.completionRate} className="mt-2 h-2" />
         </div>
         
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-sm text-slate-300 mb-2">Completed</div>
-          <div className="text-2xl font-bold text-white">{stats.completed}</div>
-          <div className="text-xs text-slate-400">of {stats.total} total</div>
+        <div className="compass-card p-4">
+          <div className="text-sm text-compass-300 mb-2">Completed</div>
+          <div className="text-2xl font-bold text-compass-100">{stats.completed}</div>
+          <div className="text-xs text-compass-400">of {stats.total} total</div>
         </div>
         
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-sm text-slate-300 mb-2">Obtainable</div>
-          <div className="text-2xl font-bold text-white">{stats.obtainable}</div>
-          <div className="text-xs text-slate-400">achievements available</div>
+        <div className="compass-card p-4">
+          <div className="text-sm text-compass-300 mb-2">Obtainable</div>
+          <div className="text-2xl font-bold text-compass-100">{stats.obtainable}</div>
+          <div className="text-xs text-compass-400">achievements available</div>
         </div>
         
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-sm text-slate-300 mb-2">Filtered Results</div>
-          <div className="text-2xl font-bold text-white">{stats.filtered}</div>
-          <div className="text-xs text-slate-400">matching criteria</div>
+        <div className="compass-card p-4">
+          <div className="text-sm text-compass-300 mb-2">Filtered Results</div>
+          <div className="text-2xl font-bold text-compass-100">{stats.filtered}</div>
+          <div className="text-xs text-compass-400">matching criteria</div>
         </div>
       </div>
 
-      {/* TSR-G Filters */}
-      <TSRGFiltersComponent filters={filters} onFiltersChange={setFilters} />
+      {/* TSR-G Filters - REMOVED from here, now in ClientAchievementsPage */}
 
       {/* Pagination Controls - Top */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-800 rounded-lg p-4 border border-slate-700">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 compass-card p-4">
         <div className="flex items-center gap-4">
-          <div className="text-sm text-slate-300">
+          <div className="text-sm text-compass-300">
             Showing {startIndex + 1}-{Math.min(endIndex, filteredAchievements.length)} of {filteredAchievements.length} results
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-300">Show:</span>
+            <span className="text-sm text-compass-300">Show:</span>
             <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-              <SelectTrigger className="w-20 bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="w-20 bg-compass-800 border-compass-600 text-compass-100">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600 text-white">
-                {PAGE_SIZE_OPTIONS.map(size => (
+              <SelectContent className="bg-compass-800 border-compass-600 text-compass-100">
+                {PAGINATION.PAGE_SIZE_OPTIONS.map(size => (
                   <SelectItem key={size} value={size.toString()}>
                     {size}
                   </SelectItem>
@@ -232,7 +221,7 @@ export function AchievementTablePaginated({
             size="sm"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="border-compass-600 text-compass-300 hover:bg-compass-700"
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
@@ -260,8 +249,8 @@ export function AchievementTablePaginated({
                   onClick={() => handlePageChange(pageNum)}
                   className={`w-8 h-8 p-0 ${
                     currentPage === pageNum 
-                      ? "bg-blue-600 hover:bg-blue-700" 
-                      : "border-slate-600 text-slate-300 hover:bg-slate-700"
+                      ? "bg-compass-600 hover:bg-compass-700" 
+                      : "border-compass-600 text-compass-300 hover:bg-compass-700"
                   }`}
                 >
                   {pageNum}
@@ -275,7 +264,7 @@ export function AchievementTablePaginated({
             size="sm"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="border-compass-600 text-compass-300 hover:bg-compass-700"
           >
             Next
             <ChevronRight className="h-4 w-4" />
@@ -284,18 +273,18 @@ export function AchievementTablePaginated({
       </div>
       
       {/* Achievement Table */}
-      <div className="rounded-md border border-slate-700 overflow-hidden" data-testid="achievements-table">
+      <div className="rounded-md border border-compass-700 overflow-hidden" data-testid="achievements-table">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-700 hover:bg-slate-700">
-              <TableHead className="text-white w-12">Icon</TableHead>
-              <TableHead className="text-white">Achievement</TableHead>
-              <TableHead className="text-white">Category</TableHead>
-              <TableHead className="text-white">TSR-G Scores</TableHead>
-              <TableHead className="text-white">Tier</TableHead>
-              <TableHead className="text-white">Points</TableHead>
-              <TableHead className="text-white">Status</TableHead>
-              <TableHead className="text-white">Completion Date</TableHead>
+            <TableRow className="bg-compass-800 hover:bg-compass-800 border-compass-700">
+              <TableHead className="text-compass-100 w-12">Icon</TableHead>
+              <TableHead className="text-compass-100">Achievement</TableHead>
+              <TableHead className="text-compass-100">Category</TableHead>
+              <TableHead className="text-compass-100">TSR-G Scores</TableHead>
+              <TableHead className="text-compass-100">Tier</TableHead>
+              <TableHead className="text-compass-100">Points</TableHead>
+              <TableHead className="text-compass-100">Status</TableHead>
+              <TableHead className="text-compass-100">Completion Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody data-testid="achievements-table-body">
@@ -303,54 +292,72 @@ export function AchievementTablePaginated({
               currentPageAchievements.map((achievement) => (
                 <TableRow 
                   key={achievement.id} 
-                  className="hover:bg-slate-700/50 border-slate-700"
+                  className={`
+                    border-compass-700 transition-colors
+                    ${achievement.isCompleted 
+                      ? 'bg-gradient-to-r from-gold-900/20 to-compass-900/20 hover:from-gold-800/30 hover:to-compass-800/30 border-l-4 border-l-gold-500' 
+                      : 'hover:bg-compass-800/50'
+                    }
+                  `}
                   data-testid={`achievement-row-${achievement.id}`}
                 >
                   <TableCell className="p-2">
-                    <AchievementIcon
-                      icon={getAchievementIconUrl(achievement.icon)}
-                      name={achievement.name}
-                      size="sm"
-                    />
+                    <div className="relative">
+                      <AchievementIcon
+                        icon={getAchievementIconUrl(achievement.icon)}
+                        name={achievement.name}
+                        size="sm"
+                      />
+                      {achievement.isCompleted && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gold-500 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3 text-compass-900" />
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium text-white">{achievement.name}</div>
-                      <div className="text-sm text-slate-400 max-w-md truncate">
+                      <div className={`font-medium ${achievement.isCompleted ? 'text-gold-200' : 'text-compass-100'}`}>
+                        {achievement.name}
+                        {achievement.isCompleted && (
+                          <CheckCircle className="inline-block ml-2 h-4 w-4 text-gold-400" />
+                        )}
+                      </div>
+                      <div className="text-sm text-compass-400 max-w-md truncate">
                         {achievement.description}
                       </div>
                       {achievement.rarity && achievement.rarity < 10 && (
-                        <Badge variant="outline" className="mt-1 text-xs bg-purple-900 border-purple-700 text-purple-300">
+                        <Badge variant="outline" className="mt-1 text-xs bg-purple-900/50 border-purple-700 text-purple-300">
                           Rare ({achievement.rarity.toFixed(1)}%)
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-slate-700 text-slate-300 border-slate-600">
+                    <Badge variant="outline" className="bg-compass-700/50 text-compass-300 border-compass-600">
                       {achievement.category}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-orange-400" />
-                        <span className="text-xs text-white">{achievement.tsrg.time}</span>
+                        <Clock className="h-3 w-3 text-gold-400" />
+                        <span className="text-xs text-compass-100">{achievement.tsrg.time}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Zap className="h-3 w-3 text-purple-400" />
-                        <span className="text-xs text-white">{achievement.tsrg.skill}</span>
+                        <Zap className="h-3 w-3 text-compass-400" />
+                        <span className="text-xs text-compass-100">{achievement.tsrg.skill}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Dice6 className="h-3 w-3 text-red-400" />
-                        <span className="text-xs text-white">{achievement.tsrg.rng}</span>
+                        <Dice6 className="h-3 w-3 text-earth-400" />
+                        <span className="text-xs text-compass-100">{achievement.tsrg.rng}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3 text-blue-400" />
-                        <span className="text-xs text-white">{achievement.tsrg.group}</span>
+                        <Users className="h-3 w-3 text-silver-400" />
+                        <span className="text-xs text-compass-100">{achievement.tsrg.group}</span>
                       </div>
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">
+                    <div className="text-xs text-compass-400 mt-1">
                       Total: {achievement.tsrg.composite}
                     </div>
                   </TableCell>
@@ -359,21 +366,24 @@ export function AchievementTablePaginated({
                       {getTierName(achievement.tsrg.tier)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-white">{achievement.points}</TableCell>
+                  <TableCell className="text-compass-100">{achievement.points}</TableCell>
                   <TableCell>
                     {!achievement.isObtainable ? (
-                      <Badge variant="outline" className="bg-slate-600 text-slate-300">
+                      <Badge variant="outline" className="bg-compass-600/50 text-compass-300">
                         Unobtainable
                       </Badge>
                     ) : achievement.isCompleted ? (
-                      <Badge className="bg-green-600 hover:bg-green-700">Completed</Badge>
+                      <Badge className="bg-gold-600 hover:bg-gold-700 text-compass-900">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Completed
+                      </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-amber-500 text-amber-500">
+                      <Badge variant="outline" className="border-compass-500 text-compass-300">
                         Incomplete
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-slate-300">
+                  <TableCell className="text-compass-300">
                     {achievement.completionDate
                       ? formatDate(achievement.completionDate)
                       : "-"}
@@ -382,7 +392,7 @@ export function AchievementTablePaginated({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-slate-400">
+                <TableCell colSpan={8} className="text-center py-8 text-compass-400" data-testid="no-achievements-message">
                   No achievements found matching your filters.
                 </TableCell>
               </TableRow>
@@ -400,7 +410,7 @@ export function AchievementTablePaginated({
               size="sm"
               onClick={() => handlePageChange(1)}
               disabled={currentPage === 1}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-compass-600 text-compass-300 hover:bg-compass-700"
             >
               First
             </Button>
@@ -409,12 +419,12 @@ export function AchievementTablePaginated({
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-compass-600 text-compass-300 hover:bg-compass-700"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <span className="text-sm text-slate-300 px-4">
+            <span className="text-sm text-compass-300 px-4">
               Page {currentPage} of {totalPages}
             </span>
             
@@ -423,7 +433,7 @@ export function AchievementTablePaginated({
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-compass-600 text-compass-300 hover:bg-compass-700"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -432,7 +442,7 @@ export function AchievementTablePaginated({
               size="sm"
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-compass-600 text-compass-300 hover:bg-compass-700"
             >
               Last
             </Button>

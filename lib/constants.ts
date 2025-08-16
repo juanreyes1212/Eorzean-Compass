@@ -1,5 +1,7 @@
 // Application constants for consistency
 
+import { UserPreferences } from "./types";
+
 export const APP_CONFIG = {
   name: 'Eorzean Compass',
   description: 'The definitive companion tool for FFXIV achievement hunters',
@@ -39,10 +41,10 @@ export const TSRG_CONFIG = {
     4: 'Apex',
   },
   TIER_COLORS: {
-    1: 'bg-green-500',
-    2: 'bg-blue-500',
-    3: 'bg-yellow-500',
-    4: 'bg-red-500',
+    1: 'bg-earth-600',
+    2: 'bg-compass-600',
+    3: 'bg-gold-600',
+    4: 'bg-gradient-to-r from-gold-500 to-compass-600',
   },
 } as const;
 
@@ -97,7 +99,7 @@ export const STORAGE_KEYS = {
   RECENT_SEARCHES: 'eorzean_compass_recent_searches',
 } as const;
 
-export const DEFAULT_PREFERENCES = {
+export const DEFAULT_PREFERENCES: UserPreferences = {
   maxTimeScore: 10,
   maxSkillScore: 10,
   maxRngScore: 10,
