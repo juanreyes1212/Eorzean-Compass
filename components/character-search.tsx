@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert"; // Keep Alert for validation errors if needed, but remove for API feedback
 import { Label } from "@/components/ui/label";
 import { Loader2, AlertCircle, Info, Compass } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 const servers = [
   // NA Data Centers
@@ -43,13 +44,12 @@ export function CharacterSearch() {
   const [characterName, setCharacterName] = useState("");
   const [server, setServer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{
     characterName?: string;
     server?: string;
   }>({});
   const router = useRouter();
+  const { toast } = useToast(); // Initialize useToast
 
   const validateForm = () => {
     const errors: { characterName?: string; server?: string } = {};
@@ -78,8 +78,6 @@ export function CharacterSearch() {
     }
     
     setIsLoading(true);
-    setError(null);
-    setWarning(null);
     
     try {
       // Add timeout to the fetch request
@@ -122,9 +120,21 @@ export function CharacterSearch() {
         throw new Error('Invalid character data received. Please try again.');
       }
 
-      // Check if this is mock data and show a warning
+      // Show success or warning toast
       if (data._isMockData) {
-        setWarning(data._error || 'Using demo data - XIVAPI may be temporarily unavailable');
+        toast({
+          title: "Using Demo Data",
+          description: data._error || 'XIVAPI may be temporarily unavailable. Showing demo data.',
+          variant: "default", // Use default for warning/info
+          icon: <Info className="h-4 w-4" />,
+        });
+      } else {
+        toast({
+          title: "Character Found!",
+          description: `Successfully loaded data for ${data.character.name} on ${data.character.server}.`,
+          variant: "default", // Use default for success
+          icon: <Compass className="h-4 w-4" />,
+        });
       }
       
       // Encode the character name and server for the URL
@@ -136,15 +146,21 @@ export function CharacterSearch() {
     } catch (error) {
       console.error("Error searching for character:", error);
       
+      let errorMessage = 'An unexpected error occurred. Please check your internet connection and try again.';
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          setError('Request timed out. The character search service may be slow. Please try again.');
+          errorMessage = 'Request timed out. The character search service may be slow. Please try again.';
         } else {
-          setError(error.message);
+          errorMessage = error.message;
         }
-      } else {
-        setError('An unexpected error occurred. Please check your internet connection and try again.');
       }
+      
+      toast({
+        title: "Search Failed",
+        description: errorMessage,
+        variant: "destructive",
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -168,19 +184,7 @@ export function CharacterSearch() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <Alert variant="destructive" data-testid="error-alert" className="border-red-600 bg-red-900/20">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-red-300">{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {warning && (
-        <Alert data-testid="warning-alert" className="border-gold-600 bg-gold-900/20">
-          <Info className="h-4 w-4 text-gold-400" />
-          <AlertDescription className="text-gold-300">{warning}</AlertDescription>
-        </Alert>
-      )}
+      {/* Removed error and warning Alert components, now handled by toasts */}
       
       <div className="space-y-2">
         <Label htmlFor="character-name" className="text-compass-200 font-medium">

@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import "./globals.css";
 import Link from "next/link";
 import { Compass } from 'lucide-react';
+import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -66,6 +67,7 @@ export default function RootLayout({
             </p>
           </div>
         </footer>
+        <Toaster /> {/* Add the Toaster component here */}
       </body>
     </html>
   );

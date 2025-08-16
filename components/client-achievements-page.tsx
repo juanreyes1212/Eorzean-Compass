@@ -29,6 +29,7 @@ import {
 import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/lib/constants"; // Import from constants
 import { UserPreferences, StoredCharacter, StoredPreferences } from "@/lib/types"; // Import types from centralized location
 import React from "react"; // Import React for React.Fragment
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface Character {
   id: string;
@@ -66,6 +67,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const [error, setError] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [usingCache, setUsingCache] = useState(false);
+  const { toast } = useToast(); // Initialize useToast
 
   // Calculate actual stats from loaded achievements
   const actualStats = useMemo(() => {
@@ -140,6 +142,12 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         });
         setUsingCache(true);
         setLoading(false);
+        toast({
+          title: "Loaded from Cache",
+          description: `Using cached data for ${cachedCharacter.name}.`,
+          variant: "default",
+          icon: <HardDrive className="h-4 w-4" />,
+        });
         return;
       }
 
@@ -204,6 +212,22 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       setUsingCache(false);
       setError(null);
 
+      if (data._isMockData) {
+        toast({
+          title: "Using Demo Data",
+          description: data._error || 'XIVAPI may be temporarily unavailable. Showing demo data.',
+          variant: "default",
+          icon: <WifiOff className="h-4 w-4" />,
+        });
+      } else {
+        toast({
+          title: "Character Data Loaded",
+          description: `Successfully loaded real data for ${data.character.name}.`,
+          variant: "default",
+          icon: <Wifi className="h-4 w-4" />,
+        });
+      }
+
     } catch (fetchError) {
       console.error('Error fetching character data:', fetchError);
       
@@ -220,8 +244,20 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
           _error: 'Using cached data - unable to fetch fresh data',
         });
         setUsingCache(true);
+        toast({
+          title: "Network Error",
+          description: `${errorMessage}. Using cached data.`,
+          variant: "destructive",
+          icon: <AlertCircle className="h-4 w-4" />,
+        });
       } else {
         setError(errorMessage);
+        toast({
+          title: "Error Loading Character",
+          description: errorMessage,
+          variant: "destructive",
+          icon: <AlertCircle className="h-4 w-4" />,
+        });
       }
     } finally {
       setLoading(false);
@@ -298,6 +334,12 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       console.error('Error fetching achievements:', error);
       // Set empty array to prevent infinite loading
       setAllAchievements([]);
+      toast({
+        title: "Error Loading Achievements",
+        description: "Failed to load achievement data. Please try refreshing.",
+        variant: "destructive",
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
     } finally {
       setAchievementsLoading(false);
     }
@@ -402,54 +444,10 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   return (
     <div className="min-h-screen bg-compass-950">
       <div className="container mx-auto px-4 py-8">
-        {/* Real Data Success Banner */}
-        {characterData._isRealData && (
-          <Alert className="mb-6 border-green-600 bg-green-900/20">
-            <CheckCircle className="h-4 w-4 text-green-400" />
-            <AlertDescription className="text-green-300">
-              <div className="flex items-center gap-2">
-                <Wifi className="h-4 w-4" />
-                <span>Connected to XIVAPI - Showing real character data for {characterData.character.name}</span>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Cache Status */}
-        {usingCache && !characterData._isRealData && (
-          <Alert className="mb-6 compass-card">
-            <HardDrive className="h-4 w-4 text-compass-400" />
-            <AlertDescription className="text-compass-300">
-              Using cached data for faster loading. Data cached locally in your browser.
-              <Button onClick={handleRetry} variant="ghost" size="sm" className="ml-2 text-compass-200 hover:text-compass-100">
-                Refresh
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Mock Data Warning */}
-        {characterData._isMockData && (
-          <Alert className="mb-6 border-gold-600 bg-gold-900/20">
-            <WifiOff className="h-4 w-4 text-gold-400" />
-            <AlertDescription className="text-gold-300">
-              {characterData._error || 'Currently showing demo data - XIVAPI may be temporarily unavailable'}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Error with cached data */}
-        {error && characterData && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error} (Showing cached data)
-              <Button onClick={handleRetry} variant="ghost" size="sm" className="ml-2">
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Real Data Success Banner - REMOVED, now handled by toast */}
+        {/* Cache Status - REMOVED, now handled by toast */}
+        {/* Mock Data Warning - REMOVED, now handled by toast */}
+        {/* Error with cached data - REMOVED, now handled by toast */}
 
         {/* Storage Info */}
         <div className="mb-6 text-xs text-compass-400 flex items-center gap-4">
