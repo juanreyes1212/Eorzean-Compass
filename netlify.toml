@@ -1,4 +1,4 @@
 [build]
   command = "bun run build"
   publish = ".next"
-  functions = "netlify/functions" # Assuming you might use Netlify Functions
+  functions = "netlify/functions"
