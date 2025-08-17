@@ -40,7 +40,11 @@ const servers = [
   { name: "Ultros", datacenter: "Primal" },
 ];
 
-export function CharacterSearch() {
+interface CharacterSearchProps {
+  onSearchStart?: () => void; // Added this prop
+}
+
+export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState("");
   const [server, setServer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +82,7 @@ export function CharacterSearch() {
     }
     
     setIsLoading(true);
+    onSearchStart?.(); // Call onSearchStart if provided
     
     try {
       // Add timeout to the fetch request

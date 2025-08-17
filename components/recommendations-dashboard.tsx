@@ -12,12 +12,15 @@ import {
   generateRecommendations, 
   generateAchievementProjects,
   analyzeUserSkillProfile,
-  type AchievementRecommendation,
-  type AchievementProject,
-  type UserPreferences 
 } from "@/lib/recommendations";
-import { AchievementWithTSRG, getTierName, getTierColor } from "@/lib/tsrg-matrix";
+import { getTierName, getTierColor } from "@/lib/tsrg-matrix";
 import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement-icon";
+import { 
+  AchievementRecommendation, 
+  AchievementProject, 
+  UserPreferences, 
+  AchievementWithTSRG 
+} from "@/lib/types"; // Import types from centralized location
 
 interface RecommendationsDashboardProps {
   allAchievements: AchievementWithTSRG[];
@@ -286,7 +289,6 @@ export function RecommendationsDashboard({
             </div>
           )}
         </TabsContent>
-      </Tabs>
 
       {/* Project Detail Modal */}
       {selectedProject && (
@@ -352,6 +354,7 @@ export function RecommendationsDashboard({
           </div>
         </Card>
       )}
+      </Tabs>
     </div>
   );
 }

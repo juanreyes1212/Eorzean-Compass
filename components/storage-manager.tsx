@@ -11,8 +11,8 @@ import {
   getStorageInfo, 
   clearAllStoredData, 
   getRecentSearches,
-  type StoredCharacter 
 } from "@/lib/storage";
+import { StoredCharacter } from "@/lib/types"; // Corrected import path for StoredCharacter
 
 export function StorageManager() {
   const [storageInfo, setStorageInfo] = useState(getStorageInfo());

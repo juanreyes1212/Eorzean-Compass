@@ -46,7 +46,7 @@ export interface AchievementWithTSRG extends AchievementWithStatus {
 }
 
 // API Response Types
-export interface CharacterResponse {
+export interface CharacterData { // Renamed from CharacterResponse to avoid confusion with Character interface
   character: Character;
   completedAchievements: CompletedAchievement[];
   _isMockData?: boolean;
@@ -59,7 +59,7 @@ export interface AchievementsResponse {
 }
 
 // Filter Types
-export interface TSRGFilters {
+export interface TSRGFilters { // Keeping this for now as it's used in AchievementTablePaginated
   maxTime: number;
   maxSkill: number;
   maxRng: number;
@@ -121,6 +121,44 @@ export interface PaginationState {
   totalItems: number;
   totalPages: number;
 }
+
+// Recommendation Types (Moved from lib/recommendations.ts)
+export interface RecommendationReason {
+  type: 'completion_rate' | 'similar_achievements' | 'time_efficient' | 'skill_match' | 'category_preference' | 'rarity' | 'points_efficient';
+  description: string;
+  weight: number;
+}
+
+export interface AchievementRecommendation {
+  achievement: AchievementWithTSRG;
+  score: number;
+  reasons: RecommendationReason[];
+  estimatedTimeToComplete?: string;
+  prerequisites?: string[];
+}
+
+export interface UserProgress {
+  completedAchievements: number[];
+  totalAchievements: number;
+  completionRate: number;
+  strongestSkillAreas: string[];
+  preferredDifficulty: number;
+  averageCompletionTime: number;
+}
+
+export interface AchievementProject {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  achievements: AchievementWithTSRG[];
+  totalPoints: number;
+  estimatedTime: string;
+  difficulty: number;
+  completionRate: number;
+  isCompleted: boolean;
+}
+
 
 // Utility Types
 export type ServerName = 

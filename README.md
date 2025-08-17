@@ -40,29 +40,29 @@ Our unique **Time-Skill-RNG-Group** scoring system rates every achievement:
 ### Local Development Setup
 
 1. **Install Bun** (if not already installed)
-   \`\`\`bash
+   ```bash
    # macOS and Linux
    curl -fsSL https://bun.sh/install | bash
    
    # Windows (PowerShell)
    powershell -c "irm bun.sh/install.ps1 | iex"
-   \`\`\`
+   ```
 
 2. **Clone and setup the project**
-   \`\`\`bash
+   ```bash
    git clone https://github.com/your-username/eorzean-compass.git
    cd eorzean-compass
    bun run setup
-   \`\`\`
+   ```
 
 3. **Start development server**
-   \`\`\`bash
+   ```bash
    # Standard Next.js development
    bun run dev
    
    # Or with Netlify functions (recommended)
    netlify dev
-   \`\`\`
+   ```
 
 4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
@@ -75,9 +75,9 @@ Our unique **Time-Skill-RNG-Group** scoring system rates every achievement:
 3. Click "New site from Git" and connect your repository
 4. Netlify will automatically detect the configuration from `netlify.toml`
 5. Set environment variables in Netlify dashboard:
-   \`\`\`
+   ```
    NEXT_PUBLIC_BASE_URL=https://your-site.netlify.app
-   \`\`\`
+   ```
 6. Deploy automatically on every push to main branch
 
 ## ⚡ Why Bun + Netlify?
@@ -98,7 +98,7 @@ Our unique **Time-Skill-RNG-Group** scoring system rates every achievement:
 
 ## 🏗️ Project Structure
 
-\`\`\`
+```
 eorzean-compass/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API routes (Netlify Functions)
@@ -128,12 +128,12 @@ eorzean-compass/
 ├── netlify.toml                # Netlify configuration
 ├── bunfig.toml                 # Bun configuration
 └── public/                     # Static assets
-\`\`\`
+```
 
 ## 🔧 Development Commands
 
 ### Local Development
-\`\`\`bash
+```bash
 # Start development server
 bun run dev
 
@@ -143,10 +143,10 @@ netlify dev
 # Type checking
 bun run type-check
 
-\`\`\`
+```
 
 ### Building & Testing
-\`\`\`bash
+```bash
 # Build for production
 bun run build
 
@@ -158,10 +158,10 @@ bun test
 
 # Open Cypress UI
 bun run test:e2e:dev
-\`\`\`
+```
 
 ### Deployment
-\`\`\`bash
+```bash
 # Deploy to Netlify (production)
 netlify deploy --prod
 
@@ -170,27 +170,22 @@ netlify deploy
 
 # Check deployment status
 netlify status
-\`\`\`
+```
 
 ## 🌐 Environment Configuration
 
 ### Local Development (`.env.local`)
-\`\`\`env
+```env
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 NODE_ENV=development
 NEXT_TELEMETRY_DISABLED=1
-\`\`\`
+```
 
 ### Netlify Environment Variables
 Set these in your Netlify dashboard under Site Settings > Environment Variables:
 
 **Required:**
 - `NEXT_PUBLIC_BASE_URL`: Your Netlify site URL
-
-**Optional (for future features):**
-- `DATABASE_URL`: PostgreSQL connection string
-- `SUPABASE_URL`: Supabase project URL
-- `SUPABASE_ANON_KEY`: Supabase anonymous key
 
 ## 🔮 Future Features Roadmap
 
@@ -299,13 +294,13 @@ Set these in your Netlify dashboard under Site Settings > Environment Variables:
 ## 🧪 Testing
 
 ### Running Tests
-\`\`\`bash
+```bash
 # Run all E2E tests (for CI)
 bun test
 
 # Open Cypress UI for development
 bun run test:e2e:dev
-\`\`\`
+```
 
 ### Test Coverage
 - Character search functionality
@@ -319,13 +314,13 @@ bun run test:e2e:dev
 ## 📊 Performance Monitoring
 
 ### Built-in Performance Tools
-\`\`\`bash
+```bash
 # Bundle size analysis
 ANALYZE=true bun run build
 
 # Netlify performance testing
 netlify dev --live
-\`\`\`
+```
 
 ### Netlify Analytics
 - Core Web Vitals monitoring
@@ -354,14 +349,14 @@ Configured in `netlify.toml`:
 ### Common Issues
 
 **Netlify Build Failures**
-\`\`\`bash
+```bash
 # Check build logs in Netlify dashboard
 # Verify environment variables are set
 # Test build locally: bun run netlify:build
-\`\`\`
+```
 
 **Bun Installation Issues**
-\`\`\`bash
+```bash
 # Verify Bun installation
 bun --version
 
@@ -370,7 +365,7 @@ curl -fsSL https://bun.sh/install | bash
 
 # Clear Bun cache
 bun pm cache rm
-\`\`\`
+```
 
 **XIVAPI Connection Issues**
 - Check `NEXT_PUBLIC_BASE_URL` is set correctly

@@ -1,27 +1,12 @@
-import { AchievementWithTSRG, TSRGScore, UserPreferences } from './types'; // Import types from centralized location
-
-export interface RecommendationReason {
-  type: 'completion_rate' | 'similar_achievements' | 'time_efficient' | 'skill_match' | 'category_preference' | 'rarity' | 'points_efficient';
-  description: string;
-  weight: number;
-}
-
-export interface AchievementRecommendation {
-  achievement: AchievementWithTSRG;
-  score: number;
-  reasons: RecommendationReason[];
-  estimatedTimeToComplete?: string;
-  prerequisites?: string[];
-}
-
-export interface UserProgress {
-  completedAchievements: number[];
-  totalAchievements: number;
-  completionRate: number;
-  strongestSkillAreas: string[];
-  preferredDifficulty: number;
-  averageCompletionTime: number;
-}
+import { 
+  AchievementWithTSRG, 
+  TSRGScore, 
+  UserPreferences,
+  RecommendationReason, // Imported from centralized types
+  AchievementRecommendation, // Imported from centralized types
+  UserProgress, // Imported from centralized types
+  AchievementProject // Imported from centralized types
+} from './types'; // Import types from centralized location
 
 // Calculate user's skill profile based on completed achievements
 export function analyzeUserSkillProfile(completedAchievements: AchievementWithTSRG[]): {
@@ -234,19 +219,6 @@ export function generateRecommendations(
 }
 
 // Generate achievement projects (grouped related achievements)
-export interface AchievementProject {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  achievements: AchievementWithTSRG[];
-  totalPoints: number;
-  estimatedTime: string;
-  difficulty: number;
-  completionRate: number;
-  isCompleted: boolean;
-}
-
 export function generateAchievementProjects(
   allAchievements: AchievementWithTSRG[],
   completedIds: Set<number>

@@ -6,7 +6,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Info, AlertCircle, RefreshCw, HardDrive, Wifi, WifiOff } from 'lucide-react';
-import { AchievementWithTSRG } from "@/lib/tsrg-matrix";
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
 import { 
   getStoredCharacter, 
@@ -19,34 +18,19 @@ import {
   getStorageInfo,
 } from "@/lib/storage";
 import { DEFAULT_PREFERENCES } from "@/lib/constants";
-import { UserPreferences, StoredCharacter, StoredPreferences } from "@/lib/types";
+import { 
+  UserPreferences, 
+  StoredCharacter, 
+  StoredPreferences,
+  Character, // Imported from lib/types
+  CompletedAchievement, // Imported from lib/types
+  CharacterData, // Imported from lib/types
+  AchievementWithTSRG // Imported from lib/types
+} from "@/lib/types";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AchievementsPageHeader } from "./achievements-page/AchievementsPageHeader";
 import { AchievementsPageContent } from "./achievements-page/AchievementsPageContent";
-
-interface Character {
-  id: string;
-  name: string;
-  server: string;
-  avatar: string;
-  achievementPoints: number;
-  achievementsCompleted: number;
-  totalAchievements: number;
-}
-
-interface CompletedAchievement {
-  id: number;
-  completionDate: string;
-}
-
-interface CharacterData {
-  character: Character;
-  completedAchievements: CompletedAchievement[];
-  _isMockData?: boolean;
-  _isRealData?: boolean;
-  _error?: string;
-}
 
 interface ClientAchievementsPageProps {
   name: string;

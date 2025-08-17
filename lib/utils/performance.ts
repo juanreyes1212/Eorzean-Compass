@@ -1,6 +1,6 @@
 // Performance optimization utilities
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react'; // Added useState
 
 // Debounce hook for search inputs
 export function useDebounce<T extends (...args: any[]) => any>(

@@ -63,7 +63,6 @@ export default function HomePage() {
 
   const techStack = [
     { icon: <Code className="h-5 w-5" />, name: "Next.js 15", color: "text-compass-400" },
-    { icon: <Database className="h-5 w-5" />, name: "Supabase", color: "text-gold-400" },
     { icon: <Palette className="h-5 w-5" />, name: "Tailwind CSS", color: "text-earth-400" },
     { icon: <Rocket className="h-5 w-5" />, name: "TypeScript", color: "text-silver-400" }
   ];
@@ -169,7 +168,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-3 mb-2">
                     {feature.icon}
                     <CardTitle className="text-compass-100">{feature.title}</CardTitle>
-                  </div>
+                  </div >
                   <CardDescription className="text-compass-300 text-base leading-relaxed">
                     {feature.description}
                   </CardDescription>

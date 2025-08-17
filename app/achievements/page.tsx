@@ -1,4 +1,4 @@
-import { AchievementTable } from "@/components/achievement-table";
+import { AchievementTablePaginated } from "@/components/achievement-table-paginated"; // Corrected import
 import { CategoryFilter } from "@/components/category-filter";
 import { SearchFilter } from "@/components/search-filter";
 import { CharacterProfile } from "@/components/character-profile";

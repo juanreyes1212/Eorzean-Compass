@@ -104,11 +104,6 @@ export default function AboutPage() {
       description: "React framework with App Router for optimal performance"
     },
     {
-      icon: <Database className="h-6 w-6 text-gold-400" />,
-      name: "Supabase",
-      description: "PostgreSQL database with real-time capabilities"
-    },
-    {
       icon: <Palette className="h-6 w-6 text-earth-400" />,
       name: "Tailwind CSS",
       description: "Utility-first CSS framework for rapid UI development"

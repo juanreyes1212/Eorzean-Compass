@@ -18,7 +18,7 @@ interface CharacterProfileProps {
     total: number;
     obtainable: number;
     completionRate: number;
-  };
+  } | null; // Changed to allow null
   isLoading?: boolean;
 }
 

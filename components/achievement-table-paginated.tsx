@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { AchievementStats } from "./achievement-table/AchievementStats";
 import { AchievementTableContent } from "./achievement-table/AchievementTableContent";
 import { AchievementTablePagination } from "./achievement-table/AchievementTablePagination";
-import { type AchievementWithTSRG, calculateTSRGScore } from "@/lib/tsrg-matrix";
-import { type UserPreferences } from "@/lib/types"; // Import UserPreferences
+import { calculateTSRGScore } from "@/lib/tsrg-matrix";
+import { AchievementWithTSRG, UserPreferences } from "@/lib/types"; // Import types from centralized location
 import { PAGINATION } from "@/lib/constants"; // Import from constants
 
 interface AchievementTablePaginatedProps {
@@ -27,7 +27,7 @@ export function AchievementTablePaginated({
 }: AchievementTablePaginatedProps) {
   const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState<number>(PAGINATION.DEFAULT_PAGE_SIZE); // Explicitly set type to number
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
