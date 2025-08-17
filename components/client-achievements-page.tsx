@@ -1,15 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { AchievementTablePaginated } from "@/components/achievement-table-paginated";
-import { CategoryFilter } from "@/components/category-filter";
-import { SearchFilter } from "@/components/search-filter";
 import { CharacterProfile } from "@/components/character-profile";
-import { RecommendationsDashboard } from "@/components/recommendations-dashboard";
-import { TSRGFiltersComponent } from "@/components/tsrg-filters"; // Import TSRGFiltersComponent
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -26,10 +20,12 @@ import {
   addRecentSearch,
   getStorageInfo,
 } from "@/lib/storage";
-import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/lib/constants"; // Import from constants
-import { UserPreferences, StoredCharacter, StoredPreferences } from "@/lib/types"; // Import types from centralized location
-import React from "react"; // Import React for React.Fragment
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/lib/constants";
+import { UserPreferences, StoredCharacter, StoredPreferences } from "@/lib/types";
+import React from "react";
+import { useToast } from "@/hooks/use-toast";
+import { AchievementsPageHeader } from "./achievements-page/AchievementsPageHeader";
+import { AchievementsPageContent } from "./achievements-page/AchievementsPageContent";
 
 interface Character {
   id: string;
@@ -67,7 +63,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const [error, setError] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [usingCache, setUsingCache] = useState(false);
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
 
   // Initialize storageInfo with a default, server-safe value
   const [storageInfo, setStorageInfo] = useState({
@@ -456,87 +452,23 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   return (
     <div className="min-h-screen bg-compass-950">
       <div className="container mx-auto px-4 py-8">
-        {/* Real Data Success Banner - REMOVED, now handled by toast */}
-        {/* Cache Status - REMOVED, now handled by toast */}
-        {/* Mock Data Warning - REMOVED, now handled by toast */}
-        {/* Error with cached data - REMOVED, now handled by toast */}
-
-        {/* Storage Info */}
-        <div className="mb-6 text-xs text-compass-400 flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <Database className="h-3 w-3" />
-            <span>Storage: {Math.round(storageInfo.used / 1024)}KB used</span>
-          </div>
-          <div>{storageInfo.characters} characters cached</div>
-          {storageInfo.hasAchievements && <div>Achievements cached</div>}
-        </div>
-        
-        {/* Character Profile with loading state and actual stats */}
-        <CharacterProfile 
-          character={characterData.character} 
+        <AchievementsPageHeader
+          characterData={characterData}
           actualStats={actualStats}
-          isLoading={achievementsLoading}
+          achievementsLoading={achievementsLoading}
+          storageInfo={storageInfo}
         />
         
-        <div className="mt-8">
-          <Tabs defaultValue="recommendations" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-compass-800 border-compass-700 mb-6">
-              <TabsTrigger value="recommendations" className="data-[state=active]:bg-compass-700 text-compass-100">
-                Recommendations & Projects
-              </TabsTrigger>
-              <TabsTrigger value="achievements" className="data-[state=active]:bg-compass-700 text-compass-100">
-                All Achievements ({allAchievements.length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="recommendations">
-              {achievementsLoading ? (
-                <Card className="p-6 compass-card">
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-compass-100">Loading achievements and generating recommendations...</div>
-                  </div>
-                </Card>
-              ) : (
-                <RecommendationsDashboard
-                  allAchievements={allAchievements}
-                  completedAchievements={completedAchievementsWithTSRG}
-                  preferences={preferences}
-                  onAchievementClick={handleAchievementClick}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="achievements">
-              <React.Fragment>
-                <div className="compass-card p-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                    <h2 className="text-2xl font-bold text-compass-100">All Achievements with TSR-G Analysis</h2>
-                    <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                      <CategoryFilter />
-                      <SearchFilter />
-                    </div>
-                  </div>
-                  
-                  {/* TSR-G Filters Component rendered here, controlling preferences */}
-                  <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
-
-                  {achievementsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-compass-100">Loading achievements...</div>
-                    </div>
-                  ) : (
-                    <AchievementTablePaginated 
-                      characterId={characterData.character.id} 
-                      completedAchievements={characterData.completedAchievements || []}
-                      allAchievements={allAchievements}
-                      preferences={preferences} {/* Pass preferences to the table */}
-                    />
-                  )}
-                </div>
-              </React.Fragment>
-            </TabsContent>
-          </Tabs>
-        </div>
+        <AchievementsPageContent
+          allAchievements={allAchievements}
+          completedAchievementsWithTSRG={completedAchievementsWithTSRG}
+          preferences={preferences}
+          setPreferences={setPreferences}
+          achievementsLoading={achievementsLoading}
+          characterId={characterData.character.id}
+          completedAchievements={characterData.completedAchievements || []}
+          onAchievementClick={handleAchievementClick}
+        />
       </div>
     </div>
   );
