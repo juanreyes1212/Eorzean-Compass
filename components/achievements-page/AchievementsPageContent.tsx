@@ -14,7 +14,7 @@ interface AchievementsPageContentProps {
   allAchievements: AchievementWithTSRG[];
   completedAchievementsWithTSRG: AchievementWithTSRG[];
   preferences: UserPreferences;
-  setPreferences: (preferences: UserPreferences) => void;
+  setPreferences: React.Dispatch<React.SetStateAction<UserPreferences>>; // Updated type here
   achievementsLoading: boolean;
   characterId: string;
   completedAchievements: Array<{ id: number; completionDate: string }>;

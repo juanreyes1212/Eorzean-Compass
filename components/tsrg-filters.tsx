@@ -13,16 +13,6 @@ import { Info } from 'lucide-react';
 import { UserPreferences } from "@/lib/types"; // Import UserPreferences
 import { DEFAULT_PREFERENCES } from "@/lib/constants"; // Import DEFAULT_PREFERENCES
 
-export interface TSRGFilters { // This interface is now redundant if UserPreferences is used directly
-  maxTime: number;
-  maxSkill: number;
-  maxRng: number;
-  maxGroup: number;
-  hideCompleted: boolean;
-  hideUnobtainable: boolean;
-  selectedTiers: number[];
-}
-
 interface TSRGFiltersProps {
   filters: UserPreferences; // Use UserPreferences for filters
   onFiltersChange: (filters: UserPreferences) => void;
