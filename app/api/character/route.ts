@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { EXTERNAL_APIS } from '@/lib/constants'; // Import EXTERNAL_APIS
 
 interface XIVAPICharacterSearchResult {
   Results: Array<{
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
     // Try XIVAPI first for ALL characters (not just test ones)
     try {
       // Step 1: Search for character to get Lodestone ID
-      const searchUrl = `https://xivapi.com/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
+      const searchUrl = `${EXTERNAL_APIS.XIVAPI_BASE}/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
       
       console.log(`Calling XIVAPI search: ${searchUrl}`);
       
@@ -187,7 +188,7 @@ export async function POST(request: Request) {
       console.log(`Found character: ${character.Name} (ID: ${character.ID})`);
 
       // Step 2: Fetch character's achievement data
-      const characterUrl = `https://xivapi.com/character/${character.ID}?data=AC`;
+      const characterUrl = `${EXTERNAL_APIS.XIVAPI_BASE}/character/${character.ID}?data=AC`;
       
       console.log(`Calling XIVAPI character: ${characterUrl}`);
       

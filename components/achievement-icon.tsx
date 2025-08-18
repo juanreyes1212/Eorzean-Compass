@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Trophy } from 'lucide-react';
+import { EXTERNAL_APIS } from '@/lib/constants'; // Import EXTERNAL_APIS
 
 interface AchievementIconProps {
   icon?: string;
@@ -78,14 +79,14 @@ export function getAchievementIconUrl(iconPath?: string): string {
   
   // Handle relative paths from XIVAPI
   if (iconPath.startsWith('/i/')) {
-    return `https://xivapi.com${iconPath}`;
+    return `${EXTERNAL_APIS.XIVAPI_BASE}${iconPath}`; // Use updated base URL
   }
   
   // Handle just the icon filename
   if (iconPath.includes('.png')) {
-    return `https://xivapi.com/i/${iconPath}`;
+    return `${EXTERNAL_APIS.XIVAPI_BASE}/i/${iconPath}`; // Use updated base URL
   }
   
   // Default fallback
-  return `https://xivapi.com/i/061000/061301.png`;
+  return `${EXTERNAL_APIS.XIVAPI_BASE}/i/061000/061301.png`; // Use updated base URL
 }

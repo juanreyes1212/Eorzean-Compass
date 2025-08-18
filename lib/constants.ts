@@ -114,6 +114,6 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 } as const;
 
 export const EXTERNAL_APIS = {
-  XIVAPI_BASE: 'https://xivapi.com',
+  XIVAPI_BASE: 'https://v2.xivapi.com', // Updated to v2
   FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
 } as const;
