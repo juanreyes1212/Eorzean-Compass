@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
+import { SERVERS } from "@/lib/constants"; // Import SERVERS
 
 interface CharacterProfileProps {
   character: {
@@ -30,6 +31,9 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
     obtainable: character.totalAchievements,
     completionRate: Math.round((character.achievementsCompleted / character.totalAchievements) * 100)
   };
+
+  // Get data center from server name
+  const dataCenter = SERVERS[character.server as keyof typeof SERVERS] || 'Unknown Data Center';
   
   return (
     <Card className="bg-slate-800 border-slate-700 p-6">
@@ -49,7 +53,9 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
         
         <div className="flex-1 text-center md:text-left w-full">
           <h1 className="text-2xl font-bold text-white">{character.name}</h1>
-          <p className="text-slate-300 mb-4">{character.server}</p>
+          <p className="text-slate-300 mb-4">
+            {character.server} <span className="text-slate-400">({dataCenter})</span>
+          </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <Stat 
