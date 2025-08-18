@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"; // Import Dialog components
 import { TrendingUp, Clock, Star, Target, Lightbulb, Trophy, Users, Zap, Dice6, ChevronRight, Info } from 'lucide-react';
 import { 
   generateRecommendations, 
@@ -290,70 +291,72 @@ export function RecommendationsDashboard({
           )}
         </TabsContent>
 
-      {/* Project Detail Modal */}
-      {selectedProject && (
-        <Card className="fixed inset-4 z-50 bg-slate-800 border-slate-700 p-6 overflow-auto">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-xl font-bold text-white">{selectedProject.name}</h3>
-              <p className="text-slate-300 mt-1">{selectedProject.description}</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setSelectedProject(null)}
-              className="text-slate-400 hover:text-white"
-            >
-              ✕
-            </Button>
-          </div>
+      {/* Project Detail Dialog */}
+      <Dialog open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
+        <DialogContent className="bg-slate-800 border-slate-700 p-6 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">{selectedProject?.name}</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {selectedProject?.description}
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">{Math.round(selectedProject.completionRate)}%</div>
-              <div className="text-sm text-slate-300">Complete</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">{selectedProject.totalPoints}</div>
-              <div className="text-sm text-slate-300">Total Points</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">{selectedProject.estimatedTime}</div>
-              <div className="text-sm text-slate-300">Est. Time</div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h4 className="font-medium text-white mb-3">Achievements in this project:</h4>
-            {selectedProject.achievements.map((achievement) => (
-              <div 
-                key={achievement.id}
-                className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 cursor-pointer"
-                onClick={() => onAchievementClick?.(achievement)}
-              >
-                <AchievementIcon
-                  icon={getAchievementIconUrl(achievement.icon)}
-                  name={achievement.name}
-                  size="sm"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-white">{achievement.name}</div>
-                  <div className="text-sm text-slate-400">{achievement.points} points</div>
+          {selectedProject && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{Math.round(selectedProject.completionRate)}%</div>
+                  <div className="text-sm text-slate-300">Complete</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {achievement.isCompleted ? (
-                    <Badge className="bg-green-600">Completed</Badge>
-                  ) : (
-                    <Badge variant="outline" className="border-amber-500 text-amber-500">
-                      Incomplete
-                    </Badge>
-                  )}
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{selectedProject.totalPoints}</div>
+                  <div className="text-sm text-slate-300">Total Points</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{selectedProject.estimatedTime}</div>
+                  <div className="text-sm text-slate-300">Est. Time</div>
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
+
+              <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                <h4 className="font-medium text-white mb-3">Achievements in this project:</h4>
+                {selectedProject.achievements.map((achievement) => (
+                  <div 
+                    key={achievement.id}
+                    className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 cursor-pointer"
+                    onClick={() => {
+                      onAchievementClick?.(achievement);
+                      setSelectedProject(null); // Close dialog after clicking an achievement
+                    }}
+                  >
+                    <AchievementIcon
+                      icon={getAchievementIconUrl(achievement.icon)}
+                      name={achievement.name}
+                      size="sm"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-white">{achievement.name}</div>
+                      <div className="text-sm text-slate-400">{achievement.points} points</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {achievement.isCompleted ? (
+                        <Badge className="bg-gold-600 text-compass-900">Completed</Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-compass-500 text-compass-300">
+                          Incomplete
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <DialogClose asChild>
+            <Button variant="outline" className="mt-4 w-full bg-compass-700 border-compass-600 text-compass-100 hover:bg-compass-600">Close</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
       </Tabs>
     </div>
   );
