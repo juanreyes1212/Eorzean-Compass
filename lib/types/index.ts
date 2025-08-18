@@ -58,17 +58,6 @@ export interface AchievementsResponse {
   achievements: Achievement[];
 }
 
-// Filter Types
-export interface TSRGFilters { // Keeping this for now as it's used in AchievementTablePaginated
-  maxTime: number;
-  maxSkill: number;
-  maxRng: number;
-  maxGroup: number;
-  hideCompleted: boolean;
-  hideUnobtainable: boolean;
-  selectedTiers: number[];
-}
-
 // User Preferences
 export interface UserPreferences {
   maxTimeScore: number;

@@ -43,6 +43,37 @@ describe('API Endpoints', () => {
         expect([200, 404, 503]).to.include(response.status)
       })
     })
+
+    it('should return mock data when XIVAPI fails', () => {
+      // Intercept XIVAPI search to simulate failure
+      cy.intercept('GET', 'https://xivapi.com/character/search*', {
+        statusCode: 500,
+        body: 'Internal Server Error'
+      }).as('xivapiSearchFail');
+
+      // Intercept XIVAPI character data fetch to simulate failure
+      cy.intercept('GET', 'https://xivapi.com/character/*', {
+        statusCode: 500,
+        body: 'Internal Server Error'
+      }).as('xivapiCharacterFail');
+
+      cy.request({
+        method: 'POST',
+        url: '/api/character',
+        body: {
+          name: 'Any Character', // Name doesn't matter as API will fail
+          server: 'Cactuar'
+        },
+        failOnStatusCode: false
+      }).then((response) => {
+        expect(response.status).to.eq(200); // Should still return 200 because of mock data fallback
+        expect(response.body).to.have.property('character');
+        expect(response.body.character).to.have.property('name', 'Any Character');
+        expect(response.body).to.have.property('_isMockData', true);
+        expect(response.body).to.have.property('_error');
+        expect(response.body._error).to.include('XIVAPI unavailable');
+      });
+    });
   })
 
   describe('/api/achievements', () => {

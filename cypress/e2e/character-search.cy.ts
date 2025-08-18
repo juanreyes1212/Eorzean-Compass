@@ -33,7 +33,7 @@ describe('Character Search', () => {
     cy.getByTestId('server-select').should('contain', 'Cactuar')
   })
 
-  it('should handle successful character search', () => {
+  it('should handle successful character search and show success toast', () => {
     // Mock successful API response
     cy.intercept('POST', '/api/character', {
       statusCode: 200,
@@ -60,9 +60,11 @@ describe('Character Search', () => {
     cy.url().should('include', '/achievements')
     cy.url().should('include', 'name=Test%20Character')
     cy.url().should('include', 'server=Cactuar')
+    cy.contains('Character Found!').should('be.visible')
+    cy.contains('Successfully loaded data for Test Character on Cactuar.').should('be.visible')
   })
 
-  it('should handle character not found error', () => {
+  it('should handle character not found error and show error toast', () => {
     cy.intercept('POST', '/api/character', {
       statusCode: 404,
       body: { error: 'Character not found' }
@@ -74,8 +76,37 @@ describe('Character Search', () => {
     cy.getByTestId('search-button').click()
 
     cy.wait('@characterNotFound')
-    cy.getByTestId('error-alert').should('be.visible')
-    cy.getByTestId('error-alert').should('contain', 'Character not found')
+    cy.contains('Search Failed').should('be.visible')
+    cy.contains('Character not found. Please check the name and server spelling.').should('be.visible')
+  })
+
+  it('should show demo data toast when API returns mock data', () => {
+    cy.intercept('POST', '/api/character', {
+      statusCode: 200,
+      body: {
+        character: {
+          id: '99999999',
+          name: 'Demo User',
+          server: 'Cactuar',
+          avatar: '/placeholder.svg',
+          achievementPoints: 500,
+          achievementsCompleted: 50,
+          totalAchievements: 2500,
+        },
+        completedAchievements: [],
+        _isMockData: true,
+        _error: 'XIVAPI is down. Showing demo data.'
+      }
+    }).as('mockCharacterSearch')
+
+    cy.getByTestId('character-name-input').type('Demo User')
+    cy.getByTestId('server-select').click()
+    cy.getByTestId('server-option-Cactuar').click()
+    cy.getByTestId('search-button').click()
+
+    cy.wait('@mockCharacterSearch')
+    cy.contains('Using Demo Data').should('be.visible')
+    cy.contains('XIVAPI is down. Showing demo data.').should('be.visible')
   })
 
   it('should clear validation errors when user types', () => {
