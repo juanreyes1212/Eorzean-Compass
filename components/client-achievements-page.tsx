@@ -133,12 +133,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-      const response = await fetch('/api/character', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, server }),
+      // Ensure this is a GET request to /api/character
+      const response = await fetch(`/api/character?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`, {
+        method: 'GET', // Explicitly set to GET
         signal: controller.signal,
       });
 
@@ -182,7 +179,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       if (data._isMockData) {
         toast({
           title: "Using Demo Data",
-          description: data._error || 'XIVAPI may be temporarily unavailable. Showing demo data.',
+          description: data._error || 'Tomestone.gg API may be temporarily unavailable. Showing demo data.', // Corrected reference
           variant: "default",
           icon: <WifiOff className="h-4 w-4" />,
         });
@@ -343,7 +340,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <p className="mb-8 text-compass-300">
-            This might be due to XIVAPI being temporarily unavailable or network issues.
+            This might be due to Tomestone.gg being temporarily unavailable or network issues.
           </p>
           <div className="space-x-4">
             <Button onClick={handleRetry} disabled={loading}>
