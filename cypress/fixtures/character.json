@@ -1,0 +1,24 @@
+{
+  "character": {
+    "id": "12345678",
+    "name": "Digs Reynar",
+    "server": "Cactuar",
+    "avatar": "/placeholder-user.jpg",
+    "achievementPoints": 1000,
+    "achievementsCompleted": 100,
+    "totalAchievements": 2500
+  },
+  "completedAchievements": [
+    { "id": 1, "completionDate": "2023-01-01T00:00:00Z" },
+    { "id": 2, "completionDate": "2023-01-02T00:00:00Z" },
+    { "id": 3, "completionDate": "2023-01-03T00:00:00Z" },
+    { "id": 4, "completionDate": "2023-01-04T00:00:00Z" },
+    { "id": 5, "completionDate": "2023-01-05T00:00:00Z" },
+    { "id": 6, "completionDate": "2023-01-06T00:00:00Z" },
+    { "id": 7, "completionDate": "2023-01-07T00:00:00Z" },
+    { "id": 8, "completionDate": "2023-01-08T00:00:00Z" },
+    { "id": 9, "completionDate": "2023-01-09T00:00:00Z" },
+    { "id": 10, "completionDate": "2023-01-10T00:00:00Z" }
+  ],
+  "_isMockData": true
+}

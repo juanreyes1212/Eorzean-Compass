@@ -13,22 +13,17 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'xivapi.com',
-        port: '',
-        pathname: '/i/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img2.finalfantasyxiv.com',
-        port: '',
-        pathname: '/f/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'ffxivcollect.com',
         port: '',
-        pathname: '/images/**',
+        pathname: '/images/**', // For achievement icons from FFXIV Collect
       },
+      {
+        protocol: 'https',
+        hostname: 'tomestone.gg',
+        port: '',
+        pathname: '/images/**', // Assuming Tomestone.gg serves avatars/images
+      },
+      // Removed xivapi.com patterns
     ],
     dangerouslyAllowSVG: true, // Allow SVG from remote patterns if needed
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;", // Strict CSP

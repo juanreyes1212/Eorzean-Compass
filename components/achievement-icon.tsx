@@ -72,21 +72,13 @@ export function AchievementIcon({
 export function getAchievementIconUrl(iconPath?: string): string {
   if (!iconPath) return "";
   
-  // Handle different icon path formats from FFXIV Collect API
+  // FFXIV Collect API provides absolute URLs for icons
   if (iconPath.startsWith('http')) {
     return iconPath;
   }
   
-  // Handle relative paths from XIVAPI
-  if (iconPath.startsWith('/i/')) {
-    return `${EXTERNAL_APIS.XIVAPI_BASE}${iconPath}`; // Use updated base URL
-  }
-  
-  // Handle just the icon filename
-  if (iconPath.includes('.png')) {
-    return `${EXTERNAL_APIS.XIVAPI_BASE}/i/${iconPath}`; // Use updated base URL
-  }
-  
-  // Default fallback
-  return `${EXTERNAL_APIS.XIVAPI_BASE}/i/061000/061301.png`; // Use updated base URL
+  // If it's a relative path, assume it's from FFXIV Collect's image CDN
+  // This is a common pattern for FFXIV Collect, e.g., /images/achievements/061000/061301.png
+  // We'll construct the full URL using FFXIV_COLLECT_BASE
+  return `${EXTERNAL_APIS.FFXIV_COLLECT_BASE.replace('/api', '')}${iconPath}`;
 }

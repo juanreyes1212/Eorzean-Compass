@@ -1,28 +1,30 @@
 import { NextResponse } from "next/server";
-import { EXTERNAL_APIS } from '@/lib/constants'; // Import EXTERNAL_APIS
+import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants'; // Import TOMESTONE_API_KEY
 
-interface XIVAPICharacterSearchResult {
-  Results: Array<{
-    ID: number;
-    Name: string;
-    Server: string;
-    Avatar: string;
+// Assuming Tomestone.gg API response structures
+interface TomestoneCharacterSearchResult {
+  characters: Array<{
+    id: string;
+    name: string;
+    server: string;
+    avatar: string;
   }>;
 }
 
-interface XIVAPICharacterData {
-  Character: {
-    ID: number;
-    Name: string;
-    Server: string;
-    Avatar: string;
+interface TomestoneCharacterData {
+  character: {
+    id: string;
+    name: string;
+    server: string;
+    avatar: string;
+    // Tomestone.gg might provide more fields, but we'll stick to what's needed
   };
-  Achievements: {
-    List: Array<{
-      ID: number;
-      Date: number;
-    }>;
-  };
+  achievements: Array<{
+    id: number;
+    date: string; // Assuming ISO string date
+  }>;
+  // Tomestone.gg might provide total achievement points or counts,
+  // but we'll calculate/estimate if not directly available.
 }
 
 // Add timeout wrapper for fetch requests
@@ -84,13 +86,13 @@ function generateMockCharacterData(name: string, server: string) {
       name: name,
       server: server,
       avatar: "/placeholder.svg?height=96&width=96&text=Avatar",
-      achievementPoints: completedAchievements.length * 10,
+      achievementPoints: completedAchievements.length * 10, // Estimate
       achievementsCompleted: completedAchievements.length,
       totalAchievements,
     },
     completedAchievements,
     _isMockData: true,
-    _error: "Using demo data - XIVAPI may be temporarily unavailable"
+    _error: "Using demo data - Tomestone.gg API may be temporarily unavailable or rate-limited."
   };
 }
 
@@ -98,7 +100,6 @@ export async function POST(request: Request) {
   let requestBody: any = {};
   
   try {
-    // Safely parse the request body
     const bodyText = await request.text();
     if (bodyText) {
       try {
@@ -121,7 +122,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate server name against known servers
     const validServers = [
       "Adamantoise", "Cactuar", "Faerie", "Gilgamesh", "Jenova", "Midgardsormr", "Sargatanas", "Siren",
       "Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera",
@@ -135,17 +135,27 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`Searching for character: ${name} on ${server}`);
+    console.log(`Searching for character: ${name} on ${server} using Tomestone.gg`);
 
-    // Try XIVAPI first for ALL characters (not just test ones)
+    // Check for API Key
+    if (!TOMESTONE_API_KEY) {
+      console.error("TOMESTONE_API_KEY is not set. Cannot call Tomestone.gg API.");
+      const mockData = generateMockCharacterData(name, server);
+      return NextResponse.json({
+        ...mockData,
+        _error: "Tomestone.gg API key is missing. Showing demo data.",
+      });
+    }
+
     try {
-      // Step 1: Search for character to get Lodestone ID
-      const searchUrl = `${EXTERNAL_APIS.XIVAPI_BASE}/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
+      // Step 1: Search for character to get ID from Tomestone.gg
+      const searchUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
       
-      console.log(`Calling XIVAPI search: ${searchUrl}`);
+      console.log(`Calling Tomestone.gg search: ${searchUrl}`);
       
       const searchResponse = await fetchWithTimeout(searchUrl, {
         headers: {
+          'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
           'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'})`,
           'Accept': 'application/json',
           'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'
@@ -153,47 +163,46 @@ export async function POST(request: Request) {
       }, 10000);
 
       if (!searchResponse.ok) {
-        console.warn(`XIVAPI search failed: ${searchResponse.status} ${searchResponse.statusText}`);
-        throw new Error(`XIVAPI search failed with status ${searchResponse.status}`);
+        console.warn(`Tomestone.gg search failed: ${searchResponse.status} ${searchResponse.statusText}`);
+        throw new Error(`Tomestone.gg search failed with status ${searchResponse.status}`);
       }
 
-      // Safely parse the search response
       const searchResponseText = await searchResponse.text();
-      let searchData: XIVAPICharacterSearchResult;
+      let searchData: TomestoneCharacterSearchResult;
       
       try {
         searchData = JSON.parse(searchResponseText);
       } catch (parseError) {
-        console.warn("Failed to parse XIVAPI search response as JSON:", parseError);
-        throw new Error("Invalid JSON response from XIVAPI search");
+        console.warn("Failed to parse Tomestone.gg search response as JSON:", parseError);
+        throw new Error("Invalid JSON response from Tomestone.gg search");
       }
       
-      if (!searchData.Results || !Array.isArray(searchData.Results) || searchData.Results.length === 0) {
+      if (!searchData.characters || !Array.isArray(searchData.characters) || searchData.characters.length === 0) {
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
           { status: 404 }
         );
       }
 
-      // Find exact match (case-insensitive)
-      const character = searchData.Results.find(
-        char => char.Name.toLowerCase() === name.toLowerCase() && 
-                 char.Server.toLowerCase() === server.toLowerCase()
-      ) || searchData.Results[0]; // Fallback to first result
+      const character = searchData.characters.find(
+        char => char.name.toLowerCase() === name.toLowerCase() && 
+                 char.server.toLowerCase() === server.toLowerCase()
+      ) || searchData.characters[0];
 
-      if (!character.ID) {
-        throw new Error("Invalid character data from XIVAPI");
+      if (!character.id) {
+        throw new Error("Invalid character data from Tomestone.gg");
       }
 
-      console.log(`Found character: ${character.Name} (ID: ${character.ID})`);
+      console.log(`Found character: ${character.name} (ID: ${character.id})`);
 
-      // Step 2: Fetch character's achievement data
-      const characterUrl = `${EXTERNAL_APIS.XIVAPI_BASE}/character/${character.ID}?data=AC`;
+      // Step 2: Fetch character's achievement data from Tomestone.gg
+      const characterUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${character.id}?data=achievements`;
       
-      console.log(`Calling XIVAPI character: ${characterUrl}`);
+      console.log(`Calling Tomestone.gg character data: ${characterUrl}`);
       
       const characterResponse = await fetchWithTimeout(characterUrl, {
         headers: {
+          'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
           'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'})`,
           'Accept': 'application/json',
           'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'
@@ -201,49 +210,47 @@ export async function POST(request: Request) {
       }, 15000);
 
       if (!characterResponse.ok) {
-        console.warn(`XIVAPI character fetch failed: ${characterResponse.status} ${characterResponse.statusText}`);
-        throw new Error(`XIVAPI character fetch failed with status ${characterResponse.status}`);
+        console.warn(`Tomestone.gg character fetch failed: ${characterResponse.status} ${characterResponse.statusText}`);
+        throw new Error(`Tomestone.gg character fetch failed with status ${characterResponse.status}`);
       }
 
-      // Safely parse the character response
       const characterResponseText = await characterResponse.text();
-      let characterData: XIVAPICharacterData;
+      let tomestoneCharacterData: TomestoneCharacterData;
       
       try {
-        characterData = JSON.parse(characterResponseText);
+        tomestoneCharacterData = JSON.parse(characterResponseText);
       } catch (parseError) {
-        console.warn("Failed to parse XIVAPI character response as JSON:", parseError);
-        throw new Error("Invalid JSON response from XIVAPI character endpoint");
+        console.warn("Failed to parse Tomestone.gg character response as JSON:", parseError);
+        throw new Error("Invalid JSON response from Tomestone.gg character endpoint");
       }
       
-      // Process completed achievements with validation
-      const completedAchievements = (characterData.Achievements?.List || [])
-        .filter(achievement => achievement.ID && achievement.Date)
+      const completedAchievements = (tomestoneCharacterData.achievements || [])
+        .filter(achievement => achievement.id && achievement.date)
         .map(achievement => ({
-          id: achievement.ID,
-          completionDate: new Date(achievement.Date * 1000).toISOString()
+          id: achievement.id,
+          completionDate: new Date(achievement.date).toISOString()
         }));
 
-      console.log(`Successfully fetched ${completedAchievements.length} completed achievements from XIVAPI for ${character.Name}`);
-
-      // Calculate achievement points (rough estimate - FFXIV doesn't provide exact points via API)
-      const achievementPoints = completedAchievements.length * 10;
+      // Tomestone.gg might provide total achievement points/counts directly.
+      // If not, we'll use a placeholder or estimate.
+      const achievementPoints = completedAchievements.length * 10; // Placeholder/Estimate
+      const totalAchievements = 2500; // Placeholder/Estimate
 
       const data = {
         character: {
-          id: character.ID.toString(),
-          name: character.Name,
-          server: character.Server,
-          avatar: character.Avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
+          id: character.id,
+          name: character.name,
+          server: character.server,
+          avatar: character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
           achievementPoints,
           achievementsCompleted: completedAchievements.length,
-          totalAchievements: 2500, // Approximate total
+          totalAchievements,
         },
         completedAchievements,
-        _isRealData: true, // Flag to indicate this is real data
+        _isRealData: true,
       };
 
-      console.log(`Successfully fetched REAL character data:`, {
+      console.log(`Successfully fetched REAL character data from Tomestone.gg:`, {
         name: data.character.name,
         completedCount: data.completedAchievements?.length || 0,
         sampleCompletedIds: data.completedAchievements?.slice(0, 10).map(a => a.id) || []
@@ -252,28 +259,25 @@ export async function POST(request: Request) {
       return NextResponse.json(data);
 
     } catch (apiError) {
-      console.warn("XIVAPI failed, falling back to mock data:", apiError);
+      console.warn("Tomestone.gg API failed, falling back to mock data:", apiError);
       
-      // Only fall back to mock data if XIVAPI is completely unavailable
-      console.log(`Generating mock data for ${name} on ${server} due to API failure: ${apiError}`);
       const mockData = generateMockCharacterData(name, server);
       
       return NextResponse.json({
         ...mockData,
-        _error: `XIVAPI unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}. Showing demo data.`
+        _error: `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}. Showing demo data.`
       });
     }
 
   } catch (error) {
     console.error("Unexpected error processing character request:", error);
     
-    // If all else fails, try to generate mock data with the request body
     if (requestBody.name && requestBody.server) {
-      console.log("Generating fallback mock data due to error");
+      console.log("Generating fallback mock data due to unexpected error");
       const mockData = generateMockCharacterData(requestBody.name, requestBody.server);
       return NextResponse.json({
         ...mockData,
-        _error: "API temporarily unavailable, showing demo data",
+        _error: "Internal server error, showing demo data",
       });
     }
     

@@ -114,6 +114,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 } as const;
 
 export const EXTERNAL_APIS = {
-  XIVAPI_BASE: 'https://v2.xivapi.com', // Updated to v2
+  TOMESTONE_BASE: 'https://tomestone.gg/api', // New Tomestone.gg API base URL
   FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
 } as const;
+
+// This will be read from process.env.TOMESTONE_API_KEY
+export const TOMESTONE_API_KEY = process.env.TOMESTONE_API_KEY;
