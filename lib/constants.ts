@@ -114,8 +114,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 } as const;
 
 export const EXTERNAL_APIS = {
-  TOMESTONE_BASE: 'https://tomestone.gg/api', // New Tomestone.gg API base URL
-  FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
+  TOMESTONE_BASE: 'https://tomestone.gg/api',
+  FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api', // Ensure this is the API base, not just the domain
 } as const;
 
 // This will be read from process.env.TOMESTONE_API_KEY

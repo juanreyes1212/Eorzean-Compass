@@ -72,13 +72,13 @@ export function AchievementIcon({
 export function getAchievementIconUrl(iconPath?: string): string {
   if (!iconPath) return "";
   
-  // Tomestone.gg and FFXIV Collect provide full URLs for icons
+  // If it's already a full URL (e.g., from Tomestone.gg), use it directly
   if (iconPath.startsWith('http')) {
     return iconPath;
   }
   
-  // If it's a relative path, assume it's from FFXIV Collect's image CDN
-  // This is a common pattern for FFXIV Collect, e.g., /images/achievements/061000/061301.png
-  // We'll construct the full URL using FFXIV_COLLECT_BASE
-  return `${EXTERNAL_APIS.FFXIV_COLLECT_BASE.replace('/api', '')}${iconPath}`;
+  // If it's a relative path (e.g., from FFXIV Collect), prepend the FFXIV Collect base URL
+  // Ensure EXTERNAL_APIS.FFXIV_COLLECT_BASE is just the domain, not /api
+  const ffxivCollectBase = EXTERNAL_APIS.FFXIV_COLLECT_BASE.replace('/api', '');
+  return `${ffxivCollectBase}${iconPath.startsWith('/') ? '' : '/'}${iconPath}`;
 }

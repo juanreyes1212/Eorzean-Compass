@@ -101,6 +101,7 @@ export async function GET(request: Request) {
     const server = searchParams.get('server');
     
     if (!name || !server || typeof name !== 'string' || typeof server !== 'string') {
+      console.error("Character API: Missing or invalid name/server parameters.");
       return NextResponse.json(
         { error: "Valid name and server strings are required" },
         { status: 400 }
@@ -114,16 +115,17 @@ export async function GET(request: Request) {
     ];
     
     if (!validServers.includes(server)) {
+      console.error(`Character API: Invalid server name provided: ${server}`);
       return NextResponse.json(
         { error: "Invalid server name" },
         { status: 400 }
       );
     }
 
-    console.log(`Searching for character: ${name} on ${server} using Tomestone.gg`);
+    console.log(`Character API: Searching for character: ${name} on ${server} using Tomestone.gg`);
 
     if (!TOMESTONE_API_KEY) {
-      console.error("TOMESTONE_API_KEY is not set. Cannot call Tomestone.gg API.");
+      console.error("Character API: TOMESTONE_API_KEY is not set. Cannot call Tomestone.gg API.");
       const mockData = generateMockCharacterData(name, server);
       return NextResponse.json({
         ...mockData,
@@ -135,7 +137,7 @@ export async function GET(request: Request) {
       // Step 1: Search for character to get ID from Tomestone.gg
       const searchUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
       
-      console.log(`Calling Tomestone.gg search: ${searchUrl}`);
+      console.log(`Character API: Calling Tomestone.gg search: ${searchUrl}`);
       
       const searchResponse = await fetchWithTimeout(searchUrl, {
         headers: {
@@ -147,13 +149,15 @@ export async function GET(request: Request) {
       }, 10000);
 
       if (!searchResponse.ok) {
-        console.warn(`Tomestone.gg search failed: ${searchResponse.status} ${searchResponse.statusText}`);
+        const errorBody = await searchResponse.text();
+        console.warn(`Character API: Tomestone.gg search failed: ${searchResponse.status} ${searchResponse.statusText}. Body: ${errorBody}`);
         throw new Error(`Tomestone.gg search failed with status ${searchResponse.status}`);
       }
 
       const searchData: TomestoneCharacterSearchResult = await searchResponse.json();
       
       if (!searchData.characters || !Array.isArray(searchData.characters) || searchData.characters.length === 0) {
+        console.warn(`Character API: Tomestone.gg search returned no characters for ${name} on ${server}.`);
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
           { status: 404 }
@@ -163,18 +167,19 @@ export async function GET(request: Request) {
       const character = searchData.characters.find(
         char => char.name.toLowerCase() === name.toLowerCase() && 
                  char.server.toLowerCase() === server.toLowerCase()
-      ) || searchData.characters[0];
+      ) || searchData.characters[0]; // Fallback to first result if exact match not found
 
       if (!character.id) {
+        console.error("Character API: Tomestone.gg search result missing character ID.");
         throw new Error("Invalid character data from Tomestone.gg search result");
       }
 
-      console.log(`Found character: ${character.name} (ID: ${character.id})`);
+      console.log(`Character API: Found character: ${character.name} (ID: ${character.id})`);
 
       // Step 2: Fetch character's achievement data from Tomestone.gg using GET /character/{id}
       const characterUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${character.id}?data=achievements`;
       
-      console.log(`Calling Tomestone.gg character data: ${characterUrl}`);
+      console.log(`Character API: Calling Tomestone.gg character data: ${characterUrl}`);
       
       const characterResponse = await fetchWithTimeout(characterUrl, {
         headers: {
@@ -186,7 +191,8 @@ export async function GET(request: Request) {
       }, 15000);
 
       if (!characterResponse.ok) {
-        console.warn(`Tomestone.gg character fetch failed: ${characterResponse.status} ${characterResponse.statusText}`);
+        const errorBody = await characterResponse.text();
+        console.warn(`Character API: Tomestone.gg character fetch failed: ${characterResponse.status} ${characterResponse.statusText}. Body: ${errorBody}`);
         throw new Error(`Tomestone.gg character fetch failed with status ${characterResponse.status}`);
       }
 
@@ -217,7 +223,7 @@ export async function GET(request: Request) {
         _isRealData: true,
       };
 
-      console.log(`Successfully fetched REAL character data from Tomestone.gg:`, {
+      console.log(`Character API: Successfully fetched REAL character data from Tomestone.gg:`, {
         name: data.character.name,
         completedCount: data.completedAchievements?.length || 0,
         sampleCompletedIds: data.completedAchievements?.slice(0, 10).map(a => a.id) || []
@@ -226,7 +232,7 @@ export async function GET(request: Request) {
       return NextResponse.json(data);
 
     } catch (apiError) {
-      console.warn("Tomestone.gg API failed, falling back to mock data:", apiError);
+      console.warn("Character API: Tomestone.gg API failed, falling back to mock data:", apiError instanceof Error ? apiError.message : apiError);
       
       const mockData = generateMockCharacterData(name, server);
       
@@ -237,13 +243,13 @@ export async function GET(request: Request) {
     }
 
   } catch (error) {
-    console.error("Unexpected error processing character request:", error);
+    console.error("Character API: Unexpected error processing character request:", error instanceof Error ? error.message : error);
     
-    const name = new URL(request.url).searchParams.get('name') || 'Unknown';
-    const server = new URL(request.url).searchParams.get('server') || 'Unknown';
+    const nameParam = new URL(request.url).searchParams.get('name') || 'Unknown';
+    const serverParam = new URL(request.url).searchParams.get('server') || 'Unknown';
 
-    console.log("Generating fallback mock data due to unexpected error");
-    const mockData = generateMockCharacterData(name, server);
+    console.log("Character API: Generating fallback mock data due to unexpected error.");
+    const mockData = generateMockCharacterData(nameParam, serverParam);
     return NextResponse.json({
       ...mockData,
       _error: "Internal server error, showing demo data",
