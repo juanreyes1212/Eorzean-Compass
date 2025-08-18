@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants'; // Import TOMESTONE_API_KEY
+import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 
-// Assuming Tomestone.gg API response structures
+// Tomestone.gg API response structures based on api-docs.json
 interface TomestoneCharacterSearchResult {
   characters: Array<{
     id: string;
@@ -17,14 +17,14 @@ interface TomestoneCharacterData {
     name: string;
     server: string;
     avatar: string;
-    // Tomestone.gg might provide more fields, but we'll stick to what's needed
+    // The docs show 'achievement_points' and 'achievements_completed' directly on character
+    achievement_points?: number;
+    achievements_completed?: number;
   };
   achievements: Array<{
     id: number;
-    date: string; // Assuming ISO string date
+    date: string; // ISO 8601 date string
   }>;
-  // Tomestone.gg might provide total achievement points or counts,
-  // but we'll calculate/estimate if not directly available.
 }
 
 // Add timeout wrapper for fetch requests
@@ -50,7 +50,6 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
 
 // Generate mock character data for testing/fallback
 function generateMockCharacterData(name: string, server: string) {
-  // Generate a deterministic ID based on name and server
   let hash = 0;
   const str = (name + server).toLowerCase();
   
@@ -62,12 +61,11 @@ function generateMockCharacterData(name: string, server: string) {
   
   const characterId = Math.abs(hash).toString().padStart(8, '0');
   
-  // Generate mock completed achievements (about 40% of 2500)
   const completedAchievements = [];
   const totalAchievements = 2500;
   
   for (let i = 1; i <= totalAchievements; i++) {
-    if ((parseInt(characterId) + i) % 10 < 4) { // 40% chance
+    if ((parseInt(characterId) + i) % 10 < 4) {
       completedAchievements.push({
         id: i,
         completionDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -86,7 +84,7 @@ function generateMockCharacterData(name: string, server: string) {
       name: name,
       server: server,
       avatar: "/placeholder.svg?height=96&width=96&text=Avatar",
-      achievementPoints: completedAchievements.length * 10, // Estimate
+      achievementPoints: completedAchievements.length * 10,
       achievementsCompleted: completedAchievements.length,
       totalAchievements,
     },
@@ -96,24 +94,11 @@ function generateMockCharacterData(name: string, server: string) {
   };
 }
 
-export async function POST(request: Request) {
-  let requestBody: any = {};
-  
+export async function GET(request: Request) {
   try {
-    const bodyText = await request.text();
-    if (bodyText) {
-      try {
-        requestBody = JSON.parse(bodyText);
-      } catch (parseError) {
-        console.error("Failed to parse request body as JSON:", parseError);
-        return NextResponse.json(
-          { error: "Invalid JSON in request body" },
-          { status: 400 }
-        );
-      }
-    }
-    
-    const { name, server } = requestBody;
+    const { searchParams } = new URL(request.url);
+    const name = searchParams.get('name');
+    const server = searchParams.get('server');
     
     if (!name || !server || typeof name !== 'string' || typeof server !== 'string') {
       return NextResponse.json(
@@ -137,7 +122,6 @@ export async function POST(request: Request) {
 
     console.log(`Searching for character: ${name} on ${server} using Tomestone.gg`);
 
-    // Check for API Key
     if (!TOMESTONE_API_KEY) {
       console.error("TOMESTONE_API_KEY is not set. Cannot call Tomestone.gg API.");
       const mockData = generateMockCharacterData(name, server);
@@ -156,9 +140,9 @@ export async function POST(request: Request) {
       const searchResponse = await fetchWithTimeout(searchUrl, {
         headers: {
           'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-          'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'})`,
+          'User-Agent': `Eorzean-Compass/1.0 (https://eorzean-compass.netlify.app)`,
           'Accept': 'application/json',
-          'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'
+          'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
         }
       }, 10000);
 
@@ -167,15 +151,7 @@ export async function POST(request: Request) {
         throw new Error(`Tomestone.gg search failed with status ${searchResponse.status}`);
       }
 
-      const searchResponseText = await searchResponse.text();
-      let searchData: TomestoneCharacterSearchResult;
-      
-      try {
-        searchData = JSON.parse(searchResponseText);
-      } catch (parseError) {
-        console.warn("Failed to parse Tomestone.gg search response as JSON:", parseError);
-        throw new Error("Invalid JSON response from Tomestone.gg search");
-      }
+      const searchData: TomestoneCharacterSearchResult = await searchResponse.json();
       
       if (!searchData.characters || !Array.isArray(searchData.characters) || searchData.characters.length === 0) {
         return NextResponse.json(
@@ -190,12 +166,12 @@ export async function POST(request: Request) {
       ) || searchData.characters[0];
 
       if (!character.id) {
-        throw new Error("Invalid character data from Tomestone.gg");
+        throw new Error("Invalid character data from Tomestone.gg search result");
       }
 
       console.log(`Found character: ${character.name} (ID: ${character.id})`);
 
-      // Step 2: Fetch character's achievement data from Tomestone.gg
+      // Step 2: Fetch character's achievement data from Tomestone.gg using GET /character/{id}
       const characterUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${character.id}?data=achievements`;
       
       console.log(`Calling Tomestone.gg character data: ${characterUrl}`);
@@ -203,9 +179,9 @@ export async function POST(request: Request) {
       const characterResponse = await fetchWithTimeout(characterUrl, {
         headers: {
           'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-          'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'})`,
+          'User-Agent': `Eorzean-Compass/1.0 (https://eorzean-compass.netlify.app)`,
           'Accept': 'application/json',
-          'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.vercel.app'
+          'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
         }
       }, 15000);
 
@@ -214,15 +190,7 @@ export async function POST(request: Request) {
         throw new Error(`Tomestone.gg character fetch failed with status ${characterResponse.status}`);
       }
 
-      const characterResponseText = await characterResponse.text();
-      let tomestoneCharacterData: TomestoneCharacterData;
-      
-      try {
-        tomestoneCharacterData = JSON.parse(characterResponseText);
-      } catch (parseError) {
-        console.warn("Failed to parse Tomestone.gg character response as JSON:", parseError);
-        throw new Error("Invalid JSON response from Tomestone.gg character endpoint");
-      }
+      const tomestoneCharacterData: TomestoneCharacterData = await characterResponse.json();
       
       const completedAchievements = (tomestoneCharacterData.achievements || [])
         .filter(achievement => achievement.id && achievement.date)
@@ -231,10 +199,9 @@ export async function POST(request: Request) {
           completionDate: new Date(achievement.date).toISOString()
         }));
 
-      // Tomestone.gg might provide total achievement points/counts directly.
-      // If not, we'll use a placeholder or estimate.
-      const achievementPoints = completedAchievements.length * 10; // Placeholder/Estimate
-      const totalAchievements = 2500; // Placeholder/Estimate
+      const achievementPoints = tomestoneCharacterData.character?.achievement_points || completedAchievements.length * 10;
+      const achievementsCompleted = tomestoneCharacterData.character?.achievements_completed || completedAchievements.length;
+      const totalAchievements = 2500; // Placeholder/Estimate as total not in this specific doc
 
       const data = {
         character: {
@@ -243,7 +210,7 @@ export async function POST(request: Request) {
           server: character.server,
           avatar: character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
           achievementPoints,
-          achievementsCompleted: completedAchievements.length,
+          achievementsCompleted,
           totalAchievements,
         },
         completedAchievements,
@@ -272,18 +239,14 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Unexpected error processing character request:", error);
     
-    if (requestBody.name && requestBody.server) {
-      console.log("Generating fallback mock data due to unexpected error");
-      const mockData = generateMockCharacterData(requestBody.name, requestBody.server);
-      return NextResponse.json({
-        ...mockData,
-        _error: "Internal server error, showing demo data",
-      });
-    }
-    
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const name = new URL(request.url).searchParams.get('name') || 'Unknown';
+    const server = new URL(request.url).searchParams.get('server') || 'Unknown';
+
+    console.log("Generating fallback mock data due to unexpected error");
+    const mockData = generateMockCharacterData(name, server);
+    return NextResponse.json({
+      ...mockData,
+      _error: "Internal server error, showing demo data",
+    });
   }
 }

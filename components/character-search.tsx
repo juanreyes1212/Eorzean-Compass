@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert"; // Keep Alert for validation errors if needed, but remove for API feedback
 import { Label } from "@/components/ui/label";
 import { Loader2, AlertCircle, Info, Compass } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast";
 
 const servers = [
   // NA Data Centers
@@ -41,7 +40,7 @@ const servers = [
 ];
 
 interface CharacterSearchProps {
-  onSearchStart?: () => void; // Added this prop
+  onSearchStart?: () => void;
 }
 
 export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
@@ -53,7 +52,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
     server?: string;
   }>({});
   const router = useRouter();
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
 
   const validateForm = () => {
     const errors: { characterName?: string; server?: string } = {};
@@ -82,22 +81,21 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
     }
     
     setIsLoading(true);
-    onSearchStart?.(); // Call onSearchStart if provided
+    onSearchStart?.();
     
     try {
+      const encodedName = encodeURIComponent(characterName.trim());
+      const encodedServer = encodeURIComponent(server);
+      
+      // Construct the URL for the GET request to your API route
+      const apiUrl = `/api/character?name=${encodedName}&server=${encodedServer}`;
+
       // Add timeout to the fetch request
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
       
-      const response = await fetch('/api/character', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: characterName.trim(),
-          server: server,
-        }),
+      const response = await fetch(apiUrl, { // Changed to GET request
+        method: 'GET',
         signal: controller.signal,
       });
 
@@ -106,7 +104,6 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
         
-        // Handle specific error cases
         switch (response.status) {
           case 404:
             throw new Error('Character not found. Please check the name and server spelling.');
@@ -125,28 +122,22 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
         throw new Error('Invalid character data received. Please try again.');
       }
 
-      // Show success or warning toast
       if (data._isMockData) {
         toast({
           title: "Using Demo Data",
-          description: data._error || 'XIVAPI may be temporarily unavailable. Showing demo data.',
-          variant: "default", // Use default for warning/info
+          description: data._error || 'Tomestone.gg API may be temporarily unavailable. Showing demo data.',
+          variant: "default",
           icon: <Info className="h-4 w-4" />,
         });
       } else {
         toast({
           title: "Character Found!",
-          description: `Successfully loaded data for ${data.character.name} on ${data.character.server}.`,
-          variant: "default", // Use default for success
+          description: `Successfully loaded real data for ${data.character.name} on ${data.character.server}.`,
+          variant: "default",
           icon: <Compass className="h-4 w-4" />,
         });
       }
       
-      // Encode the character name and server for the URL
-      const encodedName = encodeURIComponent(characterName.trim());
-      const encodedServer = encodeURIComponent(server);
-      
-      // Redirect to the achievements page
       router.push(`/achievements?name=${encodedName}&server=${encodedServer}`);
     } catch (error) {
       console.error("Error searching for character:", error);
@@ -173,7 +164,6 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
 
   const handleCharacterNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCharacterName(e.target.value);
-    // Clear validation error when user starts typing
     if (validationErrors.characterName) {
       setValidationErrors(prev => ({ ...prev, characterName: undefined }));
     }
@@ -181,7 +171,6 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
 
   const handleServerChange = (value: string) => {
     setServer(value);
-    // Clear validation error when user selects a server
     if (validationErrors.server) {
       setValidationErrors(prev => ({ ...prev, server: undefined }));
     }
@@ -189,8 +178,6 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Removed error and warning Alert components, now handled by toasts */}
-      
       <div className="space-y-2">
         <Label htmlFor="character-name" className="text-compass-200 font-medium">
           Character Name
@@ -268,7 +255,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
           <Info className="h-3 w-3" />
           Try "Test Character", "Demo User", or "Example Player" on any server for demo data
         </p>
-        <p>Real character names will attempt to fetch from XIVAPI</p>
+        <p>Real character names will attempt to fetch from Tomestone.gg</p>
       </div>
     </form>
   );

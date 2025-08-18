@@ -23,7 +23,6 @@ const nextConfig = {
         port: '',
         pathname: '/images/**', // Assuming Tomestone.gg serves avatars/images
       },
-      // Removed xivapi.com patterns
     ],
     dangerouslyAllowSVG: true, // Allow SVG from remote patterns if needed
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;", // Strict CSP

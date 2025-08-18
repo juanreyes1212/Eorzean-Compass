@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Trophy } from 'lucide-react';
-import { EXTERNAL_APIS } from '@/lib/constants'; // Import EXTERNAL_APIS
+import { EXTERNAL_APIS } from '@/lib/constants';
 
 interface AchievementIconProps {
   icon?: string;
@@ -72,7 +72,7 @@ export function AchievementIcon({
 export function getAchievementIconUrl(iconPath?: string): string {
   if (!iconPath) return "";
   
-  // FFXIV Collect API provides absolute URLs for icons
+  // Tomestone.gg and FFXIV Collect provide full URLs for icons
   if (iconPath.startsWith('http')) {
     return iconPath;
   }

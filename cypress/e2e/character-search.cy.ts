@@ -56,11 +56,8 @@ describe('Character Search', () => {
           name: 'Digs Reynar',
           server: 'Cactuar',
           avatar: '/placeholder.svg',
-          // Tomestone.gg might not provide these directly in this endpoint,
-          // but our API route will estimate them.
-          achievementPoints: 1000, 
-          achievementsCompleted: 100,
-          totalAchievements: 2500,
+          achievement_points: 1000, 
+          achievements_completed: 100,
         },
         achievements: [
           { id: 1, date: '2023-01-01T00:00:00Z' },
@@ -69,13 +66,34 @@ describe('Character Search', () => {
       }
     }).as('tomestoneCharacterData');
 
+    // Intercept the local /api/character GET request
+    cy.intercept('GET', '/api/character?name=Digs%20Reynar&server=Cactuar', {
+      statusCode: 200,
+      body: {
+        character: {
+          id: '12345678',
+          name: 'Digs Reynar',
+          server: 'Cactuar',
+          avatar: '/placeholder.svg',
+          achievementPoints: 1000,
+          achievementsCompleted: 100,
+          totalAchievements: 2500,
+        },
+        completedAchievements: [
+          { id: 1, completionDate: '2023-01-01T00:00:00Z' },
+          { id: 2, completionDate: '2023-01-02T00:00:00Z' }
+        ],
+        _isRealData: true
+      }
+    }).as('localCharacterApi');
+
+
     cy.getByTestId('character-name-input').type('Digs Reynar')
     cy.getByTestId('server-select').click()
     cy.getByTestId('server-option-Cactuar').click()
     cy.getByTestId('search-button').click()
 
-    cy.wait('@tomestoneSearch')
-    cy.wait('@tomestoneCharacterData')
+    cy.wait('@localCharacterApi') // Wait for the local API call
     cy.url().should('include', '/achievements')
     cy.url().should('include', 'name=Digs%20Reynar')
     cy.url().should('include', 'server=Cactuar')
@@ -85,33 +103,55 @@ describe('Character Search', () => {
 
   it('should handle character not found error and show error toast', () => {
     cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-      statusCode: 200, // Tomestone.gg might return 200 with empty results for not found
+      statusCode: 200,
       body: { characters: [] }
     }).as('tomestoneNotFound');
+
+    cy.intercept('GET', '/api/character?name=NonExistent&server=Cactuar', {
+      statusCode: 404,
+      body: { error: 'Character not found. Please check the name and server spelling.' }
+    }).as('localCharacterApiNotFound');
 
     cy.getByTestId('character-name-input').type('NonExistent')
     cy.getByTestId('server-select').click()
     cy.getByTestId('server-option-Cactuar').click()
     cy.getByTestId('search-button').click()
 
-    cy.wait('@tomestoneNotFound')
+    cy.wait('@localCharacterApiNotFound')
     cy.contains('Search Failed').should('be.visible')
     cy.contains('Character not found. Please check the name and server spelling.').should('be.visible')
   })
 
   it('should show demo data toast when API returns mock data', () => {
-    // Simulate Tomestone.gg API failure
     cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
       statusCode: 500,
       body: 'Internal Server Error'
     }).as('tomestoneSearchFail');
+
+    cy.intercept('GET', '/api/character?name=Demo%20User&server=Cactuar', {
+      statusCode: 200,
+      body: {
+        character: {
+          id: 'mock123',
+          name: 'Demo User',
+          server: 'Cactuar',
+          avatar: '/placeholder.svg',
+          achievementPoints: 500,
+          achievementsCompleted: 50,
+          totalAchievements: 2500,
+        },
+        completedAchievements: [],
+        _isMockData: true,
+        _error: 'Tomestone.gg API unavailable: Internal Server Error. Showing demo data.'
+      }
+    }).as('localCharacterApiMock');
 
     cy.getByTestId('character-name-input').type('Demo User')
     cy.getByTestId('server-select').click()
     cy.getByTestId('server-option-Cactuar').click()
     cy.getByTestId('search-button').click()
 
-    cy.wait('@tomestoneSearchFail')
+    cy.wait('@localCharacterApiMock')
     cy.contains('Using Demo Data').should('be.visible')
     cy.contains('Tomestone.gg API unavailable').should('be.visible')
   })
@@ -156,13 +196,30 @@ describe('Character Search', () => {
           name: 'Test Character',
           server: 'Cactuar',
           avatar: '/placeholder.svg',
-          achievementPoints: 1000,
-          achievementsCompleted: 100,
-          totalAchievements: 2500,
+          achievement_points: 1000,
+          achievements_completed: 100,
         },
         achievements: []
       }
     }).as('slowTomestoneCharacterData');
+
+    cy.intercept('GET', '/api/character?name=Test%20Character&server=Cactuar', {
+      delay: 4000, // Simulate longer local API processing
+      statusCode: 200,
+      body: {
+        character: {
+          id: '12345678',
+          name: 'Test Character',
+          server: 'Cactuar',
+          avatar: '/placeholder.svg',
+          achievementPoints: 1000,
+          achievementsCompleted: 100,
+          totalAchievements: 2500,
+        },
+        completedAchievements: [],
+        _isRealData: true
+      }
+    }).as('slowLocalCharacterApi');
 
     cy.getByTestId('character-name-input').type('Test Character')
     cy.getByTestId('server-select').click()
@@ -173,7 +230,6 @@ describe('Character Search', () => {
     cy.getByTestId('search-button').should('contain', 'Searching...')
     cy.get('.animate-spin').should('be.visible')
 
-    cy.wait('@slowTomestoneSearch')
-    cy.wait('@slowTomestoneCharacterData')
+    cy.wait('@slowLocalCharacterApi')
   })
 })

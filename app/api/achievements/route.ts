@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
 import { calculateTSRGScore } from '@/lib/tsrg-matrix';
+import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 
-interface FFXIVCollectAchievement {
+// Tomestone.gg API response structures based on api-docs.json
+interface TomestoneAchievement {
   id: number;
   name: string;
   description: string;
   points: number;
-  category: {
-    id: number;
-    name: string;
-  };
+  category: string; // Tomestone.gg provides category as a string directly
   patch: string;
-  icon: string; // Added icon field
-  owned?: string;
+  icon: string; // Full URL to icon
+  rarity?: number; // Rarity is a number
+  // Tomestone.gg does not explicitly have 'isObtainable' in the schema,
+  // so we'll infer it or keep the existing logic.
 }
 
-interface FFXIVCollectResponse {
+interface TomestoneAchievementSearchResult {
+  results: TomestoneAchievement[];
   count: number;
-  results: FFXIVCollectAchievement[];
 }
 
 // Cache for achievements data with size limit
@@ -56,9 +57,9 @@ function generateMockAchievements(): any[] {
     const category = categories[Math.floor(Math.random() * categories.length)];
     const isObtainable = category !== "Legacy" && Math.random() > 0.05; // 95% obtainable
     
-    // Generate a semi-realistic icon path
+    // Generate a semi-realistic icon path (using FFXIV Collect pattern for mock)
     const iconVariant = String(i).padStart(6, '0');
-    const iconPath = `/i/061000/061${iconVariant.slice(-3)}.png`;
+    const iconPath = `https://ffxivcollect.com/images/achievements/061000/061${iconVariant.slice(-3)}.png`;
     
     achievements.push({
       id: i,
@@ -69,6 +70,7 @@ function generateMockAchievements(): any[] {
       patch: `${Math.floor(Math.random() * 6) + 1}.${Math.floor(Math.random() * 5)}`,
       isObtainable,
       icon: iconPath, // Add icon path
+      rarity: Math.random() * 100, // Mock rarity
     });
   }
   
@@ -77,45 +79,53 @@ function generateMockAchievements(): any[] {
 
 export async function GET() {
   try {
-    // Check if we have valid cached data
     const now = Date.now();
     if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
       console.log("Returning cached achievements data");
       return NextResponse.json(achievementsCache);
     }
 
-    console.log("Fetching achievements from FFXIV Collect API...");
+    console.log("Fetching achievements from Tomestone.gg API...");
     
-    // Try to fetch from FFXIV Collect, but fall back to mock data
+    if (!TOMESTONE_API_KEY) {
+      console.error("TOMESTONE_API_KEY is not set. Cannot call Tomestone.gg API for achievements.");
+      const mockAchievements = generateMockAchievements().map(achievement => ({
+        ...achievement,
+        tsrg: calculateTSRGScore(achievement),
+      }));
+      achievementsCache = mockAchievements;
+      cacheTimestamp = now;
+      return NextResponse.json(mockAchievements);
+    }
+
     try {
-      // Fetch all achievements from FFXIV Collect with proper error handling
-      let allAchievements: FFXIVCollectAchievement[] = [];
+      let allAchievements: TomestoneAchievement[] = [];
       let page = 1;
       let hasMore = true;
       const maxPages = 50; // Prevent infinite loops
       const maxRetries = 3;
 
       while (hasMore && page <= maxPages) {
-        const url = `https://ffxivcollect.com/api/achievements?page=${page}&limit=100`;
+        const url = `${EXTERNAL_APIS.TOMESTONE_BASE}/achievements?page=${page}&limit=100`;
         
         let response: Response | null = null;
         let retryCount = 0;
         
-        // Retry logic for failed requests
         while (retryCount < maxRetries) {
           try {
             response = await fetchWithTimeout(url, {
               headers: {
-                'User-Agent': 'Eorzean-Compass/1.0',
+                'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
+                'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
                 'Accept': 'application/json',
+                'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
               }
             });
             
             if (response.ok) {
-              break; // Success, exit retry loop
+              break;
             } else if (response.status === 429) {
-              // Rate limited, wait longer
-              const waitTime = Math.pow(2, retryCount) * 2000; // Exponential backoff
+              const waitTime = Math.pow(2, retryCount) * 2000;
               console.log(`Rate limited, waiting ${waitTime}ms before retry ${retryCount + 1}`);
               await new Promise(resolve => setTimeout(resolve, waitTime));
             } else {
@@ -125,7 +135,6 @@ export async function GET() {
             console.error(`Attempt ${retryCount + 1} failed for page ${page}:`, error);
             
             if (retryCount === maxRetries - 1) {
-              // Last retry failed
               if (allAchievements.length > 0) {
                 console.log(`Failed to fetch page ${page}, but we have ${allAchievements.length} achievements. Stopping here.`);
                 hasMore = false;
@@ -135,7 +144,6 @@ export async function GET() {
               }
             }
             
-            // Wait before retry
             const waitTime = Math.pow(2, retryCount) * 1000;
             await new Promise(resolve => setTimeout(resolve, waitTime));
           }
@@ -144,20 +152,10 @@ export async function GET() {
         }
 
         if (!response || !response.ok) {
-          break; // Exit the main loop if we couldn't get a response
-        }
-
-        // Safely parse the response
-        const responseText = await response.text();
-        let data: FFXIVCollectResponse;
-        
-        try {
-          data = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error(`Failed to parse JSON for page ${page}:`, parseError);
-          console.error("Response text:", responseText.substring(0, 200));
           break;
         }
+
+        const data: TomestoneAchievementSearchResult = await response.json();
 
         if (!data.results || !Array.isArray(data.results)) {
           console.error(`Invalid data structure for page ${page}`);
@@ -168,25 +166,24 @@ export async function GET() {
         
         console.log(`Fetched page ${page}, total achievements so far: ${allAchievements.length}`);
         
-        // Check if there are more pages and we haven't hit our cache size limit
         hasMore = data.results.length === 100 && allAchievements.length < MAX_CACHE_SIZE;
         page++;
         
-        // Add a small delay to be respectful to the API
         await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       if (allAchievements.length === 0) {
-        throw new Error("No achievements were fetched from FFXIV Collect");
+        throw new Error("No achievements were fetched from Tomestone.gg");
       }
 
-      console.log(`Total achievements fetched from FFXIV Collect: ${allAchievements.length}`);
+      console.log(`Total achievements fetched from Tomestone.gg: ${allAchievements.length}`);
 
-      // Process the achievements with validation and icon handling
       const processedAchievements = allAchievements
         .filter(achievement => achievement.id && achievement.name)
         .map(achievement => {
-          const categoryName = achievement.category?.name || 'Unknown';
+          // Tomestone.gg provides category as a string, not an object
+          const categoryName = achievement.category || 'Unknown';
+          // isObtainable logic remains the same, as it's not directly from API
           const isObtainable = !categoryName.toLowerCase().includes('legacy') && 
                               !categoryName.toLowerCase().includes('seasonal') &&
                               !categoryName.toLowerCase().includes('discontinued') &&
@@ -200,10 +197,10 @@ export async function GET() {
             points: Math.max(0, achievement.points || 0),
             patch: achievement.patch || 'Unknown',
             isObtainable,
-            icon: achievement.icon || null, // Include icon from API
+            icon: achievement.icon || null,
+            rarity: achievement.rarity || null,
           };
 
-          // Calculate TSR-G score
           const tsrg = calculateTSRGScore(baseAchievement);
 
           return {
@@ -212,7 +209,6 @@ export async function GET() {
           };
         });
 
-      // Update cache with size limit
       if (processedAchievements.length <= MAX_CACHE_SIZE) {
         achievementsCache = processedAchievements;
         cacheTimestamp = now;
@@ -223,15 +219,13 @@ export async function GET() {
       return NextResponse.json(processedAchievements);
 
     } catch (apiError) {
-      console.warn("FFXIV Collect API failed, falling back to mock data:", apiError);
+      console.warn("Tomestone.gg API failed for achievements, falling back to mock data:", apiError);
       
-      // Generate mock achievements with icons
       const mockAchievements = generateMockAchievements().map(achievement => ({
         ...achievement,
         tsrg: calculateTSRGScore(achievement),
       }));
       
-      // Cache the mock data
       achievementsCache = mockAchievements;
       cacheTimestamp = now;
       
@@ -241,13 +235,11 @@ export async function GET() {
   } catch (error) {
     console.error("Error in achievements endpoint:", error);
     
-    // If we have cached data, return it even if it's stale
     if (achievementsCache && achievementsCache.length > 0) {
       console.log("Returning stale cached data due to error");
       return NextResponse.json(achievementsCache);
     }
     
-    // Last resort: generate mock data with icons
     console.log("Generating mock achievements as last resort");
     const mockAchievements = generateMockAchievements().map(achievement => ({
       ...achievement,
