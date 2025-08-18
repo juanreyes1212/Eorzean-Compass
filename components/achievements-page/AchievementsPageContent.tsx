@@ -84,6 +84,7 @@ export function AchievementsPageContent({
                   completedAchievements={completedAchievements || []}
                   allAchievements={allAchievements}
                   preferences={preferences}
+                  setPreferences={setPreferences}
                 />
               )}
             </div>

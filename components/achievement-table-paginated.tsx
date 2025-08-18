@@ -14,13 +14,15 @@ interface AchievementTablePaginatedProps {
   completedAchievements?: Array<{ id: number; completionDate: string }>;
   allAchievements: AchievementWithTSRG[]; // Now receives all achievements
   preferences: UserPreferences; // Now receives preferences as a prop
+  setPreferences: React.Dispatch<React.SetStateAction<UserPreferences>>; // Add setPreferences prop
 }
 
 export function AchievementTablePaginated({ 
   characterId, 
   completedAchievements = [],
   allAchievements = [],
-  preferences // Use preferences prop
+  preferences, // Use preferences prop
+  setPreferences // Use setPreferences prop
 }: AchievementTablePaginatedProps) {
   const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
