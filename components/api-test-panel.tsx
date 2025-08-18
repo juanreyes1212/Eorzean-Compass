@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
-
-interface APITestResult {
-  name: string;
-  status: 'loading' | 'success' | 'error';
-  message: string;
-  data?: any;
-}
+import { APITestResult } from "@/lib/types"; // Import APITestResult
 
 export function APITestPanel() {
   const [tests, setTests] = useState<APITestResult[]>([]);

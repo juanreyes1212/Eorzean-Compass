@@ -21,7 +21,6 @@ import { DEFAULT_PREFERENCES } from "@/lib/constants";
 import { 
   UserPreferences, 
   StoredCharacter, 
-  StoredPreferences,
   Character, // Imported from lib/types
   CompletedAchievement, // Imported from lib/types
   CharacterData, // Imported from lib/types
@@ -92,18 +91,8 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
   // Save preferences to localStorage when they change
   useEffect(() => {
-    const prefsToStore: StoredPreferences = {
-      maxTimeScore: preferences.maxTimeScore,
-      maxSkillScore: preferences.maxSkillScore,
-      maxRngScore: preferences.maxRngScore,
-      maxGroupScore: preferences.maxGroupScore,
-      hideCompleted: preferences.hideCompleted,
-      hideUnobtainable: preferences.hideUnobtainable,
-      selectedTiers: preferences.selectedTiers,
-      preferredCategories: preferences.preferredCategories,
-      excludedCategories: preferences.excludedCategories,
-    };
-    storePreferences(prefsToStore);
+    // UserPreferences can be directly stored as it's now the canonical type
+    storePreferences(preferences);
   }, [preferences]);
 
   const fetchCharacterData = async (isRetry = false) => {

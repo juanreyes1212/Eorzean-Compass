@@ -1,7 +1,7 @@
 // Local storage utilities for caching and preferences
 
 import { STORAGE_KEYS, CACHE_DURATION, DEFAULT_PREFERENCES } from './constants';
-import { StoredCharacter, StoredPreferences } from './types'; // Import types from centralized location
+import { StoredCharacter, UserPreferences } from './types'; // Import types from centralized location
 
 // Safe localStorage operations with error handling
 function safeGetItem(key: string): string | null {
@@ -91,7 +91,7 @@ export function storeCharacter(character: StoredCharacter): boolean {
 }
 
 // Preferences storage
-export function getStoredPreferences(): StoredPreferences | null {
+export function getStoredPreferences(): UserPreferences | null {
   const stored = safeGetItem(STORAGE_KEYS.PREFERENCES);
   if (!stored) return null;
   
@@ -103,7 +103,7 @@ export function getStoredPreferences(): StoredPreferences | null {
   }
 }
 
-export function storePreferences(preferences: StoredPreferences): boolean {
+export function storePreferences(preferences: UserPreferences): boolean {
   return safeSetItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences));
 }
 

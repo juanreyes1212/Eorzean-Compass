@@ -54,10 +54,6 @@ export interface CharacterData { // Renamed from CharacterResponse to avoid conf
   _error?: string;
 }
 
-export interface AchievementsResponse {
-  achievements: Achievement[];
-}
-
 // User Preferences
 export interface UserPreferences {
   maxTimeScore: number;
@@ -79,18 +75,6 @@ export interface StoredCharacter extends Character {
   lastUpdated: string;
 }
 
-export interface StoredPreferences {
-  maxTimeScore: number;
-  maxSkillScore: number;
-  maxRngScore: number;
-  maxGroupScore: number;
-  hideCompleted: boolean;
-  hideUnobtainable: boolean;
-  selectedTiers: number[];
-  preferredCategories: string[];
-  excludedCategories: string[];
-}
-
 // API Error Types
 export interface APIError {
   error: string;
@@ -98,7 +82,7 @@ export interface APIError {
   details?: string;
 }
 
-// Component Props Types
+// Component Props Types (Conceptual, not always directly used for useState)
 export interface LoadingState {
   isLoading: boolean;
   error?: string | null;
@@ -148,6 +132,17 @@ export interface AchievementProject {
   isCompleted: boolean;
 }
 
+// API Test Panel Types
+export interface APITestResult {
+  name: string;
+  status: 'loading' | 'success' | 'error';
+  message: string;
+  data?: any;
+}
+
+// Table Sorting Types
+export type SortColumn = 'name' | 'category' | 'points' | 'tsrgComposite' | null;
+export type SortDirection = 'asc' | 'desc';
 
 // Utility Types
 export type ServerName = 

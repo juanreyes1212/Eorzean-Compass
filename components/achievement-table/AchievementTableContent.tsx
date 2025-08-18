@@ -3,10 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AchievementTableRow } from "./AchievementTableRow";
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { AchievementWithTSRG } from "@/lib/types";
-
-type SortColumn = 'name' | 'category' | 'points' | 'tsrgComposite' | null;
-type SortDirection = 'asc' | 'desc';
+import { AchievementWithTSRG, SortColumn, SortDirection } from "@/lib/types"; // Import from types
 
 interface AchievementTableContentProps {
   achievements: AchievementWithTSRG[];
