@@ -141,7 +141,7 @@ export async function GET(request: Request) {
     // Step 1: Fetch Character Profile to get basic info and ID
     const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(serverParam)}/${encodeURIComponent(nameParam)}`;
     
-    console.log(`[Tomestone API] Calling profile endpoint: ${profileUrl}`);
+    console.log(`[Tomestone API] Attempting to fetch profile from: ${profileUrl}`);
     
     const profileResponse = await fetchWithTimeout(profileUrl, {
       headers: {
@@ -152,7 +152,7 @@ export async function GET(request: Request) {
       }
     }, 15000);
 
-    console.log(`[Tomestone API] Profile response status: ${profileResponse.status}`);
+    console.log(`[Tomestone API] Profile fetch completed. Status: ${profileResponse.status}`);
 
     if (!profileResponse.ok) {
       const errorBody = await profileResponse.text();
@@ -180,7 +180,7 @@ export async function GET(request: Request) {
     // Step 2: Fetch detailed completed achievements using the character ID
     const characterAchievementsUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${realCharacterData.id}?data=achievements`;
     
-    console.log(`[Tomestone API] Calling character achievements endpoint: ${characterAchievementsUrl}`);
+    console.log(`[Tomestone API] Attempting to fetch achievements from: ${characterAchievementsUrl}`);
     
     const achievementsResponse = await fetchWithTimeout(characterAchievementsUrl, {
       headers: {
@@ -191,7 +191,7 @@ export async function GET(request: Request) {
       }
     }, 15000);
 
-    console.log(`[Tomestone API] Achievements response status: ${achievementsResponse.status}`);
+    console.log(`[Tomestone API] Achievements fetch completed. Status: ${achievementsResponse.status}`);
 
     if (!achievementsResponse.ok) {
       const errorBody = await achievementsResponse.text();
