@@ -6,7 +6,6 @@
   package = "@netlify/plugin-nextjs"
 
 [functions]
-  node_bundler = "esbuild" # Use esbuild for faster function builds
-  external_node_modules = ["@netlify/plugin-nextjs"] # Ensure this is external
+  node_bundler = "esbuild"
   node_version = "18" # Or higher, depending on your preference and Next.js version
   directory = ".netlify/functions" # Default output directory for Next.js functions
