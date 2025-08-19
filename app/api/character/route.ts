@@ -101,10 +101,10 @@ export async function GET(request: Request) {
   const nameParam = new URL(request.url).searchParams.get('name');
   const serverParam = new URL(request.url).searchParams.get('server');
 
-  console.log(`[API Request] Received request for ${nameParam} on ${serverParam}`);
+  console.log(`[API Character] Received request for ${nameParam} on ${serverParam}`);
 
   if (!nameParam || !serverParam || typeof nameParam !== 'string' || typeof serverParam !== 'string') {
-    console.error("[API Error] Missing or invalid name/server parameters.");
+    console.error("[API Character Error] Missing or invalid name/server parameters.");
     return NextResponse.json(
       { error: "Valid name and server strings are required" },
       { status: 400 }
@@ -118,20 +118,20 @@ export async function GET(request: Request) {
   ];
   
   if (!validServers.includes(serverParam)) {
-    console.error(`[API Error] Invalid server name provided: ${serverParam}`);
+    console.error(`[API Character Error] Invalid server name provided: ${serverParam}`);
     return NextResponse.json(
       { error: "Invalid server name" },
       { status: 400 }
     );
   }
 
+  console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
+
   if (!TOMESTONE_API_KEY) {
-    console.warn("[Tomestone API] TOMESTONE_API_KEY is not set. Falling back to mock data.");
+    console.warn("[API Character] TOMESTONE_API_KEY is not set. Falling back to mock data.");
     return NextResponse.json(generateMockCharacterData(nameParam, serverParam, "Tomestone.gg API key is missing."));
   }
   
-  console.log(`[Tomestone API] API Key status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
-
   let realCharacterData: TomestoneProfileCharacter | null = null;
   let completedAchievements: Array<{ id: number; completionDate: string }> = [];
   let isRealData = false;
@@ -141,7 +141,7 @@ export async function GET(request: Request) {
     // Step 1: Fetch Character Profile to get basic info and ID
     const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(serverParam)}/${encodeURIComponent(nameParam)}`;
     
-    console.log(`[Tomestone API] Attempting to fetch profile from: ${profileUrl}`);
+    console.log(`[API Character] Attempting to fetch profile from: ${profileUrl}`);
     
     const profileResponse = await fetchWithTimeout(profileUrl, {
       headers: {
@@ -152,11 +152,11 @@ export async function GET(request: Request) {
       }
     }, 15000);
 
-    console.log(`[Tomestone API] Profile fetch completed. Status: ${profileResponse.status}`);
+    console.log(`[API Character] Profile fetch completed. Status: ${profileResponse.status}`);
 
     if (!profileResponse.ok) {
       const errorBody = await profileResponse.text();
-      console.error(`[Tomestone API Error] Profile fetch failed: ${profileResponse.status} ${profileResponse.statusText}. Body: ${errorBody}`);
+      console.error(`[API Character Error] Profile fetch failed: ${profileResponse.status} ${profileResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`); // Log first 200 chars
       if (profileResponse.status === 404) {
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
@@ -167,10 +167,10 @@ export async function GET(request: Request) {
     }
 
     const tomestoneProfileData: TomestoneProfileResponse = await profileResponse.json();
-    console.log(`[Tomestone API] Raw Tomestone profile data received: ${JSON.stringify(tomestoneProfileData, null, 2)}`);
+    console.log(`[API Character] Raw Tomestone profile data received: ${JSON.stringify(tomestoneProfileData, null, 2)}`);
     
     if (!tomestoneProfileData.character || !tomestoneProfileData.character.id) {
-      console.error("[Tomestone API Error] Profile data missing character object or ID.");
+      console.error("[API Character Error] Profile data missing character object or ID.");
       throw new Error("Invalid character data from Tomestone.gg profile result");
     }
 
@@ -180,7 +180,7 @@ export async function GET(request: Request) {
     // Step 2: Fetch detailed completed achievements using the character ID
     const characterAchievementsUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${realCharacterData.id}?data=achievements`;
     
-    console.log(`[Tomestone API] Attempting to fetch achievements from: ${characterAchievementsUrl}`);
+    console.log(`[API Character] Attempting to fetch achievements from: ${characterAchievementsUrl}`);
     
     const achievementsResponse = await fetchWithTimeout(characterAchievementsUrl, {
       headers: {
@@ -191,16 +191,16 @@ export async function GET(request: Request) {
       }
     }, 15000);
 
-    console.log(`[Tomestone API] Achievements fetch completed. Status: ${achievementsResponse.status}`);
+    console.log(`[API Character] Achievements fetch completed. Status: ${achievementsResponse.status}`);
 
     if (!achievementsResponse.ok) {
       const errorBody = await achievementsResponse.text();
-      console.error(`[Tomestone API Error] Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody}`);
+      console.error(`[API Character Error] Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`); // Log first 200 chars
       apiErrorReason = `Failed to fetch achievements: ${achievementsResponse.status} ${achievementsResponse.statusText}`;
       // Do NOT throw here, just use mock achievements
     } else {
       const tomestoneAchievementsData: TomestoneCharacterAchievementsData = await achievementsResponse.json();
-      console.log(`[Tomestone API] Raw Tomestone achievements data received: ${JSON.stringify(tomestoneAchievementsData, null, 2)}`);
+      console.log(`[API Character] Raw Tomestone achievements data received: ${JSON.stringify(tomestoneAchievementsData, null, 2)}`);
 
       if (tomestoneAchievementsData.achievements && Array.isArray(tomestoneAchievementsData.achievements)) {
         completedAchievements = tomestoneAchievementsData.achievements
@@ -209,15 +209,15 @@ export async function GET(request: Request) {
             id: achievement.id,
             completionDate: new Date(achievement.date).toISOString()
           }));
-        console.log(`[Tomestone API] Successfully fetched ${completedAchievements.length} real completed achievements.`);
+        console.log(`[API Character] Successfully fetched ${completedAchievements.length} real completed achievements.`);
       } else {
-        console.warn("[Tomestone API] Achievements array not found or invalid in response. Generating mock completed achievements.");
+        console.warn("[API Character] Achievements array not found or invalid in response. Generating mock completed achievements.");
         apiErrorReason = "Tomestone.gg did not return a valid achievements list.";
       }
     }
 
   } catch (apiError) {
-    console.error("[Tomestone API Error] Tomestone.gg API call failed:", apiError instanceof Error ? apiError.message : apiError);
+    console.error("[API Character Error] Tomestone.gg API call failed:", apiError instanceof Error ? apiError.message : apiError);
     apiErrorReason = `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}.`;
     // If any real API call fails, we fall back to mock data for everything
     isRealData = false;
@@ -267,6 +267,7 @@ export async function GET(request: Request) {
     finalError = apiErrorReason || mock._error;
   }
 
+  console.log(`[API Character] Final response: isRealData=${isRealData}, isMockData=${finalIsMockData}, error=${finalError || 'none'}`);
   return NextResponse.json({
     character: finalCharacterData,
     completedAchievements: finalCompletedAchievements,
