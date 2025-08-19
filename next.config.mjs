@@ -30,7 +30,9 @@ const nextConfig = {
   
   // Performance optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // Set removeConsole to false to see console.log messages in production logs.
+    // Remember to set this back to `process.env.NODE_ENV === 'production'` for final deployment.
+    removeConsole: false, 
   },
   
   // ESLint and TypeScript configurations
