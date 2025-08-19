@@ -2,30 +2,21 @@ import { NextResponse } from "next/server";
 import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 
 // Tomestone.gg API response structures based on api-docs.json
-interface TomestoneCharacterSearchResult {
-  characters: Array<{
-    id: string;
-    name: string;
-    server: string;
-    avatar: string;
-  }>;
+// Updated to reflect the /profile endpoint response
+interface TomestoneProfileCharacter {
+  id: string;
+  name: string;
+  server: string;
+  avatar: string;
+  achievement_points: number; // Total achievement points
+  achievements_completed: number; // Total achievements completed
+  // Note: The /profile endpoint does NOT return an array of individual completed achievements.
+  // We will have to mock this part.
 }
 
-interface TomestoneCharacterData {
-  character: {
-    id: string;
-    name: string;
-    server: string;
-    avatar: string;
-    // The docs show 'achievement_points' and 'achievements_completed' directly on character
-    achievement_points?: number;
-    achievements_completed?: number;
-  };
-  // This is the crucial part: does this endpoint actually return an 'achievements' array?
-  achievements?: Array<{ // Made optional, as it might not always be present or might be empty
-    id: number;
-    date: string; // ISO 8601 date string
-  }>;
+interface TomestoneProfileResponse {
+  character: TomestoneProfileCharacter;
+  // Other profile data might be here, but we only care about 'character' for now.
 }
 
 // Add timeout wrapper for fetch requests
@@ -50,7 +41,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
 }
 
 // Generate mock character data for testing/fallback
-function generateMockCharacterData(name: string, server: string) {
+function generateMockCharacterData(name: string, server: string, errorReason?: string) {
   let hash = 0;
   const str = (name + server).toLowerCase();
   
@@ -91,186 +82,116 @@ function generateMockCharacterData(name: string, server: string) {
     },
     completedAchievements,
     _isMockData: true,
-    _error: "Using demo data - Tomestone.gg API may be temporarily unavailable or rate-limited."
+    _error: errorReason || "Using demo data - Tomestone.gg API may be temporarily unavailable or rate-limited."
   };
 }
 
 export async function GET(request: Request) {
+  const nameParam = new URL(request.url).searchParams.get('name');
+  const serverParam = new URL(request.url).searchParams.get('server');
+
+  console.log(`[API Request] Received request for ${nameParam} on ${serverParam}`);
+
+  if (!nameParam || !serverParam || typeof nameParam !== 'string' || typeof serverParam !== 'string') {
+    console.error("[API Error] Missing or invalid name/server parameters.");
+    return NextResponse.json(
+      { error: "Valid name and server strings are required" },
+      { status: 400 }
+    );
+  }
+
+  const validServers = [
+    "Adamantoise", "Cactuar", "Faerie", "Gilgamesh", "Jenova", "Midgardsormr", "Sargatanas", "Siren",
+    "Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera",
+    "Behemoth", "Excalibur", "Exodus", "Famfrit", "Hyperion", "Lamia", "Leviathan", "Ultros"
+  ];
+  
+  if (!validServers.includes(serverParam)) {
+    console.error(`[API Error] Invalid server name provided: ${serverParam}`);
+    return NextResponse.json(
+      { error: "Invalid server name" },
+      { status: 400 }
+    );
+  }
+
+  if (!TOMESTONE_API_KEY) {
+    console.warn("[Tomestone API] TOMESTONE_API_KEY is not set. Falling back to mock data.");
+    return NextResponse.json(generateMockCharacterData(nameParam, serverParam, "Tomestone.gg API key is missing."));
+  }
+  
+  console.log(`[Tomestone API] API Key status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
+
   try {
-    const { searchParams } = new URL(request.url);
-    const name = searchParams.get('name');
-    const server = searchParams.get('server');
+    // Directly use the /character/profile endpoint
+    const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(serverParam)}/${encodeURIComponent(nameParam)}`;
     
-    console.log(`[API Request] Received request for ${name} on ${server}`);
-
-    if (!name || !server || typeof name !== 'string' || typeof server !== 'string') {
-      console.error("[API Error] Missing or invalid name/server parameters.");
-      return NextResponse.json(
-        { error: "Valid name and server strings are required" },
-        { status: 400 }
-      );
-    }
-
-    const validServers = [
-      "Adamantoise", "Cactuar", "Faerie", "Gilgamesh", "Jenova", "Midgardsormr", "Sargatanas", "Siren",
-      "Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera",
-      "Behemoth", "Excalibur", "Exodus", "Famfrit", "Hyperion", "Lamia", "Leviathan", "Ultros"
-    ];
+    console.log(`[Tomestone API] Calling profile endpoint: ${profileUrl}`);
     
-    if (!validServers.includes(server)) {
-      console.error(`[API Error] Invalid server name provided: ${server}`);
-      return NextResponse.json(
-        { error: "Invalid server name" },
-        { status: 400 }
-      );
-    }
-
-    console.log(`[Tomestone API] Attempting to fetch real data for: ${name} on ${server}`);
-
-    if (!TOMESTONE_API_KEY) {
-      console.warn("[Tomestone API] TOMESTONE_API_KEY is not set. Falling back to mock data.");
-      const mockData = generateMockCharacterData(name, server);
-      return NextResponse.json({
-        ...mockData,
-        _error: "Tomestone.gg API key is missing. Showing demo data.",
-      });
-    }
-    
-    // Log API key presence (without logging the key itself)
-    console.log(`[Tomestone API] API Key status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
-
-
-    try {
-      // Step 1: Search for character to get ID from Tomestone.gg
-      const searchUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/search?name=${encodeURIComponent(name)}&server=${encodeURIComponent(server)}`;
-      
-      console.log(`[Tomestone API] Calling search endpoint: ${searchUrl}`);
-      
-      const searchResponse = await fetchWithTimeout(searchUrl, {
-        headers: {
-          'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-          'User-Agent': `Eorzean-Compass/1.0 (https://eorzean-compass.netlify.app)`,
-          'Accept': 'application/json',
-          'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
-        }
-      }, 10000);
-
-      console.log(`[Tomestone API] Search response status: ${searchResponse.status}`);
-
-      if (!searchResponse.ok) {
-        const errorBody = await searchResponse.text();
-        console.error(`[Tomestone API Error] Search failed: ${searchResponse.status} ${searchResponse.statusText}. Body: ${errorBody}`);
-        throw new Error(`Tomestone.gg search failed with status ${searchResponse.status}`);
+    const profileResponse = await fetchWithTimeout(profileUrl, {
+      headers: {
+        'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
+        'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+        'Accept': 'application/json',
+        'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
       }
+    }, 15000); // Increased timeout slightly
 
-      const searchData: TomestoneCharacterSearchResult = await searchResponse.json();
-      console.log(`[Tomestone API] Search data received: ${JSON.stringify(searchData, null, 2)}`);
-      
-      if (!searchData.characters || !Array.isArray(searchData.characters) || searchData.characters.length === 0) {
-        console.warn(`[Tomestone API] Search returned no characters for ${name} on ${server}.`);
+    console.log(`[Tomestone API] Profile response status: ${profileResponse.status}`);
+
+    if (!profileResponse.ok) {
+      const errorBody = await profileResponse.text();
+      console.error(`[Tomestone API Error] Profile fetch failed: ${profileResponse.status} ${profileResponse.statusText}. Body: ${errorBody}`);
+      if (profileResponse.status === 404) {
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
           { status: 404 }
         );
       }
-
-      const character = searchData.characters.find(
-        char => char.name.toLowerCase() === name.toLowerCase() && 
-                 char.server.toLowerCase() === server.toLowerCase()
-      ) || searchData.characters[0]; // Fallback to first result if exact match not found
-
-      if (!character.id) {
-        console.error("[Tomestone API Error] Search result missing character ID.");
-        throw new Error("Invalid character data from Tomestone.gg search result");
-      }
-
-      console.log(`[Tomestone API] Found character: ${character.name} (ID: ${character.id})`);
-
-      // Step 2: Fetch character's achievement data from Tomestone.gg using GET /character/{id}
-      // Note: The Tomestone.gg API documentation (api-docs.json) indicates that
-      // the /character/{id} endpoint with ?data=achievements should return a list of completed achievements.
-      // If this is not happening, the API's behavior might have changed or the documentation is incomplete.
-      const characterUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${character.id}?data=achievements`;
-      
-      console.log(`[Tomestone API] Calling character data endpoint: ${characterUrl}`);
-      
-      const characterResponse = await fetchWithTimeout(characterUrl, {
-        headers: {
-          'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-          'User-Agent': `Eorzean-Compass/1.0 (https://eorzean-compass.netlify.app)`,
-          'Accept': 'application/json',
-          'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
-        }
-      }, 15000);
-
-      console.log(`[Tomestone API] Character data response status: ${characterResponse.status}`);
-
-      if (!characterResponse.ok) {
-        const errorBody = await characterResponse.text();
-        console.error(`[Tomestone API Error] Character data fetch failed: ${characterResponse.status} ${characterResponse.statusText}. Body: ${errorBody}`);
-        throw new Error(`Tomestone.gg character fetch failed with status ${characterResponse.status}`);
-      }
-
-      const tomestoneCharacterData: TomestoneCharacterData = await characterResponse.json();
-      console.log(`[Tomestone API] Raw Tomestone character data received: ${JSON.stringify(tomestoneCharacterData, null, 2)}`);
-      
-      const completedAchievements = (tomestoneCharacterData.achievements || [])
-        .filter(achievement => achievement.id && achievement.date)
-        .map(achievement => ({
-          id: achievement.id,
-          completionDate: new Date(achievement.date).toISOString()
-        }));
-
-      // Use achievement_points and achievements_completed from the character object if available,
-      // otherwise derive from the completedAchievements array.
-      const achievementPoints = tomestoneCharacterData.character?.achievement_points || completedAchievements.length * 10;
-      const achievementsCompleted = tomestoneCharacterData.character?.achievements_completed || completedAchievements.length;
-      const totalAchievements = 2500; // Placeholder/Estimate as total not in this specific doc
-
-      const data = {
-        character: {
-          id: character.id,
-          name: character.name,
-          server: character.server,
-          avatar: character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
-          achievementPoints,
-          achievementsCompleted,
-          totalAchievements,
-        },
-        completedAchievements,
-        _isRealData: true,
-      };
-
-      console.log(`[Tomestone API] Successfully fetched REAL character data from Tomestone.gg:`, {
-        name: data.character.name,
-        completedCount: data.completedAchievements?.length || 0,
-        sampleCompletedIds: data.completedAchievements?.slice(0, 10).map(a => a.id) || []
-      });
-
-      return NextResponse.json(data);
-
-    } catch (apiError) {
-      console.error("[Tomestone API Error] Tomestone.gg API call failed, falling back to mock data:", apiError instanceof Error ? apiError.message : apiError);
-      
-      const mockData = generateMockCharacterData(name, server);
-      
-      return NextResponse.json({
-        ...mockData,
-        _error: `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}. Showing demo data.`
-      });
+      throw new Error(`Tomestone.gg profile fetch failed with status ${profileResponse.status}`);
     }
 
-  } catch (error) {
-    console.error("[API Error] Unexpected error processing character request:", error instanceof Error ? error.message : error);
+    const tomestoneProfileData: TomestoneProfileResponse = await profileResponse.json();
+    console.log(`[Tomestone API] Raw Tomestone profile data received: ${JSON.stringify(tomestoneProfileData, null, 2)}`);
     
-    const nameParam = new URL(request.url).searchParams.get('name') || 'Unknown';
-    const serverParam = new URL(request.url).searchParams.get('server') || 'Unknown';
+    if (!tomestoneProfileData.character || !tomestoneProfileData.character.id) {
+      console.error("[Tomestone API Error] Profile data missing character object or ID.");
+      throw new Error("Invalid character data from Tomestone.gg profile result");
+    }
 
-    console.log("[MOCK DATA] Generating fallback mock data due to unexpected error.");
-    const mockData = generateMockCharacterData(nameParam, serverParam);
-    return NextResponse.json({
-      ...mockData,
-      _error: "Internal server error, showing demo data",
+    const character = tomestoneProfileData.character;
+
+    // IMPORTANT: The /profile endpoint does not provide individual completed achievement IDs.
+    // We must generate mock data for completedAchievements.
+    const mockCompletedAchievements = generateMockCharacterData(nameParam, serverParam).completedAchievements;
+    console.warn("[Tomestone API] Using mock completed achievements as /profile endpoint does not provide them.");
+
+    const data = {
+      character: {
+        id: character.id,
+        name: character.name,
+        server: character.server,
+        avatar: character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
+        achievementPoints: character.achievement_points || 0,
+        achievementsCompleted: character.achievements_completed || 0,
+        totalAchievements: 2500, // Placeholder/Estimate as total not in this specific doc
+      },
+      completedAchievements: mockCompletedAchievements, // Always mock this part
+      _isRealData: true,
+      _error: "Note: Completed achievement list is mocked as Tomestone.gg /profile endpoint does not provide it."
+    };
+
+    console.log(`[Tomestone API] Successfully fetched REAL character profile from Tomestone.gg:`, {
+      name: data.character.name,
+      achievementPoints: data.character.achievementPoints,
+      achievementsCompleted: data.character.achievementsCompleted,
+      // Note: completedAchievements will be mock data
     });
+
+    return NextResponse.json(data);
+
+  } catch (apiError) {
+    console.error("[Tomestone API Error] Tomestone.gg API call failed, falling back to mock data:", apiError instanceof Error ? apiError.message : apiError);
+    
+    return NextResponse.json(generateMockCharacterData(nameParam, serverParam, `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}.`));
   }
 }
