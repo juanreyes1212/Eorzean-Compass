@@ -92,106 +92,10 @@ function generateMockAchievements(): any[] {
   return achievements;
 }
 
-async function fetchAchievementsFromTomestone(): Promise<any[]> {
-  console.log("Attempting to fetch achievements from Tomestone.gg API...");
-  
-  if (!TOMESTONE_API_KEY) {
-    throw new Error("TOMESTONE_API_KEY is not set for Tomestone.gg API.");
-  }
-
-  let allAchievements: TomestoneAchievement[] = [];
-  let page = 1;
-  let hasMore = true;
-  const maxPages = 50; // Prevent excessive requests
-  const maxRetries = 3;
-
-  while (hasMore && page <= maxPages) {
-    const url = `${EXTERNAL_APIS.TOMESTONE_BASE}/achievements?page=${page}&limit=100`;
-    
-    let response: Response | null = null;
-    let retryCount = 0;
-    
-    while (retryCount < maxRetries) {
-      try {
-        response = await fetchWithTimeout(url, {
-          headers: {
-            'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-            'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
-            'Accept': 'application/json',
-            'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
-          }
-        });
-        
-        if (response.ok) {
-          break;
-        } else if (response.status === 429) {
-          const waitTime = Math.pow(2, retryCount) * 2000;
-          console.warn(`Tomestone.gg rate limited (page ${page}), waiting ${waitTime}ms before retry ${retryCount + 1}`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        } else {
-          const errorBody = await response.text();
-          throw new Error(`Tomestone.gg HTTP ${response.status}: ${response.statusText} - ${errorBody}`);
-        }
-      } catch (error) {
-        console.error(`Tomestone.gg fetch attempt ${retryCount + 1} failed for page ${page}:`, error instanceof Error ? error.message : error);
-        if (retryCount === maxRetries - 1) {
-          throw new Error(`Failed to fetch from Tomestone.gg after ${maxRetries} attempts for page ${page}.`);
-        }
-        const waitTime = Math.pow(2, retryCount) * 1000;
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-      retryCount++;
-    }
-
-    if (!response || !response.ok) {
-      console.warn(`Stopping Tomestone.gg fetch due to persistent errors on page ${page}.`);
-      break;
-    }
-
-    const data: TomestoneAchievementSearchResult = await response.json();
-
-    if (!data.results || !Array.isArray(data.results)) {
-      console.error(`Invalid data structure from Tomestone.gg for page ${page}.`);
-      break;
-    }
-
-    allAchievements = allAchievements.concat(data.results);
-    
-    console.log(`Fetched Tomestone.gg page ${page}, total achievements so far: ${allAchievements.length}`);
-    
-    hasMore = data.results.length === 100 && allAchievements.length < MAX_CACHE_SIZE;
-    page++;
-    
-    await new Promise(resolve => setTimeout(resolve, 200)); // Small delay to be polite
-  }
-
-  if (allAchievements.length === 0) {
-    throw new Error("No achievements were fetched from Tomestone.gg.");
-  }
-
-  console.log(`Successfully fetched ${allAchievements.length} achievements from Tomestone.gg.`);
-  return allAchievements.map(achievement => {
-    const categoryName = achievement.category || 'Unknown';
-    const isObtainable = !categoryName.toLowerCase().includes('legacy') && 
-                         !categoryName.toLowerCase().includes('seasonal') &&
-                         !categoryName.toLowerCase().includes('discontinued') &&
-                         !categoryName.toLowerCase().includes('feast');
-    return {
-      id: achievement.id,
-      name: achievement.name || 'Unknown Achievement',
-      description: achievement.description || 'No description available',
-      category: categoryName,
-      points: Math.max(0, achievement.points || 0),
-      patch: achievement.patch || 'Unknown',
-      isObtainable,
-      icon: achievement.icon || null,
-      rarity: achievement.rarity || null,
-    };
-  });
-}
+// Removed fetchAchievementsFromTomestone as it's not the correct endpoint for all achievements.
 
 async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
-  console.log("Attempting to fetch achievements from FFXIV Collect API (fallback)...");
+  console.log("Attempting to fetch achievements from FFXIV Collect API...");
   
   let allAchievements: FFXIVCollectAchievement[] = [];
   let page = 1;
@@ -262,18 +166,13 @@ export async function GET() {
   let source = 'mock';
 
   try {
-    processedAchievements = await fetchAchievementsFromTomestone();
-    source = 'tomestone';
-  } catch (tomestoneError) {
-    console.error("Tomestone.gg achievements API failed:", tomestoneError);
-    try {
-      processedAchievements = await fetchAchievementsFromFFXIVCollect();
-      source = 'ffxivcollect';
-    } catch (ffxivCollectError) {
-      console.error("FFXIV Collect achievements API failed:", ffxivCollectError);
-      processedAchievements = generateMockAchievements();
-      source = 'mock';
-    }
+    // Directly attempt to fetch from FFXIV Collect as the primary source for all achievements
+    processedAchievements = await fetchAchievementsFromFFXIVCollect();
+    source = 'ffxivcollect';
+  } catch (ffxivCollectError) {
+    console.error("FFXIV Collect achievements API failed:", ffxivCollectError);
+    processedAchievements = generateMockAchievements();
+    source = 'mock';
   }
 
   const achievementsWithTSRG = processedAchievements
