@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 
 // Tomestone.gg API response structures based on api-docs.json
-// Updated to reflect the /profile endpoint response
 interface TomestoneProfileCharacter {
   id: string;
   name: string;
@@ -10,13 +9,25 @@ interface TomestoneProfileCharacter {
   avatar: string;
   achievement_points: number; // Total achievement points
   achievements_completed: number; // Total achievements completed
-  // Note: The /profile endpoint does NOT return an array of individual completed achievements.
-  // We will have to mock this part.
 }
 
 interface TomestoneProfileResponse {
   character: TomestoneProfileCharacter;
-  // Other profile data might be here, but we only care about 'character' for now.
+}
+
+interface TomestoneCharacterAchievementsData {
+  character: {
+    id: string;
+    name: string;
+    server: string;
+    avatar: string;
+    achievement_points?: number;
+    achievements_completed?: number;
+  };
+  achievements?: Array<{ // This is the array we need for completed achievements
+    id: number;
+    date: string; // ISO 8601 date string
+  }>;
 }
 
 // Add timeout wrapper for fetch requests
@@ -121,8 +132,13 @@ export async function GET(request: Request) {
   
   console.log(`[Tomestone API] API Key status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
+  let realCharacterData: TomestoneProfileCharacter | null = null;
+  let completedAchievements: Array<{ id: number; completionDate: string }> = [];
+  let isRealData = false;
+  let apiErrorReason: string | undefined;
+
   try {
-    // Directly use the /character/profile endpoint
+    // Step 1: Fetch Character Profile to get basic info and ID
     const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(serverParam)}/${encodeURIComponent(nameParam)}`;
     
     console.log(`[Tomestone API] Calling profile endpoint: ${profileUrl}`);
@@ -134,7 +150,7 @@ export async function GET(request: Request) {
         'Accept': 'application/json',
         'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
       }
-    }, 15000); // Increased timeout slightly
+    }, 15000);
 
     console.log(`[Tomestone API] Profile response status: ${profileResponse.status}`);
 
@@ -158,40 +174,104 @@ export async function GET(request: Request) {
       throw new Error("Invalid character data from Tomestone.gg profile result");
     }
 
-    const character = tomestoneProfileData.character;
+    realCharacterData = tomestoneProfileData.character;
+    isRealData = true;
 
-    // IMPORTANT: The /profile endpoint does not provide individual completed achievement IDs.
-    // We must generate mock data for completedAchievements.
-    const mockCompletedAchievements = generateMockCharacterData(nameParam, serverParam).completedAchievements;
-    console.warn("[Tomestone API] Using mock completed achievements as /profile endpoint does not provide them.");
+    // Step 2: Fetch detailed completed achievements using the character ID
+    const characterAchievementsUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${realCharacterData.id}?data=achievements`;
+    
+    console.log(`[Tomestone API] Calling character achievements endpoint: ${characterAchievementsUrl}`);
+    
+    const achievementsResponse = await fetchWithTimeout(characterAchievementsUrl, {
+      headers: {
+        'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
+        'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+        'Accept': 'application/json',
+        'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
+      }
+    }, 15000);
 
-    const data = {
-      character: {
-        id: character.id,
-        name: character.name,
-        server: character.server,
-        avatar: character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
-        achievementPoints: character.achievement_points || 0,
-        achievementsCompleted: character.achievements_completed || 0,
-        totalAchievements: 2500, // Placeholder/Estimate as total not in this specific doc
-      },
-      completedAchievements: mockCompletedAchievements, // Always mock this part
-      _isRealData: true,
-      _error: "Note: Completed achievement list is mocked as Tomestone.gg /profile endpoint does not provide it."
-    };
+    console.log(`[Tomestone API] Achievements response status: ${achievementsResponse.status}`);
 
-    console.log(`[Tomestone API] Successfully fetched REAL character profile from Tomestone.gg:`, {
-      name: data.character.name,
-      achievementPoints: data.character.achievementPoints,
-      achievementsCompleted: data.character.achievementsCompleted,
-      // Note: completedAchievements will be mock data
-    });
+    if (!achievementsResponse.ok) {
+      const errorBody = await achievementsResponse.text();
+      console.error(`[Tomestone API Error] Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody}`);
+      apiErrorReason = `Failed to fetch achievements: ${achievementsResponse.status} ${achievementsResponse.statusText}`;
+      // Do NOT throw here, just use mock achievements
+    } else {
+      const tomestoneAchievementsData: TomestoneCharacterAchievementsData = await achievementsResponse.json();
+      console.log(`[Tomestone API] Raw Tomestone achievements data received: ${JSON.stringify(tomestoneAchievementsData, null, 2)}`);
 
-    return NextResponse.json(data);
+      if (tomestoneAchievementsData.achievements && Array.isArray(tomestoneAchievementsData.achievements)) {
+        completedAchievements = tomestoneAchievementsData.achievements
+          .filter(achievement => achievement.id && achievement.date)
+          .map(achievement => ({
+            id: achievement.id,
+            completionDate: new Date(achievement.date).toISOString()
+          }));
+        console.log(`[Tomestone API] Successfully fetched ${completedAchievements.length} real completed achievements.`);
+      } else {
+        console.warn("[Tomestone API] Achievements array not found or invalid in response. Generating mock completed achievements.");
+        apiErrorReason = "Tomestone.gg did not return a valid achievements list.";
+      }
+    }
 
   } catch (apiError) {
-    console.error("[Tomestone API Error] Tomestone.gg API call failed, falling back to mock data:", apiError instanceof Error ? apiError.message : apiError);
-    
-    return NextResponse.json(generateMockCharacterData(nameParam, serverParam, `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}.`));
+    console.error("[Tomestone API Error] Tomestone.gg API call failed:", apiError instanceof Error ? apiError.message : apiError);
+    apiErrorReason = `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}.`;
+    // If any real API call fails, we fall back to mock data for everything
+    isRealData = false;
+    realCharacterData = null; // Ensure we don't use partial real data if the flow broke
   }
+
+  // Final data construction
+  let finalCharacterData;
+  let finalCompletedAchievements;
+  let finalIsMockData = false;
+  let finalError: string | undefined;
+
+  if (isRealData && realCharacterData) {
+    // If profile was real, use it. If achievements fetch failed, use mock achievements.
+    finalCharacterData = {
+      id: realCharacterData.id,
+      name: realCharacterData.name,
+      server: realCharacterData.server,
+      avatar: realCharacterData.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
+      achievementPoints: realCharacterData.achievement_points || 0,
+      achievementsCompleted: realCharacterData.achievements_completed || 0,
+      totalAchievements: 2500, // Placeholder/Estimate
+    };
+    
+    if (completedAchievements.length > 0) {
+      finalCompletedAchievements = completedAchievements;
+      finalError = apiErrorReason; // If there was an error but we still got some achievements
+    } else {
+      // If real profile but no real achievements, generate mock achievements
+      const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
+      finalCompletedAchievements = mock.completedAchievements;
+      finalIsMockData = true; // Mark as mock if achievements are mocked
+      finalError = apiErrorReason || mock._error;
+    }
+    
+    // If we got real profile data, but had to mock achievements, still indicate real profile
+    if (finalIsMockData) {
+      isRealData = false; // Override to false if any part is mocked
+    }
+
+  } else {
+    // If initial profile fetch failed, use full mock data
+    const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
+    finalCharacterData = mock.character;
+    finalCompletedAchievements = mock.completedAchievements;
+    finalIsMockData = true;
+    finalError = apiErrorReason || mock._error;
+  }
+
+  return NextResponse.json({
+    character: finalCharacterData,
+    completedAchievements: finalCompletedAchievements,
+    _isRealData: isRealData, // This will be true only if both profile and achievements were real
+    _isMockData: finalIsMockData,
+    _error: finalError,
+  });
 }
