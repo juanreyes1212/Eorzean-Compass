@@ -2,18 +2,27 @@ import { NextResponse } from "next/server";
 import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 
 // Tomestone.gg API response structures based on api-docs.json
+// Corrected to reflect that the root response is the character object itself
 interface TomestoneProfileCharacter {
   id: string; // This is the Lodestone ID we need
   name: string;
   server: string;
   avatar: string;
-  achievement_points: number; // Total achievement points
-  achievements_completed: number; // Total achievements completed
+  // Corrected to match the nested structure from the logs
+  achievementPoints: {
+    id: number;
+    points: number; // Total achievement points
+    unrankedPoints: number; // This appears to be the total achievements completed
+    rankPosition: number;
+    rankPercent: number;
+    cssRankClassName: string;
+  };
+  // Other fields from the Tomestone.gg response can be added if needed,
+  // but for now, we only extract what's necessary for our Character interface.
 }
 
-interface TomestoneProfileResponse {
-  character: TomestoneProfileCharacter;
-}
+// The Tomestone API directly returns the character object, not { character: CharacterObject }
+type TomestoneProfileResponse = TomestoneProfileCharacter;
 
 // FFXIVCollect API response structures for character achievements
 interface FFXIVCollectCharacterAchievements {
@@ -170,15 +179,17 @@ export async function GET(request: Request) {
       throw new Error(`Tomestone.gg profile fetch failed with status ${profileResponse.status}`);
     }
 
-    const tomestoneProfileData: TomestoneProfileResponse = await profileResponse.json();
+    // Parse the response directly as TomestoneProfileCharacter
+    const tomestoneProfileData: TomestoneProfileCharacter = await profileResponse.json();
     console.log(`[API Character] Raw Tomestone profile data received: ${JSON.stringify(tomestoneProfileData, null, 2)}`);
     
-    if (!tomestoneProfileData.character || !tomestoneProfileData.character.id) {
-      console.error("[API Character Error] Tomestone.gg profile data missing character object or ID.");
+    // Check if the parsed data has the expected structure
+    if (!tomestoneProfileData || !tomestoneProfileData.id || !tomestoneProfileData.achievementPoints) {
+      console.error("[API Character Error] Tomestone.gg profile data missing expected fields (id or achievementPoints).");
       throw new Error("Invalid character data from Tomestone.gg profile result");
     }
 
-    realCharacterData = tomestoneProfileData.character;
+    realCharacterData = tomestoneProfileData; // Assign directly
     lodestoneId = realCharacterData.id; // Extract Lodestone ID
     isRealData = true; // Mark as real data if profile fetch is successful
 
@@ -191,6 +202,7 @@ export async function GET(request: Request) {
   // --- Step 2: Fetch Completed Achievements from FFXIVCollect (if Lodestone ID obtained) ---
   if (lodestoneId && isRealData) {
     try {
+      // Use the 'times=true' parameter to get completion dates
       const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}?times=true`;
       
       console.log(`[API Character] Attempting to fetch achievements from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
@@ -250,9 +262,10 @@ export async function GET(request: Request) {
       name: realCharacterData.name,
       server: realCharacterData.server,
       avatar: realCharacterData.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
-      achievementPoints: realCharacterData.achievement_points || 0,
-      achievementsCompleted: realCharacterData.achievements_completed || 0,
-      totalAchievements: 2500, // Placeholder/Estimate
+      // Use the nested properties for points and completed count
+      achievementPoints: realCharacterData.achievementPoints?.points || 0,
+      achievementsCompleted: realCharacterData.achievementPoints?.unrankedPoints || 0,
+      totalAchievements: 2500, // Placeholder/Estimate, as Tomestone.gg doesn't provide total
     };
     finalCompletedAchievements = completedAchievements;
     finalError = apiErrorReason; // Any non-critical errors from FFXIVCollect that didn't force mock
