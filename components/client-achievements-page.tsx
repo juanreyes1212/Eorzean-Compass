@@ -138,6 +138,18 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         } catch (parseError) {
           // Fallback if error response is not JSON
         }
+        // If character not found (404), set specific error and don't try cache
+        if (response.status === 404) {
+          setError(errorMessage);
+          toast({
+            title: "Search Failed",
+            description: errorMessage,
+            variant: "destructive",
+            icon: <AlertCircle className="h-4 w-4" />,
+          });
+          setLoading(false);
+          return; // Stop here, no character data to display
+        }
         throw new Error(errorMessage);
       }
 
@@ -330,7 +342,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <p className="mb-8 text-compass-300">
-            This might be due to Tomestone.gg being temporarily unavailable or network issues.
+            Please check the character name and server, or try again later.
           </p>
           <div className="space-x-4">
             <Button onClick={handleRefreshData} disabled={loading}>

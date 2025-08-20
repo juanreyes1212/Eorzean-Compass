@@ -165,6 +165,7 @@ export async function GET(request: Request) {
       const errorBody = await profileResponse.text();
       console.error(`[API Character Error] Tomestone.gg Profile fetch failed: ${profileResponse.status} ${profileResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`);
       if (profileResponse.status === 404) {
+        // If character not found by Tomestone.gg, return 404 directly
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
           { status: 404 }
@@ -217,7 +218,8 @@ export async function GET(request: Request) {
         // Check for private profile specific error
         if (achievementsResponse.status === 403 || errorBody.includes("private profile")) {
           apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "Character's achievements are private on Lodestone. Please make them public to view real data.";
-          isRealData = false; // Force mock data if achievements are private
+          // Do NOT set isRealData to false here. We still have the basic character profile.
+          // We will return the real character profile but with empty completed achievements.
         } else {
           throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
         }
@@ -237,14 +239,14 @@ export async function GET(request: Request) {
         } else {
           console.warn("[API Character] FFXIVCollect Achievements data is not a valid array in response. Will use mock completed achievements.");
           apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid achievements list.";
-          isRealData = false; // If achievements are not real, the whole data set is considered mock
+          // Do NOT set isRealData to false here. We still have the basic character profile.
         }
       }
 
     } catch (ffxivCollectError) {
       console.error("[API Character Error] FFXIVCollect achievements API call failed:", ffxivCollectError instanceof Error ? ffxivCollectError.message : ffxivCollectError);
       apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + `FFXIVCollect unavailable for achievements: ${ffxivCollectError instanceof Error ? ffxivCollectError.message : 'Unknown error'}.`;
-      isRealData = false; // If achievements fetch fails, fall back to mock
+      // Do NOT set isRealData to false here. We still have the basic character profile.
     }
   } else {
     // If Tomestone.gg profile fetch failed, lodestoneId will be null, so we skip FFXIVCollect
@@ -259,7 +261,7 @@ export async function GET(request: Request) {
   const now = new Date().toISOString(); // Get current timestamp
 
   if (isRealData && realCharacterData) {
-    // If both Tomestone.gg profile and FFXIVCollect achievements were successful
+    // If Tomestone.gg profile was successful
     finalCharacterData = {
       id: realCharacterData.id,
       name: realCharacterData.name,
@@ -271,10 +273,21 @@ export async function GET(request: Request) {
       totalAchievements: 2500, // Placeholder/Estimate, as Tomestone.gg doesn't provide total
       lastUpdated: now, // Set lastUpdated for real data
     };
-    finalCompletedAchievements = completedAchievements;
-    finalError = apiErrorReason; // Any non-critical errors from FFXIVCollect that didn't force mock
+    
+    // If FFXIVCollect achievements failed or were private, use mock completed achievements
+    if (apiErrorReason?.includes("private profile") || !completedAchievements.length) {
+      const mockCompleted = generateMockCharacterData(nameParam, serverParam).completedAchievements;
+      finalCompletedAchievements = mockCompleted;
+      finalIsMockData = true; // Mark as mock data if completed achievements are mocked
+      finalError = apiErrorReason || "Using demo completed achievements due to API issue.";
+    } else {
+      finalCompletedAchievements = completedAchievements;
+      finalIsMockData = false;
+      finalError = apiErrorReason; // Any non-critical errors from FFXIVCollect that didn't force mock
+    }
+
   } else {
-    // If any part of the real data fetching failed, use full mock data
+    // If Tomestone.gg profile fetch failed, use full mock data
     const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
     finalCharacterData = mock.character;
     finalCompletedAchievements = mock.completedAchievements;
@@ -287,8 +300,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     character: finalCharacterData,
     completedAchievements: finalCompletedAchievements,
-    _isRealData: isRealData, // True only if both profile and achievements were real
-    _isMockData: finalIsMockData,
+    _isRealData: isRealData, // True only if Tomestone.gg profile was successful
+    _isMockData: finalIsMockData, // True if any part of the data (profile or achievements) is mocked
     _error: finalError,
   });
 }
