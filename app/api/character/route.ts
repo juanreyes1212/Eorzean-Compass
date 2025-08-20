@@ -3,7 +3,7 @@ import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 
 // Tomestone.gg API response structures based on api-docs.json
 interface TomestoneProfileCharacter {
-  id: string;
+  id: string; // This is the Lodestone ID we need
   name: string;
   server: string;
   avatar: string;
@@ -15,19 +15,23 @@ interface TomestoneProfileResponse {
   character: TomestoneProfileCharacter;
 }
 
-interface TomestoneCharacterAchievementsData {
-  character: {
-    id: string;
-    name: string;
-    server: string;
-    avatar: string;
-    achievement_points?: number;
-    achievements_completed?: number;
+// FFXIVCollect API response structures for character achievements
+interface FFXIVCollectCharacterAchievements {
+  id: number; // Lodestone ID
+  name: string;
+  server: string;
+  data_center: string;
+  portrait: string;
+  avatar: string;
+  achievements: {
+    count: number;
+    data: Array<{
+      id: number;
+      pivot: {
+        obtained_at: string; // ISO 8601 date string
+      };
+    }>;
   };
-  achievements?: Array<{ // This is the array we need for completed achievements
-    id: number;
-    date: string; // ISO 8601 date string
-  }>;
 }
 
 // Add timeout wrapper for fetch requests
@@ -127,21 +131,21 @@ export async function GET(request: Request) {
 
   console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
-  if (!TOMESTONE_API_KEY) {
-    console.warn("[API Character] TOMESTONE_API_KEY is not set. Falling back to mock data.");
-    return NextResponse.json(generateMockCharacterData(nameParam, serverParam, "Tomestone.gg API key is missing."));
-  }
-  
   let realCharacterData: TomestoneProfileCharacter | null = null;
   let completedAchievements: Array<{ id: number; completionDate: string }> = [];
   let isRealData = false;
   let apiErrorReason: string | undefined;
+  let lodestoneId: string | null = null; // This will store the Lodestone ID from Tomestone.gg
 
+  // --- Step 1: Fetch Character Profile from Tomestone.gg (to get Lodestone ID and basic info) ---
   try {
-    // Step 1: Fetch Character Profile to get basic info and ID
+    if (!TOMESTONE_API_KEY) {
+      throw new Error("Tomestone.gg API key is missing.");
+    }
+
     const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(serverParam)}/${encodeURIComponent(nameParam)}`;
     
-    console.log(`[API Character] Attempting to fetch profile from: ${profileUrl}`);
+    console.log(`[API Character] Attempting to fetch profile from Tomestone.gg: ${profileUrl}`);
     
     const profileResponse = await fetchWithTimeout(profileUrl, {
       headers: {
@@ -152,11 +156,11 @@ export async function GET(request: Request) {
       }
     }, 15000);
 
-    console.log(`[API Character] Profile fetch completed. Status: ${profileResponse.status}`);
+    console.log(`[API Character] Tomestone.gg Profile fetch completed. Status: ${profileResponse.status}`);
 
     if (!profileResponse.ok) {
       const errorBody = await profileResponse.text();
-      console.error(`[API Character Error] Profile fetch failed: ${profileResponse.status} ${profileResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`); // Log first 200 chars
+      console.error(`[API Character Error] Tomestone.gg Profile fetch failed: ${profileResponse.status} ${profileResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`);
       if (profileResponse.status === 404) {
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
@@ -170,68 +174,77 @@ export async function GET(request: Request) {
     console.log(`[API Character] Raw Tomestone profile data received: ${JSON.stringify(tomestoneProfileData, null, 2)}`);
     
     if (!tomestoneProfileData.character || !tomestoneProfileData.character.id) {
-      console.error("[API Character Error] Profile data missing character object or ID.");
+      console.error("[API Character Error] Tomestone.gg profile data missing character object or ID.");
       throw new Error("Invalid character data from Tomestone.gg profile result");
     }
 
     realCharacterData = tomestoneProfileData.character;
-    isRealData = true;
+    lodestoneId = realCharacterData.id; // Extract Lodestone ID
+    isRealData = true; // Mark as real data if profile fetch is successful
 
-    // Step 2: Fetch detailed completed achievements using the character ID
-    const characterAchievementsUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${realCharacterData.id}?data=achievements`;
-    
-    console.log(`[API Character] Attempting to fetch achievements from: ${characterAchievementsUrl}`);
-    
-    const achievementsResponse = await fetchWithTimeout(characterAchievementsUrl, {
-      headers: {
-        'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-        'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
-        'Accept': 'application/json',
-        'Referer': process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'
-      }
-    }, 15000);
-
-    console.log(`[API Character] Achievements fetch completed. Status: ${achievementsResponse.status}`);
-
-    if (!achievementsResponse.ok) {
-      const errorBody = await achievementsResponse.text();
-      console.error(`[API Character Error] Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`); // Log first 200 chars
-      apiErrorReason = `Failed to fetch achievements: ${achievementsResponse.status} ${achievementsResponse.statusText}`;
-      // Do NOT throw here, just use mock achievements
-    } else {
-      const tomestoneAchievementsData: TomestoneCharacterAchievementsData = await achievementsResponse.json();
-      console.log(`[API Character] Raw Tomestone achievements data received: ${JSON.stringify(tomestoneAchievementsData, null, 2)}`);
-
-      if (tomestoneAchievementsData.achievements && Array.isArray(tomestoneAchievementsData.achievements)) {
-        completedAchievements = tomestoneAchievementsData.achievements
-          .filter(achievement => achievement.id && achievement.date)
-          .map(achievement => ({
-            id: achievement.id,
-            completionDate: new Date(achievement.date).toISOString()
-          }));
-        console.log(`[API Character] Successfully fetched ${completedAchievements.length} real completed achievements.`);
-      } else {
-        console.warn("[API Character] Achievements array not found or invalid in response. Generating mock completed achievements.");
-        apiErrorReason = "Tomestone.gg did not return a valid achievements list.";
-      }
-    }
-
-  } catch (apiError) {
-    console.error("[API Character Error] Tomestone.gg API call failed:", apiError instanceof Error ? apiError.message : apiError);
-    apiErrorReason = `Tomestone.gg API unavailable: ${apiError instanceof Error ? apiError.message : 'Unknown error'}.`;
-    // If any real API call fails, we fall back to mock data for everything
-    isRealData = false;
-    realCharacterData = null; // Ensure we don't use partial real data if the flow broke
+  } catch (profileError) {
+    console.error("[API Character Error] Tomestone.gg profile API call failed:", profileError instanceof Error ? profileError.message : profileError);
+    apiErrorReason = `Tomestone.gg API unavailable for profile: ${profileError instanceof Error ? profileError.message : 'Unknown error'}.`;
+    isRealData = false; // If profile fetch fails, we cannot proceed with real data
   }
 
-  // Final data construction
+  // --- Step 2: Fetch Completed Achievements from FFXIVCollect (if Lodestone ID obtained) ---
+  if (lodestoneId && isRealData) {
+    try {
+      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}?times=true`;
+      
+      console.log(`[API Character] Attempting to fetch achievements from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
+      
+      const achievementsResponse = await fetchWithTimeout(ffxivCollectAchievementsUrl, {
+        headers: {
+          'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+          'Accept': 'application/json',
+        }
+      }, 15000);
+
+      console.log(`[API Character] FFXIVCollect Achievements fetch completed. Status: ${achievementsResponse.status}`);
+
+      if (!achievementsResponse.ok) {
+        const errorBody = await achievementsResponse.text();
+        console.error(`[API Character Error] FFXIVCollect Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`);
+        throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
+      }
+
+      const ffxivCollectData: FFXIVCollectCharacterAchievements = await achievementsResponse.json();
+      console.log(`[API Character] Raw FFXIVCollect achievements data received (count: ${ffxivCollectData.achievements?.count}, first 5 data entries): ${JSON.stringify(ffxivCollectData.achievements?.data?.slice(0,5), null, 2)}`);
+
+      if (ffxivCollectData.achievements?.data && Array.isArray(ffxivCollectData.achievements.data)) {
+        completedAchievements = ffxivCollectData.achievements.data
+          .filter(ach => ach.id && ach.pivot?.obtained_at)
+          .map(ach => ({
+            id: ach.id,
+            completionDate: ach.pivot.obtained_at // Already ISO 8601 string
+          }));
+        console.log(`[API Character] Successfully fetched ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
+      } else {
+        console.warn("[API Character] FFXIVCollect Achievements data array not found or invalid in response. Will use mock completed achievements.");
+        apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid achievements list.";
+        isRealData = false; // If achievements are not real, the whole data set is considered mock
+      }
+
+    } catch (ffxivCollectError) {
+      console.error("[API Character Error] FFXIVCollect achievements API call failed:", ffxivCollectError instanceof Error ? ffxivCollectError.message : ffxivCollectError);
+      apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + `FFXIVCollect unavailable for achievements: ${ffxivCollectError instanceof Error ? ffxivCollectError.message : 'Unknown error'}.`;
+      isRealData = false; // If achievements fetch fails, fall back to mock
+    }
+  } else {
+    // If Tomestone.gg profile fetch failed, lodestoneId will be null, so we skip FFXIVCollect
+    console.warn("[API Character] Skipping FFXIVCollect call because Tomestone.gg profile fetch failed or Lodestone ID is missing.");
+  }
+
+  // --- Final Data Construction ---
   let finalCharacterData;
   let finalCompletedAchievements;
   let finalIsMockData = false;
   let finalError: string | undefined;
 
   if (isRealData && realCharacterData) {
-    // If profile was real, use it. If achievements fetch failed, use mock achievements.
+    // If both Tomestone.gg profile and FFXIVCollect achievements were successful
     finalCharacterData = {
       id: realCharacterData.id,
       name: realCharacterData.name,
@@ -241,25 +254,10 @@ export async function GET(request: Request) {
       achievementsCompleted: realCharacterData.achievements_completed || 0,
       totalAchievements: 2500, // Placeholder/Estimate
     };
-    
-    if (completedAchievements.length > 0) {
-      finalCompletedAchievements = completedAchievements;
-      finalError = apiErrorReason; // If there was an error but we still got some achievements
-    } else {
-      // If real profile but no real achievements, generate mock achievements
-      const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
-      finalCompletedAchievements = mock.completedAchievements;
-      finalIsMockData = true; // Mark as mock if achievements are mocked
-      finalError = apiErrorReason || mock._error;
-    }
-    
-    // If we got real profile data, but had to mock achievements, still indicate real profile
-    if (finalIsMockData) {
-      isRealData = false; // Override to false if any part is mocked
-    }
-
+    finalCompletedAchievements = completedAchievements;
+    finalError = apiErrorReason; // Any non-critical errors from FFXIVCollect that didn't force mock
   } else {
-    // If initial profile fetch failed, use full mock data
+    // If any part of the real data fetching failed, use full mock data
     const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
     finalCharacterData = mock.character;
     finalCompletedAchievements = mock.completedAchievements;
@@ -271,7 +269,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     character: finalCharacterData,
     completedAchievements: finalCompletedAchievements,
-    _isRealData: isRealData, // This will be true only if both profile and achievements were real
+    _isRealData: isRealData, // True only if both profile and achievements were real
     _isMockData: finalIsMockData,
     _error: finalError,
   });

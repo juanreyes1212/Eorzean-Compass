@@ -57,7 +57,7 @@ export const SERVERS: Record<string, string> = {
   "Jenova": "Aether",
   "Midgardsormr": "Aether",
   "Sargatanas": "Aether",
-  "Siren": "Aether",
+  "Siren": "Siren",
   
   // Crystal Data Center
   "Balmung": "Crystal",
@@ -66,8 +66,8 @@ export const SERVERS: Record<string, string> = {
   "Diabolos": "Crystal",
   "Goblin": "Crystal",
   "Malboro": "Crystal",
-  "Mateus": "Crystal",
-  "Zalera": "Crystal",
+  "Mateus": "Mateus",
+  "Zalera": "Zalera",
   
   // Primal Data Center
   "Behemoth": "Primal",
@@ -115,8 +115,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 
 export const EXTERNAL_APIS = {
   TOMESTONE_BASE: 'https://tomestone.gg/api',
-  FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api', // Ensure this is the API base, not just the domain
+  FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
 } as const;
 
 // This will be read from process.env.TOMESTONE_API_KEY
 export const TOMESTONE_API_KEY = process.env.TOMESTONE_API_KEY;
+// XIVAPI_API_KEY is no longer needed as FFXIVCollect will be used for character achievements.
