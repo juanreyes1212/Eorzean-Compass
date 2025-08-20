@@ -370,6 +370,23 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         storageInfo={storageInfo}
       />
       
+      {characterData._isMockData && characterData._error?.includes("private profile") && (
+        <Alert variant="destructive" className="mb-6 bg-red-900/20 border-red-700 text-red-300">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {characterData._error} To view real achievement data, please ensure your character's achievements are set to public on the FFXIV Lodestone.
+          </AlertDescription>
+        </Alert>
+      )}
+      {characterData._isMockData && !characterData._error?.includes("private profile") && (
+        <Alert variant="default" className="mb-6 bg-compass-900/20 border-compass-700 text-compass-300">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            {characterData._error || "Using demo data due to an API issue. Please try again later for real-time data."}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <AchievementsPageContent
         allAchievements={allAchievements}
         completedAchievementsWithTSRG={completedAchievementsWithTSRG}

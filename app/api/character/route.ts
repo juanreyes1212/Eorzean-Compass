@@ -212,25 +212,32 @@ export async function GET(request: Request) {
       if (!achievementsResponse.ok) {
         const errorBody = await achievementsResponse.text();
         console.error(`[API Character Error] FFXIVCollect Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`);
-        throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
-      }
-
-      // Parse the response directly as an array of achievement objects
-      const ffxivCollectData: FFXIVCollectOwnedAchievementsResponse = await achievementsResponse.json();
-      console.log(`[API Character] Raw FFXIVCollect achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
-
-      if (Array.isArray(ffxivCollectData)) {
-        completedAchievements = ffxivCollectData
-          .filter(ach => ach.id && ach.pivot?.obtained_at)
-          .map(ach => ({
-            id: ach.id,
-            completionDate: ach.pivot.obtained_at // Already ISO 8601 string
-          }));
-        console.log(`[API Character] Successfully fetched ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
+        
+        // Check for private profile specific error
+        if (achievementsResponse.status === 403 || errorBody.includes("private profile")) {
+          apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "Character's achievements are private on Lodestone. Please make them public to view real data.";
+          isRealData = false; // Force mock data if achievements are private
+        } else {
+          throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
+        }
       } else {
-        console.warn("[API Character] FFXIVCollect Achievements data is not a valid array in response. Will use mock completed achievements.");
-        apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid achievements list.";
-        isRealData = false; // If achievements are not real, the whole data set is considered mock
+        // Parse the response directly as an array of achievement objects
+        const ffxivCollectData: FFXIVCollectOwnedAchievementsResponse = await achievementsResponse.json();
+        console.log(`[API Character] Raw FFXIVCollect achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
+
+        if (Array.isArray(ffxivCollectData)) {
+          completedAchievements = ffxivCollectData
+            .filter(ach => ach.id && ach.pivot?.obtained_at)
+            .map(ach => ({
+              id: ach.id,
+              completionDate: ach.pivot.obtained_at // Already ISO 8601 string
+            }));
+          console.log(`[API Character] Successfully parsed ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
+        } else {
+          console.warn("[API Character] FFXIVCollect Achievements data is not a valid array in response. Will use mock completed achievements.");
+          apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid achievements list.";
+          isRealData = false; // If achievements are not real, the whole data set is considered mock
+        }
       }
 
     } catch (ffxivCollectError) {
