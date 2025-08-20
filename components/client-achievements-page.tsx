@@ -95,15 +95,15 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     storePreferences(preferences);
   }, [preferences]);
 
-  const fetchCharacterData = async (isRetry = false) => {
+  const fetchCharacterData = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      if (!isRetry) {
+      if (!forceRefresh) { // Only clear error if not a forced refresh
         setError(null);
       }
 
       const cachedCharacter = getStoredCharacter(name, server);
-      if (cachedCharacter && !isRetry) {
+      if (cachedCharacter && !forceRefresh) {
         setCharacterData({
           character: cachedCharacter,
           completedAchievements: cachedCharacter.completedAchievements,
@@ -157,7 +157,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const characterToStore: StoredCharacter = {
         ...data.character,
         completedAchievements: data.completedAchievements || [],
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: data.character.lastUpdated || new Date().toISOString(), // Ensure lastUpdated is set for storage
       };
       storeCharacter(characterToStore);
       addRecentSearch(name, server);
@@ -185,7 +185,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error occurred';
       
       const cachedCharacter = getStoredCharacter(name, server);
-      if (cachedCharacter) {
+      if (cachedCharacter && !forceRefresh) { // Only use cache if not forced refresh
         setCharacterData({
           character: cachedCharacter,
           completedAchievements: cachedCharacter.completedAchievements,
@@ -212,12 +212,12 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     }
   };
 
-  const fetchAchievementsWithTSRG = async () => {
+  const fetchAchievementsWithTSRG = async (forceRefresh = false) => {
     try {
       setAchievementsLoading(true);
       
       const cachedAchievements = getStoredAchievements();
-      if (cachedAchievements && characterData) {
+      if (cachedAchievements && characterData && !forceRefresh) {
         const achievementsWithStatus = cachedAchievements.map((achievement: any) => {
           const isCompleted = characterData.completedAchievements?.some(comp => comp.id === achievement.id) || false;
           const completionDate = characterData.completedAchievements?.find(comp => comp.id === achievement.id)?.completionDate || null;
@@ -299,8 +299,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     }, 100);
   };
 
-  const handleRetry = () => {
-    fetchCharacterData(true);
+  const handleRefreshData = () => {
+    fetchCharacterData(true); // Force refresh character data
+    fetchAchievementsWithTSRG(true); // Force refresh achievements data
   };
 
   if (loading) {
@@ -332,7 +333,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
             This might be due to Tomestone.gg being temporarily unavailable or network issues.
           </p>
           <div className="space-x-4">
-            <Button onClick={handleRetry} disabled={loading}>
+            <Button onClick={handleRefreshData} disabled={loading}>
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Try Again
             </Button>
@@ -368,6 +369,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         actualStats={actualStats}
         achievementsLoading={achievementsLoading}
         storageInfo={storageInfo}
+        onRefreshData={handleRefreshData} // Pass the refresh handler
       />
       
       {characterData._isMockData && characterData._error?.includes("private profile") && (

@@ -43,14 +43,19 @@ export function getStoredCharacter(name: string, server: string): StoredCharacte
     const key = `${name.toLowerCase()}_${server.toLowerCase()}`;
     const character = characters[key];
     
-    if (!character) return null;
+    // Ensure character exists and has a valid lastUpdated timestamp
+    if (!character || typeof character.lastUpdated !== 'string') {
+      console.warn(`Cached character for ${name} on ${server} is missing or has invalid lastUpdated. Treating as expired.`);
+      return null; 
+    }
     
     // Check if cache is still valid
-    const lastUpdated = new Date(character.lastUpdated).getTime();
+    const lastUpdatedTime = new Date(character.lastUpdated).getTime();
     const now = Date.now();
     
-    if (now - lastUpdated > CACHE_DURATION.CHARACTERS) {
-      return null; // Cache expired
+    if (isNaN(lastUpdatedTime) || (now - lastUpdatedTime) > CACHE_DURATION.CHARACTERS) {
+      console.log(`Cached character for ${name} on ${server} is expired or has invalid date. Invalidating cache.`);
+      return null; // Cache expired or invalid date
     }
     
     return character;
@@ -75,15 +80,18 @@ export function storeCharacter(character: StoredCharacter): boolean {
   const key = `${character.name.toLowerCase()}_${character.server.toLowerCase()}`;
   characters[key] = {
     ...character,
-    lastUpdated: new Date().toISOString(),
+    lastUpdated: character.lastUpdated || new Date().toISOString(), // Ensure lastUpdated is always a string
   };
   
   // Limit storage to last 10 characters
   const entries = Object.entries(characters);
   if (entries.length > 10) {
-    const sorted = entries.sort((a, b) => 
-      new Date(b[1].lastUpdated).getTime() - new Date(a[1].lastUpdated).getTime()
-    );
+    const sorted = entries.sort((a, b) => {
+      // Ensure lastUpdated is a string for sorting, though it should be by StoredCharacter type
+      const dateA = new Date(a[1].lastUpdated).getTime();
+      const dateB = new Date(b[1].lastUpdated).getTime();
+      return dateB - dateA;
+    });
     characters = Object.fromEntries(sorted.slice(0, 10));
   }
   

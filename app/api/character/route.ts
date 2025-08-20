@@ -96,6 +96,7 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
       achievementPoints: completedAchievements.length * 10,
       achievementsCompleted: completedAchievements.length,
       totalAchievements,
+      lastUpdated: new Date().toISOString(), // Add lastUpdated for mock data
     },
     completedAchievements,
     _isMockData: true,
@@ -255,6 +256,7 @@ export async function GET(request: Request) {
   let finalCompletedAchievements;
   let finalIsMockData = false;
   let finalError: string | undefined;
+  const now = new Date().toISOString(); // Get current timestamp
 
   if (isRealData && realCharacterData) {
     // If both Tomestone.gg profile and FFXIVCollect achievements were successful
@@ -267,6 +269,7 @@ export async function GET(request: Request) {
       achievementPoints: realCharacterData.achievementPoints?.points || 0,
       achievementsCompleted: realCharacterData.achievementPoints?.unrankedPoints || 0,
       totalAchievements: 2500, // Placeholder/Estimate, as Tomestone.gg doesn't provide total
+      lastUpdated: now, // Set lastUpdated for real data
     };
     finalCompletedAchievements = completedAchievements;
     finalError = apiErrorReason; // Any non-critical errors from FFXIVCollect that didn't force mock
@@ -277,6 +280,7 @@ export async function GET(request: Request) {
     finalCompletedAchievements = mock.completedAchievements;
     finalIsMockData = true;
     finalError = apiErrorReason || mock._error;
+    // Mock data already has lastUpdated set in generateMockCharacterData
   }
 
   console.log(`[API Character] Final response: isRealData=${isRealData}, isMockData=${finalIsMockData}, error=${finalError || 'none'}`);

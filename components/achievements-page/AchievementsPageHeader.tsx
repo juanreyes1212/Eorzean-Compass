@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
 import { CharacterProfile } from "@/components/character-profile";
-import { Database, HardDrive } from 'lucide-react';
+import { Database, HardDrive, RefreshCw, Clock } from 'lucide-react'; // Import Clock icon
 import { Character, AchievementWithTSRG } from "@/lib/types";
+import { Button } from "@/components/ui/button"; // Import Button
 
 interface AchievementsPageHeaderProps {
   characterData: {
@@ -27,6 +27,7 @@ interface AchievementsPageHeaderProps {
     hasAchievements: boolean;
     hasPreferences: boolean;
   };
+  onRefreshData: () => void; // New prop for refreshing data
 }
 
 export function AchievementsPageHeader({
@@ -34,17 +35,57 @@ export function AchievementsPageHeader({
   actualStats,
   achievementsLoading,
   storageInfo,
+  onRefreshData, // Destructure new prop
 }: AchievementsPageHeaderProps) {
+  // Format date without external dependency
+  const formatLastUpdated = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Invalid Date";
+      }
+      return date.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid Date";
+    }
+  };
+
   return (
     <>
-      {/* Storage Info */}
-      <div className="mb-6 text-xs text-compass-400 flex items-center gap-4">
+      {/* Storage Info and Refresh Button */}
+      <div className="mb-6 text-xs text-compass-400 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-1">
           <Database className="h-3 w-3" />
           <span>Storage: {Math.round(storageInfo.used / 1024)}KB used</span>
         </div>
         <div>{storageInfo.characters} characters cached</div>
         {storageInfo.hasAchievements && <div>Achievements cached</div>}
+        
+        {characterData.character.lastUpdated && (
+          <div className="flex items-center gap-1 ml-0 sm:ml-auto">
+            <Clock className="h-3 w-3" />
+            <span>Last Updated: {formatLastUpdated(characterData.character.lastUpdated)}</span>
+          </div>
+        )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefreshData}
+          className="border-compass-600 text-compass-300 hover:bg-compass-700 hover:text-compass-100 ml-auto sm:ml-0"
+          disabled={achievementsLoading} // Disable while loading
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${achievementsLoading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
       </div>
       
       {/* Character Profile with loading state and actual stats */}

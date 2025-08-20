@@ -8,6 +8,7 @@ export interface Character {
   achievementPoints: number;
   achievementsCompleted: number;
   totalAchievements: number;
+  lastUpdated?: string; // Still optional for general Character interface
 }
 
 export interface CompletedAchievement {
@@ -72,7 +73,7 @@ export interface UserPreferences {
 // Storage Types
 export interface StoredCharacter extends Character {
   completedAchievements: CompletedAchievement[];
-  lastUpdated: string;
+  lastUpdated: string; // Made required for stored characters
 }
 
 // API Error Types
