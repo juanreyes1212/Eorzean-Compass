@@ -29,10 +29,7 @@ type TomestoneProfileResponse = TomestoneProfileCharacter;
 // It returns a direct array of achievement objects, not a nested structure.
 type FFXIVCollectOwnedAchievementsResponse = Array<{
   id: number;
-  // The 'name' and 'icon' might also be present, but 'pivot.obtained_at' is crucial.
-  pivot: {
-    obtained_at: string; // ISO 8601 date string
-  };
+  obtained_at: string; // Assuming obtained_at is directly on the achievement object
 }>;
 
 
@@ -230,10 +227,10 @@ export async function GET(request: Request) {
 
         if (Array.isArray(ffxivCollectData)) {
           completedAchievements = ffxivCollectData
-            .filter(ach => ach.id && ach.pivot?.obtained_at)
+            .filter(ach => ach.id && ach.obtained_at) // Changed from ach.pivot?.obtained_at
             .map(ach => ({
               id: ach.id,
-              completionDate: ach.pivot.obtained_at // Already ISO 8601 string
+              completionDate: ach.obtained_at // Changed from ach.pivot.obtained_at
             }));
           console.log(`[API Character] Successfully parsed ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
         } else {
