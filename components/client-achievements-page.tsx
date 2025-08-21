@@ -290,6 +290,17 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     }
   }, [characterData]);
 
+  // Log data for debugging recommendations and projects
+  useEffect(() => {
+    if (characterData && allAchievements.length > 0) {
+      console.log("ClientAchievementsPage: characterData.completedAchievements (IDs only):", characterData.completedAchievements.map(a => a.id));
+      console.log("ClientAchievementsPage: allAchievements count:", allAchievements.length);
+      const completedInAll = allAchievements.filter(a => a.isCompleted).length;
+      console.log("ClientAchievementsPage: allAchievements with isCompleted=true count:", completedInAll);
+    }
+  }, [characterData, allAchievements]);
+
+
   // Handle achievement click from recommendations
   const handleAchievementClick = (achievement: AchievementWithTSRG) => {
     const achievementsTab = document.querySelector('[value="achievements"]') as HTMLElement;

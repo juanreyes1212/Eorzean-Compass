@@ -44,9 +44,7 @@ export function AchievementTableRow({ achievement }: AchievementTableRowProps) {
         <div>
           <div className={`font-medium ${achievement.isCompleted ? 'text-gold-200' : 'text-compass-100'}`}>
             {achievement.name}
-            {achievement.isCompleted && (
-              <CheckCircle className="inline-block ml-2 h-4 w-4 text-gold-400" />
-            )}
+            {/* Removed redundant CheckCircle here, as it's already next to the icon */}
           </div>
           <div className="text-sm text-compass-400 max-w-md truncate">
             {achievement.description}

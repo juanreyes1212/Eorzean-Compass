@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"; // Import Dialog components
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
 import { TrendingUp, Clock, Star, Target, Lightbulb, Trophy, Users, Zap, Dice6, ChevronRight, Info } from 'lucide-react';
 import { 
   generateRecommendations, 
@@ -98,6 +99,16 @@ export function RecommendationsDashboard({
       case 'points_efficient': return 'text-orange-400';
       case 'similar_achievements': return 'text-cyan-400';
       default: return 'text-slate-400';
+    }
+  };
+
+  const getTierDescription = (tier: number) => {
+    switch (tier) {
+      case 1: return 'Foundational: Basic milestones and story progression achievements.';
+      case 2: return 'Systematic: Regular engagement and moderate effort achievements.';
+      case 3: return 'Dedicated: Significant time investment and focused effort.';
+      case 4: return 'Apex: The most challenging achievements in the game.';
+      default: return 'Unknown Tier.';
     }
   };
 
@@ -280,9 +291,18 @@ export function RecommendationsDashboard({
                       <span className="text-slate-300">{project.achievements.length} achievements</span>
                       <span className="text-slate-300">{project.totalPoints} points</span>
                     </div>
-                    <Badge className={`${getTierColor(project.difficulty)} text-white text-xs`}>
-                      Tier {project.difficulty}
-                    </Badge>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge className={`${getTierColor(project.difficulty)} text-white text-xs cursor-help`}>
+                            Tier {project.difficulty}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs bg-compass-800 border-compass-600 text-compass-100 z-tooltip">
+                          <p>{getTierDescription(project.difficulty)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
 
                   <div className="text-xs text-slate-400 mt-2">
