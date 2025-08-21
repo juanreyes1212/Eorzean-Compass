@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <header className="navigation-header">
+        <header className="bg-compass-950 text-compass-100 border-b border-compass-700">
           <div className="container mx-auto px-4 py-4 flex justify-between items-center">
             <Link href="/" className="text-xl font-bold text-white flex items-center gap-3 group">
               <div className="relative">
@@ -50,7 +50,7 @@ export default function RootLayout({
           </div>
         </header>
         <main className="min-h-screen">{children}</main>
-        <footer className="navigation-header border-t border-compass-700 py-8 mt-12">
+        <footer className="bg-compass-950 text-compass-100 border-t border-compass-700 py-8 mt-12">
           <div className="container mx-auto px-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Compass className="h-5 w-5 text-gold-400" />
