@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
+import { CompletedAchievement } from '@/lib/types'; // Import the type
 
 // Tomestone.gg API response structures based on api-docs.json
 // Corrected to reflect that the root response is the character object itself
@@ -79,7 +80,7 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
   
   const characterId = Math.abs(hash).toString().padStart(8, '0');
   
-  const completedAchievements = [];
+  const completedAchievements: CompletedAchievement[] = []; // Explicitly type the array here
   const totalAchievements = 2500; // Matches the total in generateMockAchievements
 
   // Generate a consistent set of completed achievements for mock data
@@ -149,7 +150,7 @@ export async function GET(request: Request) {
   console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
   let realCharacterData: TomestoneProfileCharacter | null = null;
-  let completedAchievementsFromAPI: Array<{ id: number }> = []; // Changed type to remove completionDate
+  let completedAchievementsFromAPI: CompletedAchievement[] = []; // Explicitly type this array
   let isRealData = false;
   let apiErrorReason: string | undefined;
   let lodestoneId: number | null = null;
@@ -261,7 +262,7 @@ export async function GET(request: Request) {
 
   // --- Final Data Construction ---
   let finalCharacterData;
-  let finalCompletedAchievements: Array<{ id: number }> = []; // Changed type to remove completionDate
+  let finalCompletedAchievements: CompletedAchievement[] = []; // Explicitly type this array
   let finalIsMockData = false;
   let finalError: string | undefined;
   const now = new Date().toISOString();
