@@ -25,21 +25,24 @@ interface TomestoneProfileCharacter {
 type TomestoneProfileResponse = TomestoneProfileCharacter;
 
 // FFXIVCollect API response structures for character achievements
-// This interface is for the /characters/{ID}/achievements endpoint
-interface FFXIVCollectCharacterAchievementItem {
+// This interface is for the /characters/{ID}/achievements/owned endpoint
+// Based on user's Postman example, it returns full achievement objects, with 'owned' being rarity.
+interface FFXIVCollectOwnedAchievementItem {
   id: number;
-  name: string; // Full achievement data is returned
+  name: string;
   description: string;
   points: number;
-  category: { id: number; name: string };
+  order: number;
   patch: string;
+  owned: string; // This is the rarity percentage, e.g., "3.1%"
   icon: string;
-  owned: boolean; // Indicates if this character owns it
-  obtained_at: string | null; // Date obtained, or null if not owned
+  category: { id: number; name: string };
+  type: { id: number; name: string };
+  reward?: any; // Optional reward field
 }
 
-// This endpoint returns a direct array of FFXIVCollectCharacterAchievementItem
-type FFXIVCollectCharacterAchievementsResponse = FFXIVCollectCharacterAchievementItem[];
+// This endpoint returns a direct array of FFXIVCollectOwnedAchievementItem
+type FFXIVCollectCharacterOwnedAchievementsResponse = FFXIVCollectOwnedAchievementItem[];
 
 
 // Add timeout wrapper for fetch requests
@@ -141,8 +144,7 @@ export async function GET(request: Request) {
   console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
   let realCharacterData: TomestoneProfileCharacter | null = null;
-  // Change to store the full objects from FFXIVCollect, then filter them
-  let ffxivCollectAllCharacterAchievements: FFXIVCollectCharacterAchievementItem[] = [];
+  let completedAchievementsFromAPI: Array<{ id: number; completionDate: string | null }> = [];
   let isRealData = false;
   let apiErrorReason: string | undefined;
   let lodestoneId: number | null = null;
@@ -201,13 +203,14 @@ export async function GET(request: Request) {
     isRealData = false; // If profile fetch fails, we cannot proceed with real data
   }
 
-  // --- Step 2: Fetch ALL Achievements for Character from FFXIVCollect (if Lodestone ID obtained) ---
+  // --- Step 2: Fetch Completed Achievements from FFXIVCollect (if Lodestone ID obtained) ---
   if (lodestoneId && isRealData) {
     try {
-      // Use the '/achievements' endpoint to get all achievements with character-specific ownership status
-      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements`;
+      // Use the '/achievements/owned' endpoint to get the list of completed achievement IDs
+      // This endpoint returns full achievement objects, where presence in list means owned.
+      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned`;
       
-      console.log(`[API Character] Attempting to fetch ALL achievements for character from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
+      console.log(`[API Character] Attempting to fetch owned achievements from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
       
       const achievementsResponse = await fetchWithTimeout(ffxivCollectAchievementsUrl, {
         headers: {
@@ -216,36 +219,40 @@ export async function GET(request: Request) {
         }
       }, 15000);
 
-      console.log(`[API Character] FFXIVCollect Character Achievements fetch completed. Status: ${achievementsResponse.status}`);
+      console.log(`[API Character] FFXIVCollect Owned Achievements fetch completed. Status: ${achievementsResponse.status}`);
 
       if (!achievementsResponse.ok) {
         const errorBody = await achievementsResponse.text();
-        console.error(`[API Character Error] FFXIVCollect Character Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`);
+        console.error(`[API Character Error] FFXIVCollect Owned Achievements fetch failed: ${achievementsResponse.status} ${achievementsResponse.statusText}. Body: ${errorBody.substring(0, 200)}...`);
         
         if (achievementsResponse.status === 403 || errorBody.includes("private profile")) {
           apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "Character's achievements are private on Lodestone. Please make them public to view real data.";
         } else {
-          throw new Error(`FFXIVCollect character achievements fetch failed with status ${achievementsResponse.status}`);
+          throw new Error(`FFXIVCollect owned achievements fetch failed with status ${achievementsResponse.status}`);
         }
       } else {
-        const ffxivCollectData: FFXIVCollectCharacterAchievementsResponse = await achievementsResponse.json();
-        console.log(`[API Character] Raw FFXIVCollect character achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
+        const ffxivCollectData: FFXIVCollectCharacterOwnedAchievementsResponse = await achievementsResponse.json();
+        console.log(`[API Character] Raw FFXIVCollect owned achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
 
-        if (Array.isArray(ffxivCollectData) && ffxivCollectData.every(item => typeof item === 'object' && item !== null && 'id' in item && 'owned' in item && 'obtained_at' in item)) {
-          ffxivCollectAllCharacterAchievements = ffxivCollectData;
-          console.log(`[API Character] Successfully parsed ${ffxivCollectAllCharacterAchievements.length} character achievements from FFXIVCollect.`);
+        if (Array.isArray(ffxivCollectData) && ffxivCollectData.every(item => typeof item === 'object' && item !== null && 'id' in item)) {
+          // Map to CompletedAchievement, setting completionDate to null as it's not provided by this endpoint
+          completedAchievementsFromAPI = ffxivCollectData.map(item => ({
+            id: item.id,
+            completionDate: null, // Disregard obtained_at for now as per user's request
+          }));
+          console.log(`[API Character] Successfully parsed ${completedAchievementsFromAPI.length} real completed achievements from FFXIVCollect (no dates).`);
         } else {
-          console.warn("[API Character] FFXIVCollect Character Achievements data is not a valid array of results. Will use mock completed achievements.");
-          apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid character achievements list.";
+          console.warn("[API Character] FFXIVCollect Owned Achievements data is not a valid array of results. Will use mock completed achievements.");
+          apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid owned achievements list.";
         }
       }
 
     } catch (ffxivCollectError) {
-      console.error("[API Character Error] FFXIVCollect character achievements API call failed:", ffxivCollectError instanceof Error ? ffxivCollectError.message : ffxivCollectError);
-      apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + `FFXIVCollect unavailable for character achievements: ${ffxivCollectError instanceof Error ? ffxivCollectError.message : 'Unknown error'}.`;
+      console.error("[API Character Error] FFXIVCollect owned achievements API call failed:", ffxivCollectError instanceof Error ? ffxivCollectError.message : ffxivCollectError);
+      apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + `FFXIVCollect unavailable for owned achievements: ${ffxivCollectError instanceof Error ? ffxivCollectError.message : 'Unknown error'}.`;
     }
   } else {
-    console.warn("[API Character] Skipping FFXIVCollect character achievements call because Tomestone.gg profile fetch failed or Lodestone ID is missing.");
+    console.warn("[API Character] Skipping FFXIVCollect owned achievements call because Tomestone.gg profile fetch failed or Lodestone ID is missing.");
   }
 
   // --- Final Data Construction ---
@@ -267,20 +274,15 @@ export async function GET(request: Request) {
       lastUpdated: now,
     };
     
-    // If FFXIVCollect character achievements failed or were private, use mock completed achievements
-    // Otherwise, filter the fetched achievements for owned ones
-    if (apiErrorReason?.includes("private profile") || ffxivCollectAllCharacterAchievements.length === 0) {
+    // If FFXIVCollect owned achievements failed or were private, use mock completed achievements
+    // Otherwise, use the data fetched from FFXIVCollect
+    if (apiErrorReason?.includes("private profile") || completedAchievementsFromAPI.length === 0) {
       const mockCompleted = generateMockCharacterData(nameParam, serverParam).completedAchievements;
       finalCompletedAchievements = mockCompleted;
       finalIsMockData = true;
       finalError = apiErrorReason || "Using demo completed achievements due to API issue.";
     } else {
-      finalCompletedAchievements = ffxivCollectAllCharacterAchievements
-        .filter(item => item.owned && item.obtained_at) // Only include owned achievements with a date
-        .map(item => ({
-          id: item.id,
-          completionDate: item.obtained_at,
-        }));
+      finalCompletedAchievements = completedAchievementsFromAPI;
       finalIsMockData = false;
       finalError = apiErrorReason;
     }
