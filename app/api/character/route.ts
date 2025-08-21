@@ -31,10 +31,8 @@ interface FFXIVCollectOwnedAchievementItem {
   obtained_at: string;
 }
 
-interface FFXIVCollectCharacterOwnedAchievementsResponse {
-  results: FFXIVCollectOwnedAchievementItem[];
-  count: number;
-}
+// Corrected: This endpoint returns a direct array of FFXIVCollectOwnedAchievementItem
+type FFXIVCollectCharacterOwnedAchievementsResponse = FFXIVCollectOwnedAchievementItem[];
 
 
 // Add timeout wrapper for fetch requests
@@ -225,12 +223,12 @@ export async function GET(request: Request) {
           throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
         }
       } else {
-        // Parse the response as the new FFXIVCollectCharacterOwnedAchievementsResponse interface
+        // Parse the response as a direct array of FFXIVCollectOwnedAchievementItem
         const ffxivCollectData: FFXIVCollectCharacterOwnedAchievementsResponse = await achievementsResponse.json();
-        console.log(`[API Character] Raw FFXIVCollect owned achievements data received (count: ${ffxivCollectData.count}, first 5 data entries): ${JSON.stringify(ffxivCollectData.results?.slice(0,5), null, 2)}`);
+        console.log(`[API Character] Raw FFXIVCollect owned achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
 
-        if (Array.isArray(ffxivCollectData.results)) {
-          completedAchievementsFromAPI = ffxivCollectData.results.map(item => ({
+        if (Array.isArray(ffxivCollectData) && ffxivCollectData.every(item => typeof item === 'object' && item !== null && 'id' in item && 'obtained_at' in item)) {
+          completedAchievementsFromAPI = ffxivCollectData.map(item => ({
             id: item.id,
             completionDate: item.obtained_at,
           }));
