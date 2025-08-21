@@ -4,7 +4,7 @@ import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 // Tomestone.gg API response structures based on api-docs.json
 // Corrected to reflect that the root response is the character object itself
 interface TomestoneProfileCharacter {
-  id: string; // This is the Lodestone ID we need
+  id: number; // Changed from string to number
   name: string;
   server: string;
   avatar: string;
@@ -16,7 +16,7 @@ interface TomestoneProfileCharacter {
     rankPosition: number;
     rankPercent: number;
     cssRankClassName: string;
-  };
+  } | null; // Made achievementPoints nullable
   // Other fields from the Tomestone.gg response can be added if needed,
   // but for now, we only extract what's necessary for our Character interface.
 }
@@ -25,12 +25,15 @@ interface TomestoneProfileCharacter {
 type TomestoneProfileResponse = TomestoneProfileCharacter;
 
 // FFXIVCollect API response structures for character achievements
-// This interface is for the /characters/{ID}/achievements/owned endpoint
-// It returns a direct array of achievement objects, not a nested structure.
-type FFXIVCollectOwnedAchievementsResponse = Array<{
+// This interface is for the /characters/{ID}/achievements endpoint, which includes a 'pivot' object
+interface FFXIVCollectCharacterAchievement {
   id: number;
-  obtained_at: string; // Assuming obtained_at is directly on the achievement object
-}>;
+  pivot?: { // The pivot object contains the obtained_at date
+    obtained_at: string;
+  };
+  // Other achievement fields might be here, but we only care about id and obtained_at for completed list
+}
+type FFXIVCollectCharacterAchievementsResponse = FFXIVCollectCharacterAchievement[];
 
 
 // Add timeout wrapper for fetch requests
@@ -135,7 +138,7 @@ export async function GET(request: Request) {
   let completedAchievements: Array<{ id: number; completionDate: string }> = [];
   let isRealData = false;
   let apiErrorReason: string | undefined;
-  let lodestoneId: string | null = null; // This will store the Lodestone ID from Tomestone.gg
+  let lodestoneId: number | null = null; // Changed type to number
 
   // --- Step 1: Fetch Character Profile from Tomestone.gg (to get Lodestone ID and basic info) ---
   try {
@@ -175,9 +178,9 @@ export async function GET(request: Request) {
     const tomestoneProfileData: TomestoneProfileResponse = await profileResponse.json();
     console.log(`[API Character] Raw Tomestone profile data received: ${JSON.stringify(tomestoneProfileData, null, 2)}`);
     
-    // Check if the parsed data has the expected structure
-    if (!tomestoneProfileData || !tomestoneProfileData.id || !tomestoneProfileData.achievementPoints) {
-      console.error("[API Character Error] Tomestone.gg profile data missing expected fields (id or achievementPoints).");
+    // Check if the parsed data has the expected structure, allowing achievementPoints to be null
+    if (!tomestoneProfileData || !tomestoneProfileData.id || tomestoneProfileData.achievementPoints === undefined) {
+      console.error("[API Character Error] Tomestone.gg profile data missing expected fields (id or achievementPoints property).");
       throw new Error("Invalid character data from Tomestone.gg profile result");
     }
 
@@ -194,8 +197,8 @@ export async function GET(request: Request) {
   // --- Step 2: Fetch Completed Achievements from FFXIVCollect (if Lodestone ID obtained) ---
   if (lodestoneId && isRealData) {
     try {
-      // Use the '/achievements/owned' endpoint to get the detailed list with 'times=true'
-      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned?times=true`;
+      // Use the '/achievements' endpoint to get the detailed list with 'times=true' and 'pivot' data
+      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements?times=true`;
       
       console.log(`[API Character] Attempting to fetch achievements from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
       
@@ -221,16 +224,16 @@ export async function GET(request: Request) {
           throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
         }
       } else {
-        // Parse the response directly as an array of achievement objects
-        const ffxivCollectData: FFXIVCollectOwnedAchievementsResponse = await achievementsResponse.json();
+        // Parse the response as an array of FFXIVCollectCharacterAchievement objects
+        const ffxivCollectData: FFXIVCollectCharacterAchievementsResponse = await achievementsResponse.json();
         console.log(`[API Character] Raw FFXIVCollect achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
 
         if (Array.isArray(ffxivCollectData)) {
           completedAchievements = ffxivCollectData
-            .filter(ach => ach.id && ach.obtained_at) // Changed from ach.pivot?.obtained_at
+            .filter(ach => ach.id && ach.pivot?.obtained_at) // Look for pivot.obtained_at
             .map(ach => ({
               id: ach.id,
-              completionDate: ach.obtained_at // Changed from ach.pivot.obtained_at
+              completionDate: ach.pivot!.obtained_at // Use pivot.obtained_at
             }));
           console.log(`[API Character] Successfully parsed ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
         } else {
@@ -260,7 +263,7 @@ export async function GET(request: Request) {
   if (isRealData && realCharacterData) {
     // If Tomestone.gg profile was successful
     finalCharacterData = {
-      id: realCharacterData.id,
+      id: realCharacterData.id.toString(), // Convert number ID to string for Character interface
       name: realCharacterData.name,
       server: realCharacterData.server,
       avatar: realCharacterData.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
