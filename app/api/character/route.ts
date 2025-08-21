@@ -25,15 +25,8 @@ interface TomestoneProfileCharacter {
 type TomestoneProfileResponse = TomestoneProfileCharacter;
 
 // FFXIVCollect API response structures for character achievements
-// This interface is for the /characters/{ID}/achievements endpoint, which includes a 'pivot' object
-interface FFXIVCollectCharacterAchievement {
-  id: number;
-  pivot?: { // The pivot object contains the obtained_at date
-    obtained_at: string;
-  };
-  // Other achievement fields might be here, but we only care about id and obtained_at for completed list
-}
-type FFXIVCollectCharacterAchievementsResponse = FFXIVCollectCharacterAchievement[];
+// This interface is for the /characters/{ID}/achievements/owned endpoint, which returns an array of achievement IDs
+type FFXIVCollectCharacterOwnedAchievementsResponse = number[];
 
 
 // Add timeout wrapper for fetch requests
@@ -121,7 +114,7 @@ export async function GET(request: Request) {
   const validServers = [
     "Adamantoise", "Cactuar", "Faerie", "Gilgamesh", "Jenova", "Midgardsormr", "Sargatanas", "Siren",
     "Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera",
-    "Behemoth", "Excalibur", "Exodus", "Famfrit", "Hyperion", "Lamia", "Leviathan", "Ultros"
+    "Behemoth", "Excalibur", "Exodus", "Famfrit", "Primal", "Lamia", "Leviathan", "Ultros"
   ];
   
   if (!validServers.includes(serverParam)) {
@@ -135,7 +128,7 @@ export async function GET(request: Request) {
   console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
   let realCharacterData: TomestoneProfileCharacter | null = null;
-  let completedAchievements: Array<{ id: number; completionDate: string }> = [];
+  let completedAchievementIds: number[] = []; // Changed to store just IDs
   let isRealData = false;
   let apiErrorReason: string | undefined;
   let lodestoneId: number | null = null; // Changed type to number
@@ -197,9 +190,8 @@ export async function GET(request: Request) {
   // --- Step 2: Fetch Completed Achievements from FFXIVCollect (if Lodestone ID obtained) ---
   if (lodestoneId && isRealData) {
     try {
-      // Use the '/achievements' endpoint to get the detailed list with 'times=true' and 'pivot' data
-      // CORRECTED: Removed '/owned' from the URL
-      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements?times=true`;
+      // Use the '/achievements/owned' endpoint to get the list of completed achievement IDs
+      const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned`;
       
       console.log(`[API Character] Attempting to fetch achievements from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
       
@@ -225,23 +217,16 @@ export async function GET(request: Request) {
           throw new Error(`FFXIVCollect achievements fetch failed with status ${achievementsResponse.status}`);
         }
       } else {
-        // Parse the response as an array of FFXIVCollectCharacterAchievement objects
-        const ffxivCollectData: FFXIVCollectCharacterAchievementsResponse = await achievementsResponse.json();
-        console.log(`[API Character] Raw FFXIVCollect achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
+        // Parse the response as an array of numbers (achievement IDs)
+        const ffxivCollectData: FFXIVCollectCharacterOwnedAchievementsResponse = await achievementsResponse.json();
+        console.log(`[API Character] Raw FFXIVCollect owned achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
 
-        if (Array.isArray(ffxivCollectData)) {
-          // Filter for achievements that have an ID, and extract completionDate if available
-          completedAchievements = ffxivCollectData
-            .filter(ach => ach.id) // Only include if ID exists
-            .map(ach => ({
-              id: ach.id,
-              // Use pivot.obtained_at if available, otherwise null
-              completionDate: ach.pivot?.obtained_at || null 
-            })) as Array<{ id: number; completionDate: string }>; // Cast to expected type
-          console.log(`[API Character] Successfully parsed ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
+        if (Array.isArray(ffxivCollectData) && ffxivCollectData.every(id => typeof id === 'number')) {
+          completedAchievementIds = ffxivCollectData;
+          console.log(`[API Character] Successfully parsed ${completedAchievementIds.length} real completed achievement IDs from FFXIVCollect.`);
         } else {
-          console.warn("[API Character] FFXIVCollect Achievements data is not a valid array in response. Will use mock completed achievements.");
-          apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid achievements list.";
+          console.warn("[API Character] FFXIVCollect Owned Achievements data is not a valid array of numbers. Will use mock completed achievements.");
+          apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "FFXIVCollect did not return a valid owned achievements list.";
           // Do NOT set isRealData to false here. We still have the basic character profile.
         }
       }
@@ -258,7 +243,7 @@ export async function GET(request: Request) {
 
   // --- Final Data Construction ---
   let finalCharacterData;
-  let finalCompletedAchievements;
+  let finalCompletedAchievements: Array<{ id: number; completionDate: string | null }> = []; // Allow null completionDate
   let finalIsMockData = false;
   let finalError: string | undefined;
   const now = new Date().toISOString(); // Get current timestamp
@@ -278,13 +263,18 @@ export async function GET(request: Request) {
     };
     
     // If FFXIVCollect achievements failed or were private, use mock completed achievements
-    if (apiErrorReason?.includes("private profile") || !completedAchievements.length) {
+    // Otherwise, map the completedAchievementIds to the expected format with null completionDate
+    if (apiErrorReason?.includes("private profile") || completedAchievementIds.length === 0) {
       const mockCompleted = generateMockCharacterData(nameParam, serverParam).completedAchievements;
       finalCompletedAchievements = mockCompleted;
       finalIsMockData = true; // Mark as mock data if completed achievements are mocked
       finalError = apiErrorReason || "Using demo completed achievements due to API issue.";
     } else {
-      finalCompletedAchievements = completedAchievements;
+      // Map the array of IDs to the { id: number, completionDate: string | null } format
+      finalCompletedAchievements = completedAchievementIds.map(id => ({
+        id: id,
+        completionDate: null, // Set to null as /owned endpoint doesn't provide date
+      }));
       finalIsMockData = false;
       finalError = apiErrorReason; // Any non-critical errors from FFXIVCollect that didn't force mock
     }
