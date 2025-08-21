@@ -10,14 +10,15 @@ import { getAriaLabel } from "@/lib/utils/accessibility";
 
 interface AchievementTableRowProps {
   achievement: AchievementWithTSRG;
+  onClick: (achievement: AchievementWithTSRG) => void; // New prop for click handler
 }
 
-export function AchievementTableRow({ achievement }: AchievementTableRowProps) {
+export function AchievementTableRow({ achievement, onClick }: AchievementTableRowProps) {
   return (
     <TableRow 
       key={achievement.id} 
       className={`
-        border-compass-700 transition-colors
+        border-compass-700 transition-colors cursor-pointer
         ${achievement.isCompleted 
           ? 'bg-gradient-to-r from-gold-900/20 to-compass-900/20 hover:from-gold-800/30 hover:to-compass-800/30 border-l-4 border-l-gold-500' 
           : 'hover:bg-compass-800/50'
@@ -25,6 +26,7 @@ export function AchievementTableRow({ achievement }: AchievementTableRowProps) {
       `}
       data-testid={`achievement-row-${achievement.id}`}
       aria-label={getAriaLabel(achievement)}
+      onClick={() => onClick(achievement)} // Call onClick prop
     >
       <TableCell className="p-2">
         <div className="relative">
@@ -106,10 +108,7 @@ export function AchievementTableRow({ achievement }: AchievementTableRowProps) {
           </Badge>
         )}
       </TableCell>
-      <TableCell className="text-compass-300">
-        {/* Completion Date removed */}
-        -
-      </TableCell>
+      {/* Removed Completion Date TableCell */}
     </TableRow>
   );
 }

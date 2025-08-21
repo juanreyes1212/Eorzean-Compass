@@ -10,6 +10,7 @@ interface AchievementTableContentProps {
   sortColumn: SortColumn;
   sortDirection: SortDirection;
   onSort: (column: SortColumn) => void;
+  onAchievementClick: (achievement: AchievementWithTSRG) => void; // New prop
 }
 
 export function AchievementTableContent({
@@ -17,6 +18,7 @@ export function AchievementTableContent({
   sortColumn,
   sortDirection,
   onSort,
+  onAchievementClick, // Destructure new prop
 }: AchievementTableContentProps) {
   return (
     <div className="rounded-md border border-compass-700 overflow-hidden" data-testid="achievements-table">
@@ -70,17 +72,21 @@ export function AchievementTableContent({
               </div>
             </TableHead>
             <TableHead className="text-compass-100">Status</TableHead>
-            <TableHead className="text-compass-100">Completion Date</TableHead>
+            {/* Removed Completion Date TableHead */}
           </TableRow>
         </TableHeader>
         <TableBody data-testid="achievements-table-body">
           {achievements.length > 0 ? (
             achievements.map((achievement) => (
-              <AchievementTableRow key={achievement.id} achievement={achievement} />
+              <AchievementTableRow 
+                key={achievement.id} 
+                achievement={achievement} 
+                onClick={() => onAchievementClick(achievement)} // Pass click handler
+              />
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-compass-400" data-testid="no-achievements-message">
+              <TableCell colSpan={7} className="text-center py-8 text-compass-400" data-testid="no-achievements-message">
                 No achievements found matching your filters.
               </TableCell>
             </TableRow>

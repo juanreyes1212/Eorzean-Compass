@@ -4,7 +4,7 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { RecommendationsDashboard } from "@/components/recommendations-dashboard";
-import { TSRGFiltersComponent } from "@/components/tsrg-filters";
+import { TSRGFiltersComponent } from "@/components/tsrg-filters"; // Keep import for type
 import { CategoryFilter } from "@/components/category-filter";
 import { SearchFilter } from "@/components/search-filter";
 import { AchievementTablePaginated } from "@/components/achievement-table-paginated";
@@ -39,7 +39,7 @@ export function AchievementsPageContent({
             Recommendations & Projects
           </TabsTrigger>
           <TabsTrigger value="achievements" className="data-[state=active]:bg-compass-700 text-compass-100">
-            All Achievements ({allAchievements.length})
+            Your Achievements ({allAchievements.length})
           </TabsTrigger>
         </TabsList>
 
@@ -64,15 +64,14 @@ export function AchievementsPageContent({
           <React.Fragment>
             <div className="compass-card p-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h2 className="text-2xl font-bold text-compass-100">All Achievements with TSR-G Analysis</h2>
+                <h2 className="text-2xl font-bold text-compass-100">Your Achievements with TSR-G Analysis</h2>
                 <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                   <CategoryFilter />
                   <SearchFilter />
                 </div>
               </div>
               
-              {/* TSR-G Filters Component rendered here, controlling preferences */}
-              <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+              {/* TSR-G Filters Component moved to ClientAchievementsPage */}
 
               {achievementsLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -85,6 +84,7 @@ export function AchievementsPageContent({
                   allAchievements={allAchievements}
                   preferences={preferences}
                   setPreferences={setPreferences}
+                  onAchievementClick={onAchievementClick}
                 />
               )}
             </div>

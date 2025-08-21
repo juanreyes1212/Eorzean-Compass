@@ -30,6 +30,8 @@ import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AchievementsPageHeader } from "./achievements-page/AchievementsPageHeader";
 import { AchievementsPageContent } from "./achievements-page/AchievementsPageContent";
+import { AchievementDetailsModal } from "./achievement-details-modal"; // Import the modal
+import { TSRGFiltersComponent } from "./tsrg-filters"; // Import TSRGFiltersComponent
 
 interface ClientAchievementsPageProps {
   name: string;
@@ -43,6 +45,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const [achievementsLoading, setAchievementsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [selectedAchievementForDetails, setSelectedAchievementForDetails] = useState<AchievementWithTSRG | null>(null); // New state for details modal
   const { toast } = useToast();
 
   // Initialize storageInfo with a default, server-safe value
@@ -303,13 +306,18 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   }, [characterData, allAchievements]);
 
 
-  // Handle achievement click from recommendations
+  // Handle achievement click from recommendations or table
   const handleAchievementClick = (achievement: AchievementWithTSRG) => {
+    // First, open the details modal
+    setSelectedAchievementForDetails(achievement);
+
+    // Then, if coming from recommendations, switch to achievements tab and highlight
     const achievementsTab = document.querySelector('[value="achievements"]') as HTMLElement;
-    if (achievementsTab) {
+    if (achievementsTab && document.querySelector('[data-state="active"]')?.getAttribute('value') !== 'achievements') {
       achievementsTab.click();
     }
     
+    // Highlight the row after a short delay to allow tab transition
     setTimeout(() => {
       const achievementRow = document.querySelector(`[data-testid="achievement-row-${achievement.id}"]`);
       if (achievementRow) {
@@ -412,6 +420,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         </Alert>
       )}
 
+      {/* TSR-G Filters Component moved here */}
+      <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+
       <AchievementsPageContent
         allAchievements={allAchievements}
         completedAchievementsWithTSRG={completedAchievementsWithTSRG}
@@ -421,6 +432,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         characterId={characterData.character.id}
         completedAchievements={characterData.completedAchievements || []}
         onAchievementClick={handleAchievementClick}
+      />
+
+      {/* Achievement Details Modal */}
+      <AchievementDetailsModal 
+        achievement={selectedAchievementForDetails}
+        isOpen={!!selectedAchievementForDetails}
+        onClose={() => setSelectedAchievementForDetails(null)}
       />
     </div>
   );

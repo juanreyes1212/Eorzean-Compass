@@ -97,7 +97,6 @@ export function RecommendationsDashboard({
       case 'category_preference': return 'text-blue-400';
       case 'rarity': return 'text-yellow-400';
       case 'points_efficient': return 'text-orange-400';
-      case 'similar_achievements': return 'text-cyan-400';
       default: return 'text-slate-400';
     }
   };
@@ -201,8 +200,10 @@ export function RecommendationsDashboard({
                       <Badge className={`${getTierColor(rec.achievement.tsrg.tier)} text-white text-xs`}>
                         {getTierName(rec.achievement.tsrg.tier)}
                       </Badge>
+                      <Badge variant="outline" className="bg-compass-700/50 text-compass-300 border-compass-600 text-xs">
+                        {rec.achievement.points} Points
+                      </Badge>
                       <div className="text-right">
-                        <div className="text-sm font-medium text-white">{rec.achievement.points}pts</div>
                         <div className="text-xs text-slate-400">{rec.estimatedTimeToComplete}</div>
                       </div>
                     </div>

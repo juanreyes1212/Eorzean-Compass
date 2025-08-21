@@ -15,6 +15,7 @@ interface AchievementTablePaginatedProps {
   allAchievements: AchievementWithTSRG[]; // Now receives all achievements
   preferences: UserPreferences; // Now receives preferences as a prop
   setPreferences: React.Dispatch<React.SetStateAction<UserPreferences>>; // Add setPreferences prop
+  onAchievementClick: (achievement: AchievementWithTSRG) => void; // New prop
 }
 
 export function AchievementTablePaginated({ 
@@ -22,7 +23,8 @@ export function AchievementTablePaginated({
   completedAchievements = [],
   allAchievements = [],
   preferences, // Use preferences prop
-  setPreferences // Use setPreferences prop
+  setPreferences, // Use setPreferences prop
+  onAchievementClick, // Destructure new prop
 }: AchievementTablePaginatedProps) {
   const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
@@ -202,6 +204,7 @@ export function AchievementTablePaginated({
         sortColumn={sortColumn}
         sortDirection={sortDirection}
         onSort={handleSort}
+        onAchievementClick={onAchievementClick}
       />
 
       {/* Pagination Controls - Bottom */}
