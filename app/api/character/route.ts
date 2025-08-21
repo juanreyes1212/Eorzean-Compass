@@ -198,6 +198,7 @@ export async function GET(request: Request) {
   if (lodestoneId && isRealData) {
     try {
       // Use the '/achievements' endpoint to get the detailed list with 'times=true' and 'pivot' data
+      // CORRECTED: Removed '/owned' from the URL
       const ffxivCollectAchievementsUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements?times=true`;
       
       console.log(`[API Character] Attempting to fetch achievements from FFXIVCollect: ${ffxivCollectAchievementsUrl}`);
@@ -229,12 +230,14 @@ export async function GET(request: Request) {
         console.log(`[API Character] Raw FFXIVCollect achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
 
         if (Array.isArray(ffxivCollectData)) {
+          // Filter for achievements that have an ID, and extract completionDate if available
           completedAchievements = ffxivCollectData
-            .filter(ach => ach.id && ach.pivot?.obtained_at) // Look for pivot.obtained_at
+            .filter(ach => ach.id) // Only include if ID exists
             .map(ach => ({
               id: ach.id,
-              completionDate: ach.pivot!.obtained_at // Use pivot.obtained_at
-            }));
+              // Use pivot.obtained_at if available, otherwise null
+              completionDate: ach.pivot?.obtained_at || null 
+            })) as Array<{ id: number; completionDate: string }>; // Cast to expected type
           console.log(`[API Character] Successfully parsed ${completedAchievements.length} real completed achievements from FFXIVCollect.`);
         } else {
           console.warn("[API Character] FFXIVCollect Achievements data is not a valid array in response. Will use mock completed achievements.");
