@@ -16,6 +16,7 @@ import {
 } from "@/lib/recommendations";
 import { getTierName, getTierColor } from "@/lib/tsrg-matrix";
 import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement-icon";
+import { AchievementDetailsModal } from "./achievement-details-modal"; // Import the new modal
 import { 
   AchievementRecommendation, 
   AchievementProject, 
@@ -38,6 +39,7 @@ export function RecommendationsDashboard({
   onAchievementClick
 }: RecommendationsDashboardProps) {
   const [selectedProject, setSelectedProject] = useState<AchievementProject | null>(null);
+  const [selectedAchievementForDetails, setSelectedAchievementForDetails] = useState<AchievementWithTSRG | null>(null); // New state for details modal
 
   // Generate recommendations and projects - always run these hooks
   const recommendations = useMemo(() => {
@@ -314,8 +316,8 @@ export function RecommendationsDashboard({
                   <div className="text-sm text-slate-300">Total Points</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{selectedProject.estimatedTime}</div>
-                  <div className="text-sm text-slate-300">Est. Time</div>
+                  <div className="text-2xl font-bold text-white">{selectedProject.achievements.length}</div>
+                  <div className="text-sm text-slate-300">Achievements</div>
                 </div>
               </div>
 
@@ -325,10 +327,7 @@ export function RecommendationsDashboard({
                   <div 
                     key={achievement.id}
                     className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 cursor-pointer"
-                    onClick={() => {
-                      onAchievementClick?.(achievement);
-                      setSelectedProject(null); // Close dialog after clicking an achievement
-                    }}
+                    onClick={() => setSelectedAchievementForDetails(achievement)} // Open new details modal
                   >
                     <AchievementIcon
                       icon={getAchievementIconUrl(achievement.icon)}
@@ -358,6 +357,13 @@ export function RecommendationsDashboard({
           </DialogClose>
         </DialogContent>
       </Dialog>
+
+      {/* Achievement Details Modal */}
+      <AchievementDetailsModal 
+        achievement={selectedAchievementForDetails}
+        isOpen={!!selectedAchievementForDetails}
+        onClose={() => setSelectedAchievementForDetails(null)}
+      />
       </Tabs>
     </div>
   );

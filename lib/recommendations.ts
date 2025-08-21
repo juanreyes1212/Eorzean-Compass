@@ -249,7 +249,7 @@ export function generateAchievementProjects(
     Object.entries(tierGroups).forEach(([tier, tierAchievements]) => {
       if (tierAchievements.length >= 3) { // Only create projects with 3+ achievements
         const tierNum = parseInt(tier);
-        const completed = tierAchievements.filter(a => completedIds.has(a.id));
+        const completedInProject = tierAchievements.filter(a => completedIds.has(a.id));
         const totalPoints = tierAchievements.reduce((sum, a) => sum + a.points, 0);
         const avgTime = tierAchievements.reduce((sum, a) => sum + a.tsrg.time, 0) / tierAchievements.length;
         
@@ -264,14 +264,14 @@ export function generateAchievementProjects(
         projects.push({
           id: `${category.toLowerCase().replace(/\s+/g, '-')}-tier-${tier}`,
           name: `${category} - ${tierNames[tierNum]} Mastery`,
-          description: `Complete all ${tierNames[tierNum].toLowerCase()} ${category.toLowerCase()} achievements`,
+          description: `Complete all ${tierNames[tierNum].toLowerCase()} ${category.toLowerCase()} achievements. This project contains ${tierAchievements.length} achievements worth ${totalPoints} points.`,
           category,
           achievements: tierAchievements,
           totalPoints,
           estimatedTime,
           difficulty: tierNum,
-          completionRate: (completed.length / tierAchievements.length) * 100,
-          isCompleted: completed.length === tierAchievements.length,
+          completionRate: (completedInProject.length / tierAchievements.length) * 100,
+          isCompleted: completedInProject.length === tierAchievements.length,
         });
       }
     });
