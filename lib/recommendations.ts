@@ -65,19 +65,20 @@ export function analyzeUserSkillProfile(completedAchievements: AchievementWithTS
 // Generate personalized recommendations
 export function generateRecommendations(
   allAchievements: AchievementWithTSRG[],
-  completedAchievements: CompletedAchievement[],
+  completedAchievements: CompletedAchievement[], // This is now just IDs
   preferences: UserPreferences,
   maxRecommendations: number = 10
 ): AchievementRecommendation[] {
   const completedIds = new Set(completedAchievements.map(a => a.id));
   
   // Filter all achievements to get only the ones that are actually completed and have TSRG data
+  // This is used for user profile analysis
   const completedAchievementsWithTSRG = allAchievements.filter(a => completedIds.has(a.id));
   const userProfile = analyzeUserSkillProfile(completedAchievementsWithTSRG);
   
   // Filter available achievements
   const availableAchievements = allAchievements.filter(achievement => {
-    // Skip completed achievements
+    // Skip completed achievements if preference is set
     if (preferences.hideCompleted && completedIds.has(achievement.id)) return false;
     
     // Skip unobtainable if preference is set
@@ -225,7 +226,7 @@ export function generateRecommendations(
 // Generate achievement projects (grouped related achievements)
 export function generateAchievementProjects(
   allAchievements: AchievementWithTSRG[],
-  completedIds: Set<number>
+  completedIds: Set<number> // This is now a Set of IDs
 ): AchievementProject[] {
   const projects: AchievementProject[] = [];
 
@@ -249,6 +250,7 @@ export function generateAchievementProjects(
     Object.entries(tierGroups).forEach(([tier, tierAchievements]) => {
       if (tierAchievements.length >= 3) { // Only create projects with 3+ achievements
         const tierNum = parseInt(tier);
+        // Filter tierAchievements to get only the ones that are actually completed
         const completedInProject = tierAchievements.filter(a => completedIds.has(a.id));
         const totalPoints = tierAchievements.reduce((sum, a) => sum + a.points, 0);
         const avgTime = tierAchievements.reduce((sum, a) => sum + a.tsrg.time, 0) / tierAchievements.length;

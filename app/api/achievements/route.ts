@@ -65,31 +65,46 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
 
 // Generate mock achievements data with icons
 function generateMockAchievements(): any[] {
-  const categories = ["Battle", "Character", "Items", "Crafting & Gathering", "Quests", "Exploration", "PvP", "Grand Company"];
-  const achievementNames = [
+  const categories = ["Battle", "Character", "Items", "Crafting & Gathering", "Quests", "Exploration", "PvP", "Grand Company", "Legacy"];
+  const baseNames = [
     "The Ultimate Hunter", "Master Crafter", "Dungeon Delver", "PvP Champion", "Explorer Extraordinaire",
-    "Quest Seeker", "Item Collector", "Beast Slayer", "Gathering Guru", "Trial Conqueror"
+    "Quest Seeker", "Item Collector", "Beast Slayer", "Gathering Guru", "Trial Conqueror",
+    "FATE Finisher", "Levemate", "Triple Triad Master", "Mahjong Mogul", "Ocean Fisher",
+    "Deep Dungeon Diver", "Eureka Explorer", "Bozjan Battler", "Relic Reborn", "Mount Collector"
   ];
-  const achievementSuffixes = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+  const adjectives = ["Grand", "Epic", "Legendary", "Swift", "Mighty", "Hidden", "Glorious", "Unseen", "Eternal", "Valiant"];
+  const nouns = ["Journey", "Feat", "Triumph", "Conquest", "Odyssey", "Saga", "Venture", "Pursuit", "Challenge", "Legacy"];
   const achievements = [];
   
   for (let i = 1; i <= 2500; i++) {
     const category = categories[Math.floor(Math.random() * categories.length)];
     const isObtainable = category !== "Legacy" && Math.random() > 0.05; // 95% obtainable
     
-    // Generate a more varied name
-    const baseName = achievementNames[Math.floor(Math.random() * achievementNames.length)];
-    const suffix = achievementSuffixes[Math.floor(Math.random() * achievementSuffixes.length)];
-    const name = `${baseName} ${suffix}`;
+    // Generate a more varied and unique name
+    const namePart1 = baseNames[Math.floor(Math.random() * baseNames.length)];
+    const namePart2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const namePart3 = nouns[Math.floor(Math.random() * nouns.length)];
+    const name = `${namePart1}: ${namePart2} ${namePart3} ${i}`; // Add unique ID to ensure uniqueness
+
+    // Generate a more varied description
+    const descriptionTemplates = [
+      `Complete the arduous task of ${namePart1.toLowerCase()} to earn this prestigious award.`,
+      `Prove your ${namePart2.toLowerCase()} skills in ${category.toLowerCase()} by achieving this remarkable ${namePart3.toLowerCase()}.`,
+      `This achievement signifies your dedication to ${category.toLowerCase()} and your mastery of ${namePart1.toLowerCase()} challenges.`,
+      `A testament to your ${namePart2.toLowerCase()} spirit and your relentless ${namePart3.toLowerCase()} across Eorzea.`,
+      `Only the most ${adjectives[Math.floor(Math.random() * adjectives.length)].toLowerCase()} adventurers can claim this ${nouns[Math.floor(Math.random() * nouns.length)].toLowerCase()}.`
+    ];
+    const description = descriptionTemplates[Math.floor(Math.random() * descriptionTemplates.length)];
 
     // Generate a semi-realistic icon path (using FFXIV Collect pattern for mock)
-    const iconVariant = String(i).padStart(6, '0');
-    const iconPath = `/images/achievements/061000/061${iconVariant.slice(-3)}.png`; // Relative path for mock
+    const iconId = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0'); // Random 3-digit number
+    const iconCategory = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0'); // Random 3-digit number for category
+    const iconPath = `/images/achievements/061${iconCategory}/061${iconId}.png`; // Relative path for mock
     
     achievements.push({
       id: i,
       name: name,
-      description: `This is a ${category.toLowerCase()} achievement that tests your skills in FFXIV. It involves ${name.toLowerCase().replace(/ .*/, '')} activities.`,
+      description: description,
       category,
       points: Math.floor(Math.random() * 15) * 5, // Points in multiples of 5, up to 70
       patch: `${Math.floor(Math.random() * 6) + 1}.${Math.floor(Math.random() * 5)}`,
