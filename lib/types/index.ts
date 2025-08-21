@@ -13,7 +13,6 @@ export interface Character {
 
 export interface CompletedAchievement {
   id: number;
-  completionDate: string;
 }
 
 export interface Achievement {
@@ -30,7 +29,6 @@ export interface Achievement {
 
 export interface AchievementWithStatus extends Achievement {
   isCompleted: boolean;
-  completionDate: string | null;
 }
 
 export interface TSRGScore {

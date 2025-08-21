@@ -230,14 +230,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       
       const cachedAchievements = getStoredAchievements();
       if (cachedAchievements && characterData && !forceRefresh) {
+        const completedAchievementIds = new Set(characterData.completedAchievements?.map(comp => comp.id));
         const achievementsWithStatus = cachedAchievements.map((achievement: any) => {
-          const isCompleted = characterData.completedAchievements?.some(comp => comp.id === achievement.id) || false;
-          const completionDate = characterData.completedAchievements?.find(comp => comp.id === achievement.id)?.completionDate || null;
+          const isCompleted = completedAchievementIds.has(achievement.id);
           
           return {
             ...achievement,
             isCompleted,
-            completionDate,
             tsrg: achievement.tsrg || calculateTSRGScore(achievement),
           };
         });
@@ -255,14 +254,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const achievements = await response.json();
       storeAchievements(achievements);
       
+      const completedAchievementIds = new Set(characterData?.completedAchievements?.map(comp => comp.id));
       const achievementsWithTSRG = achievements.map((achievement: any) => {
-        const isCompleted = characterData?.completedAchievements?.some(comp => comp.id === achievement.id) || false;
-        const completionDate = characterData?.completedAchievements?.find(comp => comp.id === achievement.id)?.completionDate || null;
+        const isCompleted = completedAchievementIds.has(achievement.id);
         
         return {
           ...achievement,
           isCompleted,
-          completionDate,
           tsrg: achievement.tsrg || calculateTSRGScore(achievement),
         };
       });

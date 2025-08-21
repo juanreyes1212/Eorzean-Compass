@@ -6,12 +6,12 @@ import { AchievementStats } from "./achievement-table/AchievementStats";
 import { AchievementTableContent } from "./achievement-table/AchievementTableContent";
 import { AchievementTablePagination } from "./achievement-table/AchievementTablePagination";
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
-import { AchievementWithTSRG, UserPreferences, SortColumn, SortDirection } from "@/lib/types"; // Import SortColumn, SortDirection
+import { AchievementWithTSRG, UserPreferences, SortColumn, SortDirection, CompletedAchievement } from "@/lib/types"; // Import SortColumn, SortDirection, CompletedAchievement
 import { PAGINATION } from "@/lib/constants"; // Import from constants
 
 interface AchievementTablePaginatedProps {
   characterId: string;
-  completedAchievements?: Array<{ id: number; completionDate: string }>;
+  completedAchievements?: CompletedAchievement[]; // Updated type here
   allAchievements: AchievementWithTSRG[]; // Now receives all achievements
   preferences: UserPreferences; // Now receives preferences as a prop
   setPreferences: React.Dispatch<React.SetStateAction<UserPreferences>>; // Add setPreferences prop

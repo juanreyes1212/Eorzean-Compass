@@ -8,7 +8,7 @@ import { TSRGFiltersComponent } from "@/components/tsrg-filters";
 import { CategoryFilter } from "@/components/category-filter";
 import { SearchFilter } from "@/components/search-filter";
 import { AchievementTablePaginated } from "@/components/achievement-table-paginated";
-import { AchievementWithTSRG, UserPreferences } from "@/lib/types";
+import { AchievementWithTSRG, UserPreferences, CompletedAchievement } from "@/lib/types"; // Import CompletedAchievement
 
 interface AchievementsPageContentProps {
   allAchievements: AchievementWithTSRG[];
@@ -17,7 +17,7 @@ interface AchievementsPageContentProps {
   setPreferences: React.Dispatch<React.SetStateAction<UserPreferences>>; // Updated type here
   achievementsLoading: boolean;
   characterId: string;
-  completedAchievements: Array<{ id: number; completionDate: string }>;
+  completedAchievements: CompletedAchievement[]; // Updated type here
   onAchievementClick: (achievement: AchievementWithTSRG) => void;
 }
 

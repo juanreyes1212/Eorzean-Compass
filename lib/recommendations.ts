@@ -5,7 +5,8 @@ import {
   RecommendationReason, // Imported from centralized types
   AchievementRecommendation, // Imported from centralized types
   UserProgress, // Imported from centralized types
-  AchievementProject // Imported from centralized types
+  AchievementProject, // Imported from centralized types
+  CompletedAchievement // Import CompletedAchievement
 } from './types'; // Import types from centralized location
 
 // Calculate user's skill profile based on completed achievements
@@ -64,12 +65,15 @@ export function analyzeUserSkillProfile(completedAchievements: AchievementWithTS
 // Generate personalized recommendations
 export function generateRecommendations(
   allAchievements: AchievementWithTSRG[],
-  completedAchievements: AchievementWithTSRG[],
+  completedAchievements: CompletedAchievement[],
   preferences: UserPreferences,
   maxRecommendations: number = 10
 ): AchievementRecommendation[] {
   const completedIds = new Set(completedAchievements.map(a => a.id));
-  const userProfile = analyzeUserSkillProfile(completedAchievements);
+  
+  // Filter all achievements to get only the ones that are actually completed and have TSRG data
+  const completedAchievementsWithTSRG = allAchievements.filter(a => completedIds.has(a.id));
+  const userProfile = analyzeUserSkillProfile(completedAchievementsWithTSRG);
   
   // Filter available achievements
   const availableAchievements = allAchievements.filter(achievement => {
@@ -181,7 +185,7 @@ export function generateRecommendations(
     }
 
     // Similar achievements bonus (if user has completed similar ones)
-    const similarCompleted = completedAchievements.filter(completed => 
+    const similarCompleted = completedAchievementsWithTSRG.filter(completed => 
       completed.category === achievement.category &&
       Math.abs(completed.tsrg.composite - achievement.tsrg.composite) <= 5
     );

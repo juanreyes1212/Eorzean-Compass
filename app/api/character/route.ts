@@ -86,7 +86,7 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
     if ((parseInt(characterId) + i) % 10 < 4) { // Roughly 40% completion
       completedAchievements.push({
         id: i,
-        completionDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+        // completionDate removed as per user request
       });
     }
   }
@@ -144,7 +144,7 @@ export async function GET(request: Request) {
   console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
   let realCharacterData: TomestoneProfileCharacter | null = null;
-  let completedAchievementsFromAPI: Array<{ id: number; completionDate: string | null }> = [];
+  let completedAchievementsFromAPI: Array<{ id: number }> = []; // Changed type to remove completionDate
   let isRealData = false;
   let apiErrorReason: string | undefined;
   let lodestoneId: number | null = null;
@@ -235,10 +235,9 @@ export async function GET(request: Request) {
         console.log(`[API Character] Raw FFXIVCollect owned achievements data received (count: ${ffxivCollectData.length}, first 5 data entries): ${JSON.stringify(ffxivCollectData.slice(0,5), null, 2)}`);
 
         if (Array.isArray(ffxivCollectData) && ffxivCollectData.every(item => typeof item === 'object' && item !== null && 'id' in item)) {
-          // Map to CompletedAchievement, setting completionDate to null as it's not provided by this endpoint
+          // Map to CompletedAchievement, only including the ID
           completedAchievementsFromAPI = ffxivCollectData.map(item => ({
             id: item.id,
-            completionDate: null, // Disregard obtained_at for now as per user's request
           }));
           console.log(`[API Character] Successfully parsed ${completedAchievementsFromAPI.length} real completed achievements from FFXIVCollect (no dates).`);
         } else {
@@ -257,7 +256,7 @@ export async function GET(request: Request) {
 
   // --- Final Data Construction ---
   let finalCharacterData;
-  let finalCompletedAchievements: Array<{ id: number; completionDate: string | null }> = [];
+  let finalCompletedAchievements: Array<{ id: number }> = []; // Changed type to remove completionDate
   let finalIsMockData = false;
   let finalError: string | undefined;
   const now = new Date().toISOString();

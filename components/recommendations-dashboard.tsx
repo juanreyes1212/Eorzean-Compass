@@ -20,12 +20,13 @@ import {
   AchievementRecommendation, 
   AchievementProject, 
   UserPreferences, 
-  AchievementWithTSRG 
+  AchievementWithTSRG,
+  CompletedAchievement // Import CompletedAchievement
 } from "@/lib/types"; // Import types from centralized location
 
 interface RecommendationsDashboardProps {
   allAchievements: AchievementWithTSRG[];
-  completedAchievements: AchievementWithTSRG[];
+  completedAchievements: CompletedAchievement[]; // Updated type here
   preferences: UserPreferences;
   onAchievementClick?: (achievement: AchievementWithTSRG) => void;
 }
@@ -51,8 +52,8 @@ export function RecommendationsDashboard({
   }, [allAchievements, completedAchievements]);
 
   const userProfile = useMemo(() => 
-    analyzeUserSkillProfile(completedAchievements),
-    [completedAchievements]
+    analyzeUserSkillProfile(allAchievements.filter(a => completedAchievements.some(ca => ca.id === a.id))), // Filter allAchievements to get completed ones with TSRG
+    [allAchievements, completedAchievements]
   );
 
   // Get top incomplete projects

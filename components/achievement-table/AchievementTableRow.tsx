@@ -12,24 +12,6 @@ interface AchievementTableRowProps {
   achievement: AchievementWithTSRG;
 }
 
-// Format date without external dependency
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return "Invalid Date";
-    }
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Invalid Date";
-  }
-}
-
 export function AchievementTableRow({ achievement }: AchievementTableRowProps) {
   return (
     <TableRow 
@@ -127,9 +109,8 @@ export function AchievementTableRow({ achievement }: AchievementTableRowProps) {
         )}
       </TableCell>
       <TableCell className="text-compass-300">
-        {achievement.completionDate
-          ? formatDate(achievement.completionDate)
-          : "-"}
+        {/* Completion Date removed */}
+        -
       </TableCell>
     </TableRow>
   );

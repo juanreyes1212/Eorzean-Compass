@@ -2,13 +2,13 @@
 
 import { CharacterProfile } from "@/components/character-profile";
 import { Database, HardDrive, RefreshCw, Clock } from 'lucide-react'; // Import Clock icon
-import { Character, AchievementWithTSRG } from "@/lib/types";
+import { Character, CompletedAchievement } from "@/lib/types"; // Import CompletedAchievement
 import { Button } from "@/components/ui/button"; // Import Button
 
 interface AchievementsPageHeaderProps {
   characterData: {
     character: Character;
-    completedAchievements: Array<{ id: number; completionDate: string }>;
+    completedAchievements: CompletedAchievement[]; // Updated type here
     _isMockData?: boolean;
     _isRealData?: boolean;
     _error?: string;
