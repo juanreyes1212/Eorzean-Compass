@@ -40,7 +40,8 @@ interface FFXIVCollectAchievementSearchResult {
 let achievementsCache: any[] | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
-const MAX_ACHIEVEMENTS_TO_FETCH = 3000; // Cap the total number of achievements to fetch
+// Removed MAX_ACHIEVEMENTS_TO_FETCH from here as a hard cap for fetching.
+// The loop will now fetch all available achievements.
 
 // Add timeout wrapper for fetch requests
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 15000): Promise<Response> {
@@ -125,7 +126,8 @@ async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
   const limit = 100; // FFXIV Collect default limit
   let totalAchievementsCount = 0; // To store the total count from the first response
 
-  while (allAchievements.length < MAX_ACHIEVEMENTS_TO_FETCH) {
+  // Loop until all achievements are fetched or an error occurs
+  while (true) {
     const offset = (page - 1) * limit;
     const url = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/achievements?limit=${limit}&offset=${offset}`;
     
@@ -139,7 +141,7 @@ async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
 
       if (!data.results || !Array.isArray(data.results)) {
         console.error(`Invalid data structure from FFXIV Collect for page ${page}.`);
-        break;
+        break; // Exit loop on invalid data
       }
 
       if (page === 1) {
@@ -150,14 +152,14 @@ async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
       allAchievements = allAchievements.concat(data.results);
       console.log(`Fetched FFXIV Collect page ${page}, total achievements so far: ${allAchievements.length}`);
       
-      // Stop if we've fetched all available or reached our cap
+      // Stop if we've fetched all available on the API or if the current page returned less than the limit
       if (data.results.length < limit || allAchievements.length >= totalAchievementsCount) {
         console.log("Reached end of FFXIV Collect data or fetched all available achievements.");
         break;
       }
       
       page++;
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to avoid rate limits
     } catch (error) {
       console.error(`FFXIV Collect fetch failed for page ${page}:`, error instanceof Error ? error.message : error);
       break; // Stop fetching on first error
@@ -225,13 +227,10 @@ export async function GET() {
       tsrg: calculateTSRGScore(achievement),
     }));
 
-  if (achievementsWithTSRG.length <= MAX_ACHIEVEMENTS_TO_FETCH) { // Use the cap for caching as well
-    achievementsCache = achievementsWithTSRG;
-    cacheTimestamp = now;
-    console.log(`Achievements cached from ${source} source. Total: ${achievementsWithTSRG.length}`);
-  } else {
-    console.warn(`Achievement list too large (${achievementsWithTSRG.length}), not caching.`);
-  }
+  // Cache all fetched achievements, as the fetching logic now ensures it's a complete set
+  achievementsCache = achievementsWithTSRG;
+  cacheTimestamp = now;
+  console.log(`Achievements cached from ${source} source. Total: ${achievementsWithTSRG.length}`);
 
   return NextResponse.json(achievementsWithTSRG);
 }

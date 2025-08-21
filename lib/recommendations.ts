@@ -78,8 +78,8 @@ export function generateRecommendations(
   
   // Filter available achievements
   const availableAchievements = allAchievements.filter(achievement => {
-    // Skip completed achievements if preference is set
-    if (preferences.hideCompleted && completedIds.has(achievement.id)) return false;
+    // Always skip completed achievements for recommendations
+    if (completedIds.has(achievement.id)) return false;
     
     // Skip unobtainable if preference is set
     if (preferences.hideUnobtainable && !achievement.isObtainable) return false;
