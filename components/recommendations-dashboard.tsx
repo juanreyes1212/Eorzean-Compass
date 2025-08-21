@@ -182,7 +182,7 @@ export function RecommendationsDashboard({
               {recommendations.map((rec) => (
                 <Card 
                   key={rec.achievement.id} 
-                  className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors cursor-pointer"
+                  className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 hover:bg-slate-700/70 transition-colors cursor-pointer" // Added hover styles
                   onClick={() => onAchievementClick?.(rec.achievement)}
                   data-testid="recommendation-card"
                 >
@@ -262,7 +262,7 @@ export function RecommendationsDashboard({
               {topProjects.map((project) => (
                 <Card 
                   key={project.id} 
-                  className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors cursor-pointer"
+                  className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 hover:bg-slate-700/70 transition-colors cursor-pointer" // Added hover styles
                   onClick={() => setSelectedProject(project)}
                   data-testid="project-card"
                 >

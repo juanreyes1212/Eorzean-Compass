@@ -231,6 +231,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const cachedAchievements = getStoredAchievements();
       if (cachedAchievements && characterData && !forceRefresh) {
         const completedAchievementIds = new Set(characterData.completedAchievements?.map(comp => comp.id));
+        console.log("ClientAchievementsPage: Using cached achievements. Completed IDs count:", completedAchievementIds.size);
         const achievementsWithStatus = cachedAchievements.map((achievement: any) => {
           const isCompleted = completedAchievementIds.has(achievement.id);
           
@@ -255,6 +256,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       storeAchievements(achievements);
       
       const completedAchievementIds = new Set(characterData?.completedAchievements?.map(comp => comp.id));
+      console.log("ClientAchievementsPage: Fetched fresh achievements. Completed IDs count:", completedAchievementIds.size);
       const achievementsWithTSRG = achievements.map((achievement: any) => {
         const isCompleted = completedAchievementIds.has(achievement.id);
         
