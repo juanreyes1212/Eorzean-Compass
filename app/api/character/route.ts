@@ -80,16 +80,21 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
   const characterId = Math.abs(hash).toString().padStart(8, '0');
   
   const completedAchievements = [];
-  const totalAchievements = 2500;
-  
-  for (let i = 1; i <= totalAchievements; i++) {
-    if ((parseInt(characterId) + i) % 10 < 4) { // Roughly 40% completion
-      completedAchievements.push({
-        id: i,
-        // completionDate removed as per user request
-      });
-    }
+  const totalAchievements = 2500; // Matches the total in generateMockAchievements
+
+  // Generate a consistent set of completed achievements for mock data
+  // For demo purposes, let's say achievements with an even ID are completed
+  // and some random ones to make it more dynamic.
+  const completionCount = Math.floor(totalAchievements * 0.3); // Roughly 30% completion
+  const completedIds = new Set<number>();
+  while (completedIds.size < completionCount) {
+    const randomId = Math.floor(Math.random() * totalAchievements) + 1;
+    completedIds.add(randomId);
   }
+
+  completedIds.forEach(id => {
+    completedAchievements.push({ id });
+  });
 
   console.log(`[MOCK DATA] Generated mock data for ${name}:`, {
     completedCount: completedAchievements.length,
@@ -102,7 +107,7 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
       name: name,
       server: server,
       avatar: "/placeholder.svg?height=96&width=96&text=Avatar",
-      achievementPoints: completedAchievements.length * 10,
+      achievementPoints: completedAchievements.length * 10, // Mock points
       achievementsCompleted: completedAchievements.length,
       totalAchievements,
       lastUpdated: new Date().toISOString(), // Add lastUpdated for mock data

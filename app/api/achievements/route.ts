@@ -66,20 +66,30 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
 // Generate mock achievements data with icons
 function generateMockAchievements(): any[] {
   const categories = ["Battle", "Character", "Items", "Crafting & Gathering", "Quests", "Exploration", "PvP", "Grand Company"];
+  const achievementNames = [
+    "The Ultimate Hunter", "Master Crafter", "Dungeon Delver", "PvP Champion", "Explorer Extraordinaire",
+    "Quest Seeker", "Item Collector", "Beast Slayer", "Gathering Guru", "Trial Conqueror"
+  ];
+  const achievementSuffixes = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
   const achievements = [];
   
   for (let i = 1; i <= 2500; i++) {
     const category = categories[Math.floor(Math.random() * categories.length)];
     const isObtainable = category !== "Legacy" && Math.random() > 0.05; // 95% obtainable
     
+    // Generate a more varied name
+    const baseName = achievementNames[Math.floor(Math.random() * achievementNames.length)];
+    const suffix = achievementSuffixes[Math.floor(Math.random() * achievementSuffixes.length)];
+    const name = `${baseName} ${suffix}`;
+
     // Generate a semi-realistic icon path (using FFXIV Collect pattern for mock)
     const iconVariant = String(i).padStart(6, '0');
     const iconPath = `/images/achievements/061000/061${iconVariant.slice(-3)}.png`; // Relative path for mock
     
     achievements.push({
       id: i,
-      name: `Achievement ${i}`,
-      description: `This is a ${category.toLowerCase()} achievement that tests your skills in FFXIV.`,
+      name: name,
+      description: `This is a ${category.toLowerCase()} achievement that tests your skills in FFXIV. It involves ${name.toLowerCase().replace(/ .*/, '')} activities.`,
       category,
       points: Math.floor(Math.random() * 15) * 5, // Points in multiples of 5, up to 70
       patch: `${Math.floor(Math.random() * 6) + 1}.${Math.floor(Math.random() * 5)}`,
@@ -136,8 +146,19 @@ async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
     throw new Error("No achievements were fetched from FFXIV Collect.");
   }
 
-  console.log(`Successfully fetched ${allAchievements.length} achievements from FFXIV Collect.`);
-  return allAchievements.map(achievement => {
+  // Deduplicate achievements by ID to ensure uniqueness
+  const uniqueAchievementsMap = new Map<number, FFXIVCollectAchievement>();
+  allAchievements.forEach(ach => {
+    if (ach.id) {
+      uniqueAchievementsMap.set(ach.id, ach);
+    }
+  });
+  const uniqueAchievements = Array.from(uniqueAchievementsMap.values());
+  console.log(`Deduplicated achievements: ${uniqueAchievements.length} unique achievements.`);
+
+
+  console.log(`Successfully fetched ${uniqueAchievements.length} achievements from FFXIV Collect.`);
+  return uniqueAchievements.map(achievement => {
     const categoryName = achievement.category?.name || 'Unknown';
     const isObtainable = !categoryName.toLowerCase().includes('legacy') && 
                          !categoryName.toLowerCase().includes('seasonal'); // FFXIV Collect specific logic
