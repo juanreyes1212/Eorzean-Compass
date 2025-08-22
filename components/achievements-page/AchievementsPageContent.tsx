@@ -39,7 +39,7 @@ export function AchievementsPageContent({
             Recommendations & Projects
           </TabsTrigger>
           <TabsTrigger value="achievements" className="data-[state=active]:bg-compass-700 text-compass-100">
-            Your Achievements ({allAchievements.length})
+            Your Achievements ({completedAchievementsWithTSRG.length} unlocked out of {allAchievements.length})
           </TabsTrigger>
         </TabsList>
 

@@ -136,7 +136,7 @@ export async function GET(request: Request) {
   const validServers = [
     "Adamantoise", "Cactuar", "Faerie", "Gilgamesh", "Jenova", "Midgardsormr", "Sargatanas", "Siren",
     "Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera",
-    "Behemoth", "Excalibur", "Exodus", "Famfrit", "Primal", "Lamia", "Leviathan", "Ultros"
+    "Behemoth", "Excalibur", "Exodus", "Famfrit", "Hyperion", "Lamia", "Leviathan", "Ultros" // Corrected Primal datacenter server list
   ];
   
   if (!validServers.includes(serverParam)) {
@@ -274,7 +274,10 @@ export async function GET(request: Request) {
       server: realCharacterData.server,
       avatar: realCharacterData.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
       achievementPoints: realCharacterData.achievementPoints?.points || 0,
-      achievementsCompleted: realCharacterData.achievementPoints?.unrankedPoints || 0,
+      // Use the count from FFXIVCollect if available, otherwise Tomestone's unrankedPoints, then 0
+      achievementsCompleted: completedAchievementsFromAPI.length > 0 
+        ? completedAchievementsFromAPI.length 
+        : (realCharacterData.achievementPoints?.unrankedPoints || 0),
       totalAchievements: 2500, // Placeholder/Estimate
       lastUpdated: now,
     };

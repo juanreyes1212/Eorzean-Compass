@@ -42,6 +42,13 @@ export function RecommendationsDashboard({
   const [selectedProject, setSelectedProject] = useState<AchievementProject | null>(null);
   const [selectedAchievementForDetails, setSelectedAchievementForDetails] = useState<AchievementWithTSRG | null>(null); // New state for details modal
 
+  // Filter allAchievements to get only the ones that are actually completed and have TSRG data
+  // This is used for user profile analysis and project completion calculation
+  const completedAchievementsWithTSRG = useMemo(() => 
+    allAchievements.filter(a => completedAchievements.some(ca => ca.id === a.id)),
+    [allAchievements, completedAchievements]
+  );
+
   // Generate recommendations and projects - always run these hooks
   const recommendations = useMemo(() => {
     if (allAchievements.length === 0) return [];
@@ -55,8 +62,8 @@ export function RecommendationsDashboard({
   }, [allAchievements, completedAchievements]);
 
   const userProfile = useMemo(() => 
-    analyzeUserSkillProfile(allAchievements.filter(a => completedAchievements.some(ca => ca.id === a.id))), // Filter allAchievements to get completed ones with TSRG
-    [allAchievements, completedAchievements]
+    analyzeUserSkillProfile(completedAchievementsWithTSRG), // Use the filtered list here
+    [completedAchievementsWithTSRG]
   );
 
   // Get top incomplete projects
