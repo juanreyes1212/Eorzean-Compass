@@ -33,13 +33,6 @@ export function AchievementTablePaginated({
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
-  // Get filter parameters from URL
-  const categoryFilter = searchParams.get("category") || "all";
-  const searchQuery = searchParams.get("query") || "";
-  
-  // Use virtual scrolling for large datasets
-  const useVirtualScrolling = filteredAchievements.length > 500;
-  
   // Apply filters and sorting to get filtered achievements
   const filteredAchievements = useMemo(() => {
     let filtered = [...allAchievements];
@@ -122,6 +115,13 @@ export function AchievementTablePaginated({
     
     return filtered;
   }, [allAchievements, preferences, categoryFilter, searchQuery, sortColumn, sortDirection]);
+  
+  // Get filter parameters from URL
+  const categoryFilter = searchParams.get("category") || "all";
+  const searchQuery = searchParams.get("query") || "";
+  
+  // Use virtual scrolling for large datasets
+  const useVirtualScrolling = filteredAchievements.length > 500;
   
   // Calculate pagination
   const totalPages = Math.ceil(filteredAchievements.length / pageSize);
