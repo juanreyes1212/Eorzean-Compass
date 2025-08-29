@@ -63,6 +63,7 @@ export function DevDebugPanel() {
       return "Unable to format data";
     }
   };
+  
   const getStatusIcon = (result: any) => {
     if (result.error) return <XCircle className="h-4 w-4 text-red-400" />;
     
