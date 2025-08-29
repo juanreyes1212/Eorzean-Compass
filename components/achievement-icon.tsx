@@ -64,6 +64,8 @@ export function AchievementIcon({
         onLoad={handleImageLoad}
         onError={handleImageError}
         loading="lazy"
+        decoding="async"
+        fetchPriority="low"
       />
     </div>
   );

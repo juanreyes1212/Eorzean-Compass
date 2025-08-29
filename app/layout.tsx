@@ -4,6 +4,8 @@ import "./globals.css";
 import Link from "next/link";
 import { Compass } from 'lucide-react';
 import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
+import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
+import { PerformanceMonitor } from "@/components/performance-monitor";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,7 +51,9 @@ export default function RootLayout({
             </nav>
           </div>
         </header>
-        <main className="min-h-screen">{children}</main>
+        <ErrorBoundaryWrapper>
+          <main className="min-h-screen">{children}</main>
+        </ErrorBoundaryWrapper>
         <footer className="bg-compass-950 text-compass-100 border-t border-compass-700 py-8 mt-12">
           <div className="container mx-auto px-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -68,6 +72,7 @@ export default function RootLayout({
           </div>
         </footer>
         <Toaster /> {/* Add the Toaster component here */}
+        <PerformanceMonitor />
       </body>
     </html>
   );

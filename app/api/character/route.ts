@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 import { CompletedAchievement } from '@/lib/types'; // Import the type
+import { validateCharacterName, validateServerName, apiRateLimiter, securityHeaders } from '@/lib/security';
 
 // Tomestone.gg API response structures based on api-docs.json
 // Corrected to reflect that the root response is the character object itself
@@ -120,6 +121,18 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
 }
 
 export async function GET(request: Request) {
+  // Add security headers
+  const headers = new Headers(securityHeaders);
+  
+  // Rate limiting
+  const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
+  if (!apiRateLimiter.isAllowed(clientIP)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      { status: 429, headers }
+    );
+  }
+  
   const nameParam = new URL(request.url).searchParams.get('name');
   const serverParam = new URL(request.url).searchParams.get('server');
 
@@ -129,23 +142,30 @@ export async function GET(request: Request) {
     console.error("[API Character Error] Missing or invalid name/server parameters.");
     return NextResponse.json(
       { error: "Valid name and server strings are required" },
-      { status: 400 }
+      { status: 400, headers }
+    );
+  }
+  
+  // Validate and sanitize inputs
+  const nameValidation = validateCharacterName(nameParam);
+  if (!nameValidation.isValid) {
+    return NextResponse.json(
+      { error: nameValidation.error },
+      { status: 400, headers }
+    );
+  }
+  
+  const serverValidation = validateServerName(serverParam);
+  if (!serverValidation.isValid) {
+    return NextResponse.json(
+      { error: serverValidation.error },
+      { status: 400, headers }
     );
   }
 
-  const validServers = [
-    "Adamantoise", "Cactuar", "Faerie", "Gilgamesh", "Jenova", "Midgardsormr", "Sargatanas", "Siren",
-    "Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera",
-    "Behemoth", "Excalibur", "Exodus", "Famfrit", "Hyperion", "Lamia", "Leviathan", "Ultros" // Corrected Primal datacenter server list
-  ];
-  
-  if (!validServers.includes(serverParam)) {
-    console.error(`[API Character Error] Invalid server name provided: ${serverParam}`);
-    return NextResponse.json(
-      { error: "Invalid server name" },
-      { status: 400 }
-    );
-  }
+  // Use sanitized inputs
+  const sanitizedName = nameValidation.isValid ? nameParam.trim() : nameParam;
+  const sanitizedServer = serverParam;
 
   console.log(`[API Character] TOMESTONE_API_KEY status: ${TOMESTONE_API_KEY ? 'Present' : 'Missing'}`);
 
@@ -183,7 +203,7 @@ export async function GET(request: Request) {
         // If character not found by Tomestone.gg, return 404 directly
         return NextResponse.json(
           { error: "Character not found. Please check the name and server spelling." },
-          { status: 404 }
+          { status: 404, headers }
         );
       }
       throw new Error(`Tomestone.gg profile fetch failed with status ${profileResponse.status}`);
@@ -310,5 +330,5 @@ export async function GET(request: Request) {
     _isRealData: isRealData,
     _isMockData: finalIsMockData,
     _error: finalError,
-  });
+  }, { headers });
 }

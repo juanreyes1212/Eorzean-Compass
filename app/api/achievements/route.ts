@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { calculateTSRGScore } from '@/lib/tsrg-matrix';
 import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
+import { apiRateLimiter, securityHeaders } from '@/lib/security';
 
 // Tomestone.gg API response structures based on api-docs.json
 interface TomestoneAchievement {
@@ -199,10 +200,13 @@ async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
 }
 
 export async function GET() {
+  // Add security headers
+  const headers = new Headers(securityHeaders);
+  
   const now = Date.now();
   if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
     console.log("Returning cached achievements data.");
-    return NextResponse.json(achievementsCache);
+    return NextResponse.json(achievementsCache, { headers });
   }
 
   let processedAchievements: any[] = [];
@@ -230,5 +234,5 @@ export async function GET() {
   cacheTimestamp = now;
   console.log(`Achievements cached from ${source} source. Total: ${achievementsWithTSRG.length}`);
 
-  return NextResponse.json(achievementsWithTSRG);
+  return NextResponse.json(achievementsWithTSRG, { headers });
 }

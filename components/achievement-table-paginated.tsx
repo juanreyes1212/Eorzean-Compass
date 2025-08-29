@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AchievementStats } from "./achievement-table/AchievementStats";
 import { AchievementTableContent } from "./achievement-table/AchievementTableContent";
 import { AchievementTablePagination } from "./achievement-table/AchievementTablePagination";
+import { VirtualAchievementTable } from "./virtual-achievement-table";
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
 import { AchievementWithTSRG, UserPreferences, SortColumn, SortDirection, CompletedAchievement } from "@/lib/types"; // Import SortColumn, SortDirection, CompletedAchievement
 import { PAGINATION } from "@/lib/constants"; // Import from constants
@@ -35,6 +36,9 @@ export function AchievementTablePaginated({
   // Get filter parameters from URL
   const categoryFilter = searchParams.get("category") || "all";
   const searchQuery = searchParams.get("query") || "";
+  
+  // Use virtual scrolling for large datasets
+  const useVirtualScrolling = filteredAchievements.length > 500;
   
   // Apply filters and sorting to get filtered achievements
   const filteredAchievements = useMemo(() => {
@@ -199,16 +203,27 @@ export function AchievementTablePaginated({
       />
       
       {/* Achievement Table */}
-      <AchievementTableContent
-        achievements={currentPageAchievements}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        onSort={handleSort}
-        onAchievementClick={onAchievementClick}
-      />
+      {useVirtualScrolling ? (
+        <VirtualAchievementTable
+          achievements={filteredAchievements}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onAchievementClick={onAchievementClick}
+          containerHeight={600}
+        />
+      ) : (
+        <AchievementTableContent
+          achievements={currentPageAchievements}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onAchievementClick={onAchievementClick}
+        />
+      )}
 
       {/* Pagination Controls - Bottom */}
-      {totalPages > 1 && (
+      {totalPages > 1 && !useVirtualScrolling && (
         <div className="flex justify-center">
           <AchievementTablePagination
             currentPage={currentPage}
