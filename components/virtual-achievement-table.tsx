@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableCell } from "@/components/ui/table";
 import { AchievementTableRow } from "./achievement-table/AchievementTableRow";
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { AchievementWithTSRG, SortColumn, SortDirection } from "@/lib/types";
