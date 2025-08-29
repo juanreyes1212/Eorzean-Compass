@@ -69,7 +69,8 @@ class Analytics {
     new PerformanceObserver((list) => {
       const entries = list.getEntries();
       entries.forEach((entry) => {
-        this.trackPerformance('FID', entry.processingStart - entry.startTime);
+        const eventEntry = entry as PerformanceEventTiming;
+        this.trackPerformance('FID', eventEntry.processingStart - eventEntry.startTime);
       });
     }).observe({ entryTypes: ['first-input'] });
 
