@@ -295,12 +295,17 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       console.log(`[Achievements Fetch] Cached achievements found:`, !!cachedAchievements);
       
       if (cachedAchievements && characterData && !forceRefresh) {
-        const completedAchievementIds = new Set(characterData.completedAchievements?.map(comp => comp.id));
+        const completedAchievementIds = new Set(characterData.completedAchievements?.map(comp => comp.id) || []);
         console.log(`[Achievements Fetch] Using cached achievements. Completed IDs count: ${completedAchievementIds.size}`);
         console.log(`[Achievements Fetch] Cached achievements count: ${cachedAchievements.length}`);
+        console.log(`[Achievements Fetch] Sample completed IDs:`, Array.from(completedAchievementIds).slice(0, 10));
         
         const achievementsWithStatus = cachedAchievements.map((achievement: any) => {
           const isCompleted = completedAchievementIds.has(achievement.id);
+          
+          if (isCompleted) {
+            console.log(`[Achievements Fetch] Marking achievement as completed: ${achievement.name} (ID: ${achievement.id})`);
+          }
           
           return {
             ...achievement,
@@ -365,7 +370,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       
       storeAchievements(achievements);
       
-      const completedAchievementIds = new Set(characterData?.completedAchievements?.map(comp => comp.id));
+      const completedAchievementIds = new Set(characterData?.completedAchievements?.map(comp => comp.id) || []);
       console.log(`[Achievements Fetch] Processing ${achievements.length} achievements with ${completedAchievementIds.size} completed IDs`);
       console.log(`[Achievements Fetch] Sample completed IDs:`, Array.from(completedAchievementIds).slice(0, 10));
       

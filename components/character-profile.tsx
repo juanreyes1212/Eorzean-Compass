@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,12 +27,24 @@ interface CharacterProfileProps {
 
 export function CharacterProfile({ character, actualStats, isLoading = false }: CharacterProfileProps) {
   // Use actual stats if available, otherwise fall back to character data
-  const stats = actualStats || {
-    completed: character.achievementsCompleted,
-    total: character.totalAchievements,
-    obtainable: character.totalAchievements,
-    completionRate: Math.round((character.achievementsCompleted / character.totalAchievements) * 100)
-  };
+  const stats = useMemo(() => {
+    if (actualStats) {
+      console.log(`[Character Profile] Using actual stats:`, actualStats);
+      return actualStats;
+    }
+    
+    const fallbackStats = {
+      completed: character.achievementsCompleted,
+      total: character.totalAchievements,
+      obtainable: character.totalAchievements,
+      completionRate: character.totalAchievements > 0 
+        ? Math.round((character.achievementsCompleted / character.totalAchievements) * 100) 
+        : 0
+    };
+    
+    console.log(`[Character Profile] Using fallback stats:`, fallbackStats);
+    return fallbackStats;
+  }, [actualStats, character]);
 
   // Get data center from server name
   const dataCenter = SERVERS[character.server as keyof typeof SERVERS] || 'Unknown Data Center';
