@@ -1,6 +1,6 @@
 // Performance optimization utilities
 
-import { useCallback, useRef, useEffect, useState } from 'react'; // Added useState
+import { useCallback, useRef, useEffect, useState } from 'react';
 
 // Debounce hook for search inputs
 export function useDebounce<T extends (...args: any[]) => any>(
@@ -104,4 +104,74 @@ export function useVirtualScrolling<T>(
     offsetY,
     setScrollTop,
   };
+}
+
+// Performance measurement hook
+export function usePerformanceMetrics() {
+  const [metrics, setMetrics] = useState<{
+    loadTime: number;
+    renderTime: number;
+    memoryUsage: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const measurePerformance = () => {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const loadTime = navigation.loadEventEnd - navigation.fetchStart;
+      
+      let memoryUsage = 0;
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        memoryUsage = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
+      }
+
+      const paintEntries = performance.getEntriesByType('paint');
+      const renderTime = paintEntries.length > 0 ? paintEntries[paintEntries.length - 1].startTime : 0;
+
+      setMetrics({
+        loadTime: Math.round(loadTime),
+        renderTime: Math.round(renderTime),
+        memoryUsage: Math.round(memoryUsage),
+      });
+    };
+
+    if (document.readyState === 'complete') {
+      measurePerformance();
+    } else {
+      window.addEventListener('load', measurePerformance);
+    }
+
+    return () => window.removeEventListener('load', measurePerformance);
+  }, []);
+
+  return metrics;
+}
+
+// Image lazy loading hook
+export function useLazyImage(src: string, placeholder: string = '') {
+  const [imageSrc, setImageSrc] = useState(placeholder);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const isIntersecting = useIntersectionObserver(imgRef, {
+    threshold: 0.1,
+    rootMargin: '50px',
+  });
+
+  useEffect(() => {
+    if (isIntersecting && !isLoaded && !isError) {
+      const img = new Image();
+      img.onload = () => {
+        setImageSrc(src);
+        setIsLoaded(true);
+      };
+      img.onerror = () => {
+        setIsError(true);
+      };
+      img.src = src;
+    }
+  }, [isIntersecting, src, isLoaded, isError]);
+
+  return { imageSrc, isLoaded, isError, ref: imgRef };
 }

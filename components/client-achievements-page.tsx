@@ -32,6 +32,8 @@ import { AchievementsPageHeader } from "./achievements-page/AchievementsPageHead
 import { AchievementsPageContent } from "./achievements-page/AchievementsPageContent";
 import { AchievementDetailsModal } from "./achievement-details-modal"; // Import the modal
 import { TSRGFiltersComponent } from "./tsrg-filters"; // Import TSRGFiltersComponent
+import { ErrorState } from "./error-states/ErrorState";
+import { LoadingState } from "./loading-states/LoadingState";
 
 interface ClientAchievementsPageProps {
   name: string;
@@ -338,15 +340,11 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   if (loading) {
     return (
       <div className="min-h-screen bg-compass-950 container mx-auto px-4 py-8">
-        <Skeleton className="h-32 w-full mb-8" />
-        <div className="compass-card p-6">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="flex gap-4 mb-6">
-            <Skeleton className="h-10 w-48" />
-            <Skeleton className="h-10 w-64" />
-          </div>
-          <Skeleton className="h-96 w-full" />
-        </div>
+        <LoadingState 
+          type="dashboard" 
+          title="Loading Character Data" 
+          message="Fetching character information and achievements..."
+        />
       </div>
     );
   }
@@ -354,24 +352,14 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   if (error && !characterData) {
     return (
       <div className="min-h-screen bg-compass-950 flex items-center justify-center">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-compass-100">Error Loading Character</h1>
-          <Alert variant="destructive" className="mb-6 max-w-md mx-auto">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-          <p className="mb-8 text-compass-300">
-            Please check the character name and server, or try again later.
-          </p>
-          <div className="space-x-4">
-            <Button onClick={handleRefreshData} disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Try Again
-            </Button>
-            <Link href="/">
-              <Button variant="outline">Return Home</Button>
-            </Link>
-          </div>
+        <div className="container mx-auto px-4 py-16">
+          <ErrorState
+            title="Error Loading Character"
+            message={`${error}. Please check the character name and server, or try again later.`}
+            type="api"
+            onRetry={handleRefreshData}
+            showHomeButton={true}
+          />
         </div>
       </div>
     );

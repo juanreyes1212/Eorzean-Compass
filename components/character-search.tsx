@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, AlertCircle, Info, Compass } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { announceToScreenReader } from "@/lib/utils/accessibility";
+import { useAnalytics } from "@/lib/analytics";
 
 const servers = [
   // NA Data Centers
@@ -54,6 +55,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
   }>({});
   const router = useRouter();
   const { toast } = useToast();
+  const { trackCharacterSearch } = useAnalytics();
 
   const validateForm = () => {
     const errors: { characterName?: string; server?: string } = {};
@@ -144,6 +146,9 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
       }
       
       router.push(`/achievements?name=${encodedName}&server=${encodedServer}`);
+      
+      // Track successful search
+      trackCharacterSearch(characterName.trim(), server, true);
     } catch (error) {
       console.error("Error searching for character:", error);
       
@@ -163,6 +168,9 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
         icon: <AlertCircle className="h-4 w-4" />,
       });
       announceToScreenReader(`Search failed: ${errorMessage}`, 'assertive');
+      
+      // Track failed search
+      trackCharacterSearch(characterName.trim(), server, false);
     } finally {
       setIsLoading(false);
     }
