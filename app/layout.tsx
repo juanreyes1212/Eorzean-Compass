@@ -6,13 +6,34 @@ import { Compass } from 'lucide-react';
 import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
 import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
 import { PerformanceMonitor } from "@/components/performance-monitor";
+import { createSkipLink } from "@/lib/utils/accessibility";
+import { useEffect } from "react";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Eorzean Compass | FFXIV Achievement Tracker",
   description: "Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters",
-    generator: 'v0.dev'
+  generator: 'Next.js',
+  manifest: '/manifest.json',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
+  themeColor: '#f59e0b',
+  colorScheme: 'dark',
+  robots: 'index, follow',
+  openGraph: {
+    title: 'Eorzean Compass | FFXIV Achievement Tracker',
+    description: 'Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Eorzean Compass',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Eorzean Compass | FFXIV Achievement Tracker',
+    description: 'Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters',
+  },
+  keywords: ['FFXIV', 'Final Fantasy XIV', 'achievements', 'tracker', 'gaming', 'MMO'],
 };
 
 export default function RootLayout({
@@ -20,6 +41,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    // Add skip link for accessibility
+    createSkipLink('main-content', 'Skip to main content');
+  }, []);
+
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -52,7 +78,9 @@ export default function RootLayout({
           </div>
         </header>
         <ErrorBoundaryWrapper>
-          <main className="min-h-screen">{children}</main>
+          <main id="main-content" className="min-h-screen" tabIndex={-1}>
+            {children}
+          </main>
         </ErrorBoundaryWrapper>
         <footer className="bg-compass-950 text-compass-100 border-t border-compass-700 py-8 mt-12">
           <div className="container mx-auto px-4 text-center">
@@ -73,6 +101,7 @@ export default function RootLayout({
         </footer>
         <Toaster /> {/* Add the Toaster component here */}
         <PerformanceMonitor />
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Loader2, AlertCircle, Info, Compass } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { announceToScreenReader } from "@/lib/utils/accessibility";
 
 const servers = [
   // NA Data Centers
@@ -77,11 +78,13 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
     e.preventDefault();
     
     if (!validateForm()) {
+      announceToScreenReader('Please fix the form errors before submitting', 'assertive');
       return;
     }
     
     setIsLoading(true);
     onSearchStart?.();
+    announceToScreenReader('Searching for character, please wait');
     
     try {
       const encodedName = encodeURIComponent(characterName.trim());
@@ -129,6 +132,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
           variant: "default",
           icon: <Info className="h-4 w-4" />,
         });
+        announceToScreenReader('Character found using demo data');
       } else {
         toast({
           title: "Character Found!",
@@ -136,6 +140,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
           variant: "default",
           icon: <Compass className="h-4 w-4" />,
         });
+        announceToScreenReader(`Character ${data.character.name} found successfully`);
       }
       
       router.push(`/achievements?name=${encodedName}&server=${encodedServer}`);
@@ -157,6 +162,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
         variant: "destructive",
         icon: <AlertCircle className="h-4 w-4" />,
       });
+      announceToScreenReader(`Search failed: ${errorMessage}`, 'assertive');
     } finally {
       setIsLoading(false);
     }
@@ -191,9 +197,13 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
           className="bg-compass-800 border-compass-600 text-compass-100 placeholder:text-compass-400 focus:border-gold-500 focus:ring-gold-500/20"
           data-testid="character-name-input"
           disabled={isLoading}
+          aria-describedby={validationErrors.characterName ? "character-name-error" : undefined}
+          aria-invalid={!!validationErrors.characterName}
         />
         {validationErrors.characterName && (
-          <p className="text-sm text-red-400">{validationErrors.characterName}</p>
+          <p id="character-name-error" className="text-sm text-red-400" role="alert">
+            {validationErrors.characterName}
+          </p>
         )}
       </div>
       
@@ -205,6 +215,8 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
           value={server} 
           onValueChange={handleServerChange} 
           disabled={isLoading}
+          aria-describedby={validationErrors.server ? "server-error" : undefined}
+          aria-invalid={!!validationErrors.server}
         >
           <SelectTrigger 
             className="bg-compass-800 border-compass-600 text-compass-100 focus:border-gold-500 focus:ring-gold-500/20"
@@ -227,7 +239,9 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
           </SelectContent>
         </Select>
         {validationErrors.server && (
-          <p className="text-sm text-red-400">{validationErrors.server}</p>
+          <p id="server-error" className="text-sm text-red-400" role="alert">
+            {validationErrors.server}
+          </p>
         )}
       </div>
       
