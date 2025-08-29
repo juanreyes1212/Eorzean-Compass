@@ -35,7 +35,7 @@ describe('Accessibility', () => {
 
   it('should support keyboard navigation', () => {
     // Tab through interactive elements
-    cy.get('body').tab()
+    cy.get('body').trigger('keydown', { key: 'Tab' })
     cy.focused().should('be.visible')
     
     // Test Enter key on buttons
