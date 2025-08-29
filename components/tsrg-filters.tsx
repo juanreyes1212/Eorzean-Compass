@@ -12,7 +12,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info } from 'lucide-react';
 import { UserPreferences } from "@/lib/types"; // Import UserPreferences
 import { DEFAULT_PREFERENCES } from "@/lib/constants"; // Import DEFAULT_PREFERENCES
-import { useAnalytics } from "@/lib/analytics";
 
 interface TSRGFiltersProps {
   filters: UserPreferences; // Use UserPreferences for filters
@@ -20,15 +19,12 @@ interface TSRGFiltersProps {
 }
 
 export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersProps) {
-  const { trackFilterUsage } = useAnalytics();
-
   // Optimized slider change handler with useCallback
   const handleSliderChange = useCallback((key: 'maxTimeScore' | 'maxSkillScore' | 'maxRngScore' | 'maxGroupScore', value: number[]) => {
     onFiltersChange({
       ...filters,
       [key]: value[0],
     });
-    trackFilterUsage(key, value[0]);
   }, [filters, onFiltersChange]);
 
   // Optimized switch change handler
@@ -37,7 +33,6 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
       ...filters,
       [key]: checked,
     });
-    trackFilterUsage(key, checked);
   }, [filters, onFiltersChange]);
 
   // Optimized tier toggle handler
@@ -50,7 +45,6 @@ export function TSRGFiltersComponent({ filters, onFiltersChange }: TSRGFiltersPr
       ...filters,
       selectedTiers: newTiers,
     });
-    trackFilterUsage('selectedTiers', newTiers);
   }, [filters, onFiltersChange]);
 
   const resetFilters = useCallback(() => {

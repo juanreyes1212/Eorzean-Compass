@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { Info, AlertCircle, RefreshCw, HardDrive, Wifi, WifiOff } from 'lucide-react';
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
 import { 
@@ -26,7 +23,6 @@ import {
   CharacterData, // Imported from lib/types
   AchievementWithTSRG // Imported from lib/types
 } from "@/lib/types";
-import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AchievementsPageHeader } from "./achievements-page/AchievementsPageHeader";
 import { AchievementsPageContent } from "./achievements-page/AchievementsPageContent";
@@ -367,14 +363,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
   if (!characterData) {
     return (
-      <div className="min-h-screen bg-compass-950 flex items-center justify-center">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-compass-100">No Character Data</h1>
-          <p className="mb-8 text-compass-300">Unable to load character information.</p>
-          <Link href="/">
-            <Button>Return Home</Button>
-          </Link>
-        </div>
+      <div className="min-h-screen bg-compass-950 container mx-auto px-4 py-8">
+        <ErrorState
+          title="No Character Data"
+          message="Unable to load character information."
+          type="generic"
+          showHomeButton={true}
+        />
       </div>
     );
   }

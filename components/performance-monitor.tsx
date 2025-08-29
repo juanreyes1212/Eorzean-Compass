@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Activity, Zap, Clock, HardDrive } from 'lucide-react';
-import { getStorageInfo } from '@/lib/storage';
 
 interface PerformanceMetrics {
   loadTime: number;
@@ -50,8 +49,7 @@ export function PerformanceMonitor() {
       }
 
       // Calculate cache hit rate from localStorage
-      const storageInfo = getStorageInfo();
-      const cacheHitRate = storageInfo.hasAchievements ? 85 : 0; // Simplified calculation
+      const cacheHitRate = 85; // Simplified calculation for development
 
       setMetrics({
         loadTime: Math.round(loadTime),

@@ -6,7 +6,6 @@ import { AchievementStats } from "./achievement-table/AchievementStats";
 import { AchievementTableContent } from "./achievement-table/AchievementTableContent";
 import { AchievementTablePagination } from "./achievement-table/AchievementTablePagination";
 import { VirtualAchievementTable } from "./virtual-achievement-table";
-import { calculateTSRGScore } from "@/lib/tsrg-matrix";
 import { AchievementWithTSRG, UserPreferences, SortColumn, SortDirection, CompletedAchievement } from "@/lib/types"; // Import SortColumn, SortDirection, CompletedAchievement
 import { PAGINATION } from "@/lib/constants"; // Import from constants
 
