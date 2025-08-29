@@ -115,9 +115,9 @@ export function VirtualAchievementTable({
                   ))
                 ) : (
                   <TableRow>
-                    <TableHead colSpan={7} className="text-center py-8 text-compass-400">
+                    <TableCell colSpan={6} className="text-center py-8 text-compass-400">
                       No achievements found matching your filters.
-                    </TableHead>
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
