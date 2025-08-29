@@ -1,4 +1,5 @@
 // Analytics and performance monitoring for production
+import { useEffect } from 'react';
 
 interface AnalyticsEvent {
   name: string;
