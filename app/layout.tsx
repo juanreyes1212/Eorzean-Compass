@@ -15,9 +15,6 @@ export const metadata: Metadata = {
   description: "Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters",
   generator: 'Next.js',
   manifest: '/manifest.json',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
-  themeColor: '#f59e0b',
-  colorScheme: 'dark',
   robots: 'index, follow',
   openGraph: {
     title: 'Eorzean Compass | FFXIV Achievement Tracker',
@@ -32,6 +29,14 @@ export const metadata: Metadata = {
     description: 'Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters',
   },
   keywords: ['FFXIV', 'Final Fantasy XIV', 'achievements', 'tracker', 'gaming', 'MMO'],
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#f59e0b',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({
