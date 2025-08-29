@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, AlertCircle, RefreshCw, HardDrive, Wifi, WifiOff } from 'lucide-react';
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
@@ -31,6 +32,7 @@ import { AchievementDetailsModal } from "./achievement-details-modal"; // Import
 import { TSRGFiltersComponent } from "./tsrg-filters"; // Import TSRGFiltersComponent
 import { ErrorState } from "./error-states/ErrorState";
 import { LoadingState } from "./loading-states/LoadingState";
+import { DevDebugPanel } from "./dev-debug-panel"; // Import DevDebugPanel
 
 interface ClientAchievementsPageProps {
   name: string;
@@ -234,7 +236,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const fetchAchievementsWithTSRG = async (forceRefresh = false) => {
     try {
       setAchievementsLoading(true);
-      setAchievementsFetchProgress({ current: 0, total: 0, isLoading: true });
+      setAchievementsFetchProgress({ current: 0, total: 2500, isLoading: true });
       
       const cachedAchievements = getStoredAchievements();
       if (cachedAchievements && characterData && !forceRefresh) {
@@ -253,11 +255,17 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         setAllAchievements(achievementsWithStatus);
         setAchievementsFetchProgress({ current: achievementsWithStatus.length, total: achievementsWithStatus.length, isLoading: false });
         setAchievementsLoading(false);
+        
+        toast({
+          title: "Loaded from Cache",
+          description: `Using ${achievementsWithStatus.length} cached achievements.`,
+          variant: "default",
+          icon: <HardDrive className="h-4 w-4" />,
+        });
         return;
       }
 
-      // Show progress for fresh fetch
-      setAchievementsFetchProgress({ current: 0, total: 2500, isLoading: true });
+      console.log("[Client] Starting fresh achievements fetch...");
 
       const response = await fetch('/api/achievements');
       if (!response.ok) {
@@ -265,10 +273,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       }
       
       const achievements = await response.json();
+      console.log(`[Client] Received ${achievements.length} achievements from API`);
+      
       storeAchievements(achievements);
       
       const completedAchievementIds = new Set(characterData?.completedAchievements?.map(comp => comp.id));
-      console.log("ClientAchievementsPage: Fetched fresh achievements. Completed IDs count:", completedAchievementIds.size);
+      console.log(`[Client] Processing ${achievements.length} achievements with ${completedAchievementIds.size} completed IDs`);
+      
       const achievementsWithTSRG = achievements.map((achievement: any) => {
         const isCompleted = completedAchievementIds.has(achievement.id);
         
@@ -281,6 +292,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       
       setAllAchievements(achievementsWithTSRG);
       setAchievementsFetchProgress({ current: achievementsWithTSRG.length, total: achievementsWithTSRG.length, isLoading: false });
+      
+      toast({
+        title: "Achievements Loaded",
+        description: `Successfully loaded ${achievementsWithTSRG.length} achievements with TSR-G analysis.`,
+        variant: "default",
+        icon: <Database className="h-4 w-4" />,
+      });
     } catch (fetchError) {
       setAllAchievements([]);
       setAchievementsFetchProgress({ current: 0, total: 0, isLoading: false });
@@ -448,6 +466,11 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
       {/* TSR-G Filters Component moved here */}
       <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+
+      {/* Development Debug Panel */}
+      {process.env.NODE_ENV === 'development' && (
+        <DevDebugPanel />
+      )}
 
       <AchievementsPageContent
         allAchievements={allAchievements}

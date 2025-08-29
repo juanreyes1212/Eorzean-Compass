@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Loader2, RefreshCw, Database, User, Info } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, RefreshCw, Database, User, Info, Activity } from 'lucide-react';
 
 interface DebugResult {
   endpoint: string;
   timestamp: string;
   apiKey: string;
+  request: any;
   results: any;
 }
 
@@ -34,7 +34,7 @@ export function DevDebugPanel() {
         ...params
       });
       
-      const response = await fetch(`/api/debug/tomestone?${queryParams}`);
+      const response = await fetch(`/api/debug/inspect?${queryParams}`);
       const result = await response.json();
       
       setDebugResults(prev => [result, ...prev.slice(0, 9)]); // Keep last 10 results
@@ -44,6 +44,7 @@ export function DevDebugPanel() {
         endpoint,
         timestamp: new Date().toISOString(),
         apiKey: 'Unknown',
+        request: params,
         results: { error: error instanceof Error ? error.message : 'Unknown error' }
       }, ...prev.slice(0, 9)]);
     } finally {
@@ -53,21 +54,24 @@ export function DevDebugPanel() {
 
   const getStatusIcon = (result: any) => {
     if (result.error) return <XCircle className="h-4 w-4 text-red-400" />;
-    if (result.achievements?.status === 200 || result.characterAchievements?.status === 200 || 
-        result.characterProfile?.status === 200 || result.ffxivCollectAchievements?.status === 200 ||
-        result.ffxivCollectCharacter?.status === 200) {
-      return <CheckCircle className="h-4 w-4 text-green-400" />;
-    }
-    return <XCircle className="h-4 w-4 text-red-400" />;
+    
+    // Check for successful responses in any of the result types
+    const hasSuccess = Object.values(result).some((value: any) => 
+      value && typeof value === 'object' && value.status === 200
+    );
+    
+    return hasSuccess ? 
+      <CheckCircle className="h-4 w-4 text-green-400" /> : 
+      <XCircle className="h-4 w-4 text-red-400" />;
   };
 
   const formatDataPreview = (data: any) => {
     if (!data) return "No data";
-    if (typeof data === 'string') return data.substring(0, 200) + (data.length > 200 ? '...' : '');
+    if (typeof data === 'string') return data.substring(0, 300) + (data.length > 300 ? '...' : '');
     
     try {
       const str = JSON.stringify(data, null, 2);
-      return str.substring(0, 500) + (str.length > 500 ? '\n...' : '');
+      return str.substring(0, 800) + (str.length > 800 ? '\n...' : '');
     } catch {
       return "Unable to format data";
     }
@@ -78,214 +82,265 @@ export function DevDebugPanel() {
   }
 
   return (
-    <Card className="p-6 compass-card mb-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-compass-100 flex items-center gap-2">
-          <Database className="h-5 w-5 text-gold-400" />
-          API Debug Panel
-        </h3>
-        <Badge variant="outline" className="bg-compass-700 border-compass-600 text-compass-300">
-          Development Only
-        </Badge>
-      </div>
+    <Card className="compass-card mb-6">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-compass-100 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-gold-400" />
+            API Debug & Inspection Panel
+          </CardTitle>
+          <Badge variant="outline" className="bg-compass-700 border-compass-600 text-compass-300">
+            Development Only
+          </Badge>
+        </div>
+        <CardDescription className="text-compass-300">
+          Inspect raw API responses from Tomestone.gg and FFXIVCollect to debug data flow issues.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="test" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-compass-800 border-compass-700">
+            <TabsTrigger value="test" className="data-[state=active]:bg-compass-700 text-compass-100">
+              Test Endpoints
+            </TabsTrigger>
+            <TabsTrigger value="results" className="data-[state=active]:bg-compass-700 text-compass-100">
+              Results ({debugResults.length})
+            </TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="test" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-compass-800 border-compass-700">
-          <TabsTrigger value="test" className="data-[state=active]:bg-compass-700 text-compass-100">
-            Test Endpoints
-          </TabsTrigger>
-          <TabsTrigger value="results" className="data-[state=active]:bg-compass-700 text-compass-100">
-            Results ({debugResults.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="test" className="space-y-6">
-          {/* Test Parameters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-compass-200">Character Name</Label>
-              <Input
-                value={characterName}
-                onChange={(e) => setCharacterName(e.target.value)}
-                className="bg-compass-800 border-compass-600 text-compass-100"
-                placeholder="Character name"
-              />
+          <TabsContent value="test" className="space-y-6">
+            {/* Test Parameters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-compass-200">Character Name</Label>
+                <Input
+                  value={characterName}
+                  onChange={(e) => setCharacterName(e.target.value)}
+                  className="bg-compass-800 border-compass-600 text-compass-100"
+                  placeholder="Character name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-compass-200">Server</Label>
+                <Input
+                  value={server}
+                  onChange={(e) => setServer(e.target.value)}
+                  className="bg-compass-800 border-compass-600 text-compass-100"
+                  placeholder="Server name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-compass-200">Character ID (Lodestone)</Label>
+                <Input
+                  value={characterId}
+                  onChange={(e) => setCharacterId(e.target.value)}
+                  className="bg-compass-800 border-compass-600 text-compass-100"
+                  placeholder="Lodestone character ID"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-compass-200">Page Number</Label>
+                <Input
+                  value={page}
+                  onChange={(e) => setPage(e.target.value)}
+                  className="bg-compass-800 border-compass-600 text-compass-100"
+                  placeholder="Page number"
+                  type="number"
+                  min="1"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-compass-200">Server</Label>
-              <Input
-                value={server}
-                onChange={(e) => setServer(e.target.value)}
-                className="bg-compass-800 border-compass-600 text-compass-100"
-                placeholder="Server name"
-              />
+
+            {/* Tomestone.gg Tests */}
+            <div>
+              <h4 className="text-compass-100 font-medium mb-3">Tomestone.gg API Tests</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <Button
+                  onClick={() => testEndpoint('tomestone-character-profile', { name: characterName, server })}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-compass-600 text-compass-300 hover:bg-compass-700"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Character Profile
+                </Button>
+
+                <Button
+                  onClick={() => testEndpoint('tomestone-character-achievements', { characterId, page })}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-compass-600 text-compass-300 hover:bg-compass-700"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Character Achievements (Page {page})
+                </Button>
+
+                <Button
+                  onClick={() => testEndpoint('tomestone-achievements', { page })}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-compass-600 text-compass-300 hover:bg-compass-700"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  All Achievements (Page {page})
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-compass-200">Character ID (Lodestone)</Label>
-              <Input
-                value={characterId}
-                onChange={(e) => setCharacterId(e.target.value)}
-                className="bg-compass-800 border-compass-600 text-compass-100"
-                placeholder="Lodestone character ID"
-              />
+
+            {/* FFXIVCollect Tests */}
+            <div>
+              <h4 className="text-compass-100 font-medium mb-3">FFXIVCollect API Tests</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button
+                  onClick={() => testEndpoint('ffxiv-collect-achievements', { page })}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-earth-600 text-earth-300 hover:bg-earth-700"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  All Achievements (Page {page})
+                </Button>
+
+                <Button
+                  onClick={() => testEndpoint('ffxiv-collect-character', { characterId })}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-earth-600 text-earth-300 hover:bg-earth-700"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Character Achievements
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-compass-200">Page Number</Label>
-              <Input
-                value={page}
-                onChange={(e) => setPage(e.target.value)}
-                className="bg-compass-800 border-compass-600 text-compass-100"
-                placeholder="Page number"
-                type="number"
-                min="1"
-              />
+
+            {/* Pagination Tests */}
+            <div>
+              <h4 className="text-compass-100 font-medium mb-3">Pagination Tests</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button
+                  onClick={() => testEndpoint('pagination-test-tomestone')}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-gold-600 text-gold-300 hover:bg-gold-700"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Test Tomestone Pagination (Pages 1-3)
+                </Button>
+
+                <Button
+                  onClick={() => testEndpoint('pagination-test-ffxiv')}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="border-gold-600 text-gold-300 hover:bg-gold-700"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Test FFXIVCollect Pagination (Pages 1-3)
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Test Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button
-              onClick={() => testEndpoint('character-profile', { name: characterName, server })}
-              disabled={isLoading}
-              variant="outline"
-              className="border-compass-600 text-compass-300 hover:bg-compass-700"
-            >
-              <User className="h-4 w-4 mr-2" />
-              Test Character Profile
-            </Button>
+            {isLoading && (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertDescription>
+                  Testing API endpoints... This may take a few moments.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
 
-            <Button
-              onClick={() => testEndpoint('character-achievements', { characterId })}
-              disabled={isLoading}
-              variant="outline"
-              className="border-compass-600 text-compass-300 hover:bg-compass-700"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              Test Character Achievements
-            </Button>
-
-            <Button
-              onClick={() => testEndpoint('achievements', { page })}
-              disabled={isLoading}
-              variant="outline"
-              className="border-compass-600 text-compass-300 hover:bg-compass-700"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Test All Achievements (Page {page})
-            </Button>
-
-            <Button
-              onClick={() => testEndpoint('ffxiv-collect-achievements', { page })}
-              disabled={isLoading}
-              variant="outline"
-              className="border-earth-600 text-earth-300 hover:bg-earth-700"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              Test FFXIVCollect Achievements
-            </Button>
-
-            <Button
-              onClick={() => testEndpoint('ffxiv-collect-character', { characterId })}
-              disabled={isLoading}
-              variant="outline"
-              className="border-earth-600 text-earth-300 hover:bg-earth-700"
-            >
-              <User className="h-4 w-4 mr-2" />
-              Test FFXIVCollect Character
-            </Button>
-
-            <Button
-              onClick={async () => {
-                // Test pagination by fetching multiple pages
-                setIsLoading(true);
-                for (let i = 1; i <= 3; i++) {
-                  await testEndpoint('achievements', { page: i.toString() });
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                }
-                setIsLoading(false);
-              }}
-              disabled={isLoading}
-              variant="outline"
-              className="border-gold-600 text-gold-300 hover:bg-gold-700"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Test Pagination (Pages 1-3)
-            </Button>
-          </div>
-
-          {isLoading && (
-            <Alert>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <AlertDescription>
-                Testing API endpoints... This may take a few moments.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-
-        <TabsContent value="results" className="space-y-4">
-          {debugResults.length === 0 ? (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                No test results yet. Use the "Test Endpoints" tab to run API tests.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
-              {debugResults.map((result, index) => (
-                <Card key={index} className="compass-card">
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(result.results)}
-                        <span className="font-medium text-compass-100">{result.endpoint}</span>
+          <TabsContent value="results" className="space-y-4">
+            {debugResults.length === 0 ? (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  No test results yet. Use the "Test Endpoints" tab to run API tests and inspect responses.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+                {debugResults.map((result, index) => (
+                  <Card key={index} className="compass-card">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(result.results)}
+                          <CardTitle className="text-compass-100 text-base">{result.endpoint}</CardTitle>
+                        </div>
                         <Badge variant="outline" className="text-xs bg-compass-700 border-compass-600 text-compass-300">
                           {new Date(result.timestamp).toLocaleTimeString()}
                         </Badge>
                       </div>
-                    </div>
-
-                    {Object.entries(result.results).map(([key, value]: [string, any]) => (
-                      <div key={key} className="mb-4">
-                        <h4 className="font-medium text-compass-200 mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h4>
-                        
-                        {value && typeof value === 'object' && value.status ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant={value.status === 200 ? "default" : "destructive"}
-                                className="text-xs"
-                              >
-                                {value.status} {value.statusText}
-                              </Badge>
-                            </div>
-                            
-                            {value.data && (
-                              <details className="mt-2">
-                                <summary className="text-xs text-compass-400 cursor-pointer hover:text-compass-300">
-                                  Show response data
-                                </summary>
-                                <pre className="text-xs text-compass-400 mt-2 p-3 bg-compass-800 rounded overflow-auto max-h-40">
-                                  {formatDataPreview(value.data)}
-                                </pre>
-                              </details>
-                            )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {/* Request Parameters */}
+                      {result.request && Object.keys(result.request).length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="font-medium text-compass-200 mb-2">Request Parameters:</h5>
+                          <div className="text-xs text-compass-400 bg-compass-800 p-2 rounded">
+                            {JSON.stringify(result.request, null, 2)}
                           </div>
-                        ) : (
-                          <pre className="text-xs text-compass-400 p-3 bg-compass-800 rounded overflow-auto max-h-32">
-                            {formatDataPreview(value)}
-                          </pre>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                        </div>
+                      )}
+
+                      {/* Results */}
+                      {Object.entries(result.results).map(([key, value]: [string, any]) => (
+                        <div key={key} className="mb-4">
+                          <h5 className="font-medium text-compass-200 mb-2 capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                          </h5>
+                          
+                          {value && typeof value === 'object' && value.status ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  variant={value.status === 200 ? "default" : "destructive"}
+                                  className="text-xs"
+                                >
+                                  {value.status} {value.statusText}
+                                </Badge>
+                                {value.dataStructure && (
+                                  <Badge variant="outline" className="text-xs bg-compass-700 border-compass-600">
+                                    {value.dataStructure.resultsLength || value.dataStructure.length || 0} items
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              {/* Data Structure Summary */}
+                              {value.dataStructure && (
+                                <div className="text-xs text-compass-300 bg-compass-800 p-2 rounded">
+                                  <strong>Data Structure:</strong>
+                                  <pre>{JSON.stringify(value.dataStructure, null, 2)}</pre>
+                                </div>
+                              )}
+                              
+                              {/* Raw Data Preview */}
+                              {value.rawData && (
+                                <details className="mt-2">
+                                  <summary className="text-xs text-compass-400 cursor-pointer hover:text-compass-300">
+                                    Show raw response data
+                                  </summary>
+                                  <pre className="text-xs text-compass-400 mt-2 p-3 bg-compass-900 rounded overflow-auto max-h-60">
+                                    {formatDataPreview(value.rawData)}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          ) : (
+                            <pre className="text-xs text-compass-400 p-3 bg-compass-800 rounded overflow-auto max-h-32">
+                              {formatDataPreview(value)}
+                            </pre>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
     </Card>
   );
 }
