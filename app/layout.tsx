@@ -1,5 +1,3 @@
-'use client';
-
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
@@ -8,8 +6,6 @@ import { Compass } from 'lucide-react';
 import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
 import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
 import { PerformanceMonitor } from "@/components/performance-monitor";
-import { createSkipLink } from "@/lib/utils/accessibility";
-import { useEffect } from "react";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -43,11 +39,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  useEffect(() => {
-    // Add skip link for accessibility
-    createSkipLink('main-content', 'Skip to main content');
-  }, []);
-
   return (
     <html lang="en">
       <body className={inter.className}>
