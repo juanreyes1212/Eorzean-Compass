@@ -43,6 +43,11 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const [achievementsLoading, setAchievementsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [achievementsFetchProgress, setAchievementsFetchProgress] = useState<{
+    current: number;
+    total: number;
+    isLoading: boolean;
+  }>({ current: 0, total: 0, isLoading: false });
   const [selectedAchievementForDetails, setSelectedAchievementForDetails] = useState<AchievementWithTSRG | null>(null); // New state for details modal
   const { toast } = useToast();
 
@@ -228,6 +233,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const fetchAchievementsWithTSRG = async (forceRefresh = false) => {
     try {
       setAchievementsLoading(true);
+      setAchievementsFetchProgress({ current: 0, total: 0, isLoading: true });
       
       const cachedAchievements = getStoredAchievements();
       if (cachedAchievements && characterData && !forceRefresh) {
@@ -244,9 +250,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         });
         
         setAllAchievements(achievementsWithStatus);
+        setAchievementsFetchProgress({ current: achievementsWithStatus.length, total: achievementsWithStatus.length, isLoading: false });
         setAchievementsLoading(false);
         return;
       }
+
+      // Show progress for fresh fetch
+      setAchievementsFetchProgress({ current: 0, total: 2500, isLoading: true });
 
       const response = await fetch('/api/achievements');
       if (!response.ok) {
@@ -269,8 +279,10 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       });
       
       setAllAchievements(achievementsWithTSRG);
+      setAchievementsFetchProgress({ current: achievementsWithTSRG.length, total: achievementsWithTSRG.length, isLoading: false });
     } catch (fetchError) {
       setAllAchievements([]);
+      setAchievementsFetchProgress({ current: 0, total: 0, isLoading: false });
       toast({
         title: "Error Loading Achievements",
         description: "Failed to load achievement data. Please try refreshing.",
@@ -336,11 +348,36 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   if (loading) {
     return (
       <div className="min-h-screen bg-compass-950 container mx-auto px-4 py-8">
-        <LoadingState 
-          type="dashboard" 
-          title="Loading Character Data" 
-          message="Fetching character information and achievements..."
-        />
+        <div className="space-y-6">
+          <LoadingState 
+            type="dashboard" 
+            title="Loading Character Data" 
+            message="Fetching character information from Tomestone.gg..."
+          />
+          {achievementsFetchProgress.isLoading && (
+            <Card className="p-6 compass-card">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-compass-100">Loading All Achievements</h3>
+                  <span className="text-compass-300">
+                    {achievementsFetchProgress.current} / {achievementsFetchProgress.total}
+                  </span>
+                </div>
+                <div className="w-full bg-compass-800 rounded-full h-2">
+                  <div 
+                    className="bg-gold-500 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${achievementsFetchProgress.total > 0 ? (achievementsFetchProgress.current / achievementsFetchProgress.total) * 100 : 0}%` 
+                    }}
+                  ></div>
+                </div>
+                <p className="text-sm text-compass-400">
+                  Fetching achievements from Tomestone.gg (50 per page)...
+                </p>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
     );
   }
@@ -398,7 +435,12 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         <Alert variant="default" className="mb-6 bg-compass-900/20 border-compass-700 text-compass-300">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            {characterData._error || "Using demo data due to an API issue. Please try again later for real-time data."}
+            {characterData._error || "Using demo data due to an API issue. Please try again later for real-time data."} 
+            {achievementsFetchProgress.isLoading && (
+              <div className="mt-2">
+                <div className="text-sm">Loading achievements: {achievementsFetchProgress.current} / {achievementsFetchProgress.total}</div>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}

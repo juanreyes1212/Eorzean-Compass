@@ -13,6 +13,8 @@ export interface Character {
 
 export interface CompletedAchievement {
   id: number;
+  completedAt?: string; // Date when achievement was completed
+  progress?: any; // Any progress data if available
 }
 
 export interface Achievement {
