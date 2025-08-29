@@ -331,7 +331,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
       
-      const response = await fetch('/api/achievements');
+      const response = await fetch('/api/achievements', {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
