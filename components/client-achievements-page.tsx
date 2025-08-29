@@ -467,7 +467,6 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
 
     // Then, if coming from recommendations, switch to achievements tab and highlight
     const achievementsTab = document.querySelector('[value="achievements"]') as HTMLElement;
-      const achievementsTab = document.querySelector('[value="achievements"]') as HTMLElement;
       if (achievementsTab && document.querySelector('[data-state="active"]')?.getAttribute('value') !== 'achievements') {
         achievementsTab.click();
       }
