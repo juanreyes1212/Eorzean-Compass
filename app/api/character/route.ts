@@ -242,9 +242,12 @@ export async function GET(request: Request) {
   // Add security headers
   const headers = new Headers(securityHeaders);
   
+  console.log("[Character API] Starting character fetch...");
+  
   // Rate limiting
   const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
   if (!apiRateLimiter.isAllowed(clientIP)) {
+    console.warn(`[Character API] Rate limit exceeded for IP: ${clientIP}`);
     return NextResponse.json(
       { error: "Too many requests. Please wait before trying again." },
       { status: 429, headers }
@@ -267,6 +270,7 @@ export async function GET(request: Request) {
   // Validate and sanitize inputs
   const nameValidation = validateCharacterName(nameParam);
   if (!nameValidation.isValid) {
+    console.error(`[Character API] Name validation failed: ${nameValidation.error}`);
     return NextResponse.json(
       { error: nameValidation.error },
       { status: 400, headers }
@@ -275,6 +279,7 @@ export async function GET(request: Request) {
   
   const serverValidation = validateServerName(serverParam);
   if (!serverValidation.isValid) {
+    console.error(`[Character API] Server validation failed: ${serverValidation.error}`);
     return NextResponse.json(
       { error: serverValidation.error },
       { status: 400, headers }
@@ -295,6 +300,7 @@ export async function GET(request: Request) {
   // Step 1: Fetch Character Profile from Tomestone.gg (to get Lodestone ID)
   try {
     if (!TOMESTONE_API_KEY) {
+      console.warn("[Character API] No Tomestone API key available");
       throw new Error("Tomestone.gg API key is missing.");
     }
 
@@ -327,8 +333,16 @@ export async function GET(request: Request) {
 
     const tomestoneProfileData: TomestoneProfileCharacter = await profileResponse.json();
     console.log(`[Character API] Profile data received for character ID: ${tomestoneProfileData.id}`);
+    console.log(`[Character API] Profile data structure:`, {
+      id: tomestoneProfileData.id,
+      name: tomestoneProfileData.name,
+      server: tomestoneProfileData.server,
+      hasAvatar: !!tomestoneProfileData.avatar,
+      achievementPointsStructure: tomestoneProfileData.achievementPoints
+    });
     
     if (!tomestoneProfileData || !tomestoneProfileData.id) {
+      console.error("[Character API] Invalid character data from Tomestone:", tomestoneProfileData);
       throw new Error("Invalid character data from Tomestone.gg");
     }
 
@@ -344,6 +358,7 @@ export async function GET(request: Request) {
 
   // Step 2: Fetch Completed Achievements using Lodestone ID
   if (lodestoneId && isRealData) {
+    console.log(`[Character API] Fetching completed achievements for Lodestone ID: ${lodestoneId}`);
     try {
       completedAchievementsFromAPI = await fetchAllCompletedAchievements(lodestoneId);
       console.log(`[Character API] Successfully fetched ${completedAchievementsFromAPI.length} completed achievements from Tomestone.gg`);
@@ -353,6 +368,7 @@ export async function GET(request: Request) {
       
       // Try FFXIVCollect fallback for completed achievements
       try {
+        console.log("[Character API] Trying FFXIVCollect fallback for completed achievements...");
         completedAchievementsFromAPI = await fetchCompletedFromFFXIVCollect(lodestoneId);
         apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "Using FFXIVCollect for completed achievements (no completion dates available).";
       } catch (ffxivError) {
@@ -370,6 +386,7 @@ export async function GET(request: Request) {
   const now = new Date().toISOString();
 
   if (isRealData && realCharacterData) {
+    console.log("[Character API] Constructing real character data...");
     finalCharacterData = {
       id: realCharacterData.id.toString(),
       name: realCharacterData.name,
@@ -386,6 +403,7 @@ export async function GET(request: Request) {
     finalError = apiErrorReason;
 
   } else {
+    console.log("[Character API] Generating mock character data...");
     const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
     finalCharacterData = mock.character;
     finalCompletedAchievements = mock.completedAchievements;
@@ -394,6 +412,7 @@ export async function GET(request: Request) {
   }
 
   console.log(`[Character API] Final response: ${finalCompletedAchievements.length} completed achievements, isRealData=${isRealData}`);
+  console.log(`[Character API] Sample completed achievement IDs:`, finalCompletedAchievements.slice(0, 10).map(a => a.id));
   
   return NextResponse.json({
     character: finalCharacterData,

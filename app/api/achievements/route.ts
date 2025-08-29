@@ -285,10 +285,13 @@ export async function GET() {
   // Add security headers
   const headers = new Headers(securityHeaders);
   
+  console.log("[Achievements API] Starting achievements fetch...");
+  
   // Check cache first
   const now = Date.now();
   if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
     console.log("[Achievements API] Returning cached achievements data.");
+    console.log(`[Achievements API] Cache contains ${achievementsCache.length} achievements`);
     return NextResponse.json(achievementsCache, { headers });
   }
 
@@ -296,9 +299,12 @@ export async function GET() {
   let source = 'mock';
 
   try {
+    console.log("[Achievements API] Attempting to fetch from FFXIVCollect...");
     // Primary: Fetch from FFXIVCollect (comprehensive database)
     processedAchievements = await fetchAllAchievementsFromFFXIVCollect();
     source = 'ffxivcollect';
+    
+    console.log(`[Achievements API] FFXIVCollect returned ${processedAchievements.length} achievements`);
     
     // Supplement with Tomestone.gg data if available
     processedAchievements = await supplementWithTomestoneData(processedAchievements);
@@ -323,6 +329,7 @@ export async function GET() {
 
       while (page <= 50) { // Limit to prevent infinite loops
         const url = `${EXTERNAL_APIS.TOMESTONE_BASE}/achievements?page=${page}&limit=${limit}`;
+        console.log(`[Achievements API] Fetching Tomestone page ${page}: ${url}`);
         
         const response = await fetchWithTimeout(url, {
           headers: {
@@ -333,12 +340,15 @@ export async function GET() {
         });
 
         if (!response.ok) {
+          console.error(`[Achievements API] Tomestone page ${page} failed: ${response.status} ${response.statusText}`);
           throw new Error(`Tomestone HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data: TomestoneResponse = await response.json();
+        console.log(`[Achievements API] Tomestone page ${page} returned ${data.results?.length || 0} achievements`);
         
         if (!data.results || !Array.isArray(data.results)) {
+          console.warn(`[Achievements API] Invalid Tomestone data structure for page ${page}:`, data);
           break;
         }
 
@@ -346,12 +356,15 @@ export async function GET() {
         console.log(`[Achievements API] Fetched Tomestone page ${page}, total: ${tomestoneAchievements.length}`);
         
         if (data.results.length < limit) {
+          console.log(`[Achievements API] Reached end of Tomestone data at page ${page}`);
           break;
         }
         
         page++;
         await new Promise(resolve => setTimeout(resolve, 200));
       }
+
+      console.log(`[Achievements API] Total Tomestone achievements: ${tomestoneAchievements.length}`);
 
       processedAchievements = tomestoneAchievements.map(achievement => ({
         id: achievement.id,
@@ -372,10 +385,13 @@ export async function GET() {
       console.error("[Achievements API] Tomestone.gg also failed:", tomestoneError);
       
       // Last resort: Generate mock data
+      console.log("[Achievements API] Using mock data as last resort");
       processedAchievements = generateMockAchievements();
       source = 'mock';
     }
   }
+
+  console.log(`[Achievements API] Processing ${processedAchievements.length} achievements for TSR-G scoring...`);
 
   // Add TSR-G scores to all achievements
   const achievementsWithTSRG = processedAchievements
@@ -384,6 +400,8 @@ export async function GET() {
       ...achievement,
       tsrg: calculateTSRGScore(achievement),
     }));
+
+  console.log(`[Achievements API] Final achievements with TSR-G: ${achievementsWithTSRG.length}`);
 
   // Cache the results
   achievementsCache = achievementsWithTSRG;

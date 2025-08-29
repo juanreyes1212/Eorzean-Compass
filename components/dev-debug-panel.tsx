@@ -52,6 +52,17 @@ export function DevDebugPanel() {
     }
   };
 
+  const formatDataPreview = (data: any) => {
+    if (!data) return "No data";
+    if (typeof data === 'string') return data.substring(0, 300) + (data.length > 300 ? '...' : '');
+    
+    try {
+      const str = JSON.stringify(data, null, 2);
+      return str.substring(0, 800) + (str.length > 800 ? '\n...' : '');
+    } catch {
+      return "Unable to format data";
+    }
+  };
   const getStatusIcon = (result: any) => {
     if (result.error) return <XCircle className="h-4 w-4 text-red-400" />;
     
@@ -65,17 +76,6 @@ export function DevDebugPanel() {
       <XCircle className="h-4 w-4 text-red-400" />;
   };
 
-  const formatDataPreview = (data: any) => {
-    if (!data) return "No data";
-    if (typeof data === 'string') return data.substring(0, 300) + (data.length > 300 ? '...' : '');
-    
-    try {
-      const str = JSON.stringify(data, null, 2);
-      return str.substring(0, 800) + (str.length > 800 ? '\n...' : '');
-    } catch {
-      return "Unable to format data";
-    }
-  };
 
   if (process.env.NODE_ENV !== 'development') {
     return null;
@@ -213,28 +213,60 @@ export function DevDebugPanel() {
               </div>
             </div>
 
-            {/* Pagination Tests */}
+            {/* Quick Tests */}
             <div>
-              <h4 className="text-compass-100 font-medium mb-3">Pagination Tests</h4>
+              <h4 className="text-compass-100 font-medium mb-3">Quick Tests</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button
-                  onClick={() => testEndpoint('pagination-test-tomestone')}
+                  onClick={() => testEndpoint('pagination-test')}
                   disabled={isLoading}
                   variant="outline"
                   className="border-gold-600 text-gold-300 hover:bg-gold-700"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Test Tomestone Pagination (Pages 1-3)
+                  Test Pagination (Pages 1-3)
                 </Button>
 
                 <Button
-                  onClick={() => testEndpoint('pagination-test-ffxiv')}
+                  onClick={async () => {
+                    // Test our own endpoints
+                    try {
+                      const [charResponse, achResponse] = await Promise.all([
+                        fetch(`/api/character?name=${encodeURIComponent(characterName)}&server=${encodeURIComponent(server)}`),
+                        fetch('/api/achievements')
+                      ]);
+                      
+                      const charData = await charResponse.json();
+                      const achData = await achResponse.json();
+                      
+                      setDebugResults(prev => [{
+                        endpoint: 'local-endpoints-test',
+                        timestamp: new Date().toISOString(),
+                        apiKey: 'N/A',
+                        request: { name: characterName, server },
+                        results: {
+                          character: {
+                            status: charResponse.status,
+                            completedCount: charData.completedAchievements?.length || 0,
+                            isMockData: charData._isMockData
+                          },
+                          achievements: {
+                            status: achResponse.status,
+                            count: Array.isArray(achData) ? achData.length : 0,
+                            sampleAchievement: Array.isArray(achData) ? achData[0] : null
+                          }
+                        }
+                      }, ...prev.slice(0, 9)]);
+                    } catch (error) {
+                      console.error('Local endpoints test failed:', error);
+                    }
+                  }}
                   disabled={isLoading}
                   variant="outline"
                   className="border-gold-600 text-gold-300 hover:bg-gold-700"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Test FFXIVCollect Pagination (Pages 1-3)
+                  <Database className="h-4 w-4 mr-2" />
+                  Test Local Endpoints
                 </Button>
               </div>
             </div>
