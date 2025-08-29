@@ -49,6 +49,7 @@ export function useVirtualScrolling<T>(
 ) {
   const [scrollTop, setScrollTop] = useState(0);
 
+  console.log(`[Virtual Scrolling] items=${items.length}, itemHeight=${itemHeight}, containerHeight=${containerHeight}, scrollTop=${scrollTop}`);
   const startIndex = Math.floor(scrollTop / itemHeight);
   const endIndex = Math.min(
     startIndex + Math.ceil(containerHeight / itemHeight) + 1,
@@ -59,6 +60,7 @@ export function useVirtualScrolling<T>(
   const totalHeight = items.length * itemHeight;
   const offsetY = startIndex * itemHeight;
 
+  console.log(`[Virtual Scrolling] startIndex=${startIndex}, endIndex=${endIndex}, visibleItems=${visibleItems.length}`);
   return {
     visibleItems,
     totalHeight,

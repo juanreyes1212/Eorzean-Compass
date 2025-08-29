@@ -301,11 +301,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         console.log(`[Achievements Fetch] Sample completed IDs:`, Array.from(completedAchievementIds).slice(0, 10));
         
         const achievementsWithStatus = cachedAchievements.map((achievement: any) => {
-          const isCompleted = completedAchievementIds.has(achievement.id);
+          const isCompleted = completedAchievementIds.has(Number(achievement.id));
           
-          if (isCompleted) {
-            console.log(`[Achievements Fetch] Marking achievement as completed: ${achievement.name} (ID: ${achievement.id})`);
-          }
+          console.log(`[Achievements Fetch] Processing achievement ${achievement.id}: ${achievement.name}, isCompleted: ${isCompleted}`);
           
           return {
             ...achievement,
@@ -380,11 +378,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
           return null;
         }
         
-        const isCompleted = completedAchievementIds.has(achievement.id);
+        const isCompleted = completedAchievementIds.has(Number(achievement.id));
         
-        if (isCompleted) {
-          console.log(`[Achievements Fetch] Found completed achievement: ${achievement.name} (ID: ${achievement.id})`);
-        }
+        console.log(`[Achievements Fetch] Processing fresh achievement ${achievement.id}: ${achievement.name}, isCompleted: ${isCompleted}`);
         
         return {
           ...achievement,

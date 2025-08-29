@@ -38,8 +38,10 @@ export function AchievementTablePaginated({
   
   // Apply filters and sorting to get filtered achievements
   const filteredAchievements = useMemo(() => {
-    console.log(`[Table] Starting filter with ${allAchievements.length} total achievements`);
-    console.log(`[Table] Completed achievements in all:`, allAchievements.filter(a => a.isCompleted).length);
+    console.log(`[Table Filter] Starting with ${allAchievements.length} total achievements`);
+    const completedCount = allAchievements.filter(a => a.isCompleted).length;
+    console.log(`[Table Filter] Completed achievements count: ${completedCount}`);
+    console.log(`[Table Filter] Sample completed achievements:`, allAchievements.filter(a => a.isCompleted).slice(0, 5).map(a => ({ id: a.id, name: a.name })));
     
     let filtered = [...allAchievements];
     
@@ -59,18 +61,18 @@ export function AchievementTablePaginated({
       return true;
     });
     
-    console.log(`[Table] After TSR-G filters: ${filtered.length} achievements`);
+    console.log(`[Table Filter] After TSR-G filters: ${filtered.length} achievements`);
     
     // Apply completion filter
     if (preferences.hideCompleted) {
       filtered = filtered.filter(achievement => !achievement.isCompleted);
-      console.log(`[Table] After hiding completed: ${filtered.length} achievements`);
+      console.log(`[Table Filter] After hiding completed: ${filtered.length} achievements`);
     }
     
     // Apply obtainable filter
     if (preferences.hideUnobtainable) {
       filtered = filtered.filter(achievement => achievement.isObtainable);
-      console.log(`[Table] After hiding unobtainable: ${filtered.length} achievements`);
+      console.log(`[Table Filter] After hiding unobtainable: ${filtered.length} achievements`);
     }
     
     // Filter by category
@@ -78,7 +80,7 @@ export function AchievementTablePaginated({
       filtered = filtered.filter(
         (achievement) => achievement.category.toLowerCase().includes(categoryFilter.toLowerCase())
       );
-      console.log(`[Table] After category filter (${categoryFilter}): ${filtered.length} achievements`);
+      console.log(`[Table Filter] After category filter (${categoryFilter}): ${filtered.length} achievements`);
     }
     
     // Filter by search query
@@ -89,7 +91,7 @@ export function AchievementTablePaginated({
           achievement.name.toLowerCase().includes(query) ||
           achievement.description.toLowerCase().includes(query)
       );
-      console.log(`[Table] After search query (${searchQuery}): ${filtered.length} achievements`);
+      console.log(`[Table Filter] After search query (${searchQuery}): ${filtered.length} achievements`);
     }
 
     // Apply sorting
@@ -125,12 +127,15 @@ export function AchievementTablePaginated({
       });
     }
     
-    console.log(`[Table] Final filtered achievements: ${filtered.length}`);
+    console.log(`[Table Filter] Final filtered achievements: ${filtered.length}`);
+    console.log(`[Table Filter] Sample filtered achievements:`, filtered.slice(0, 3).map(a => ({ id: a.id, name: a.name, isCompleted: a.isCompleted })));
     return filtered;
   }, [allAchievements, preferences, categoryFilter, searchQuery, sortColumn, sortDirection]);
   
   // Use virtual scrolling for large datasets
-  const useVirtualScrolling = filteredAchievements.length > 500;
+  const useVirtualScrolling = false; // Temporarily disable virtual scrolling to debug
+  
+  console.log(`[Table Paginated] useVirtualScrolling: ${useVirtualScrolling}, filteredCount: ${filteredAchievements.length}`);
   
   // Calculate pagination
   const totalPages = Math.ceil(filteredAchievements.length / pageSize);
@@ -138,6 +143,7 @@ export function AchievementTablePaginated({
   const endIndex = startIndex + pageSize;
   const currentPageAchievements = filteredAchievements.slice(startIndex, endIndex);
 
+  console.log(`[Table Paginated] Pagination: page ${currentPage}/${totalPages}, showing ${currentPageAchievements.length} achievements (${startIndex}-${endIndex})`);
   // Reset to page 1 when filters or sort changes
   useEffect(() => {
     setCurrentPage(1);

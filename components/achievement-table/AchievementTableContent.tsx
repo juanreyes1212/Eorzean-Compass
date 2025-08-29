@@ -77,17 +77,20 @@ export function AchievementTableContent({
         </TableHeader>
         <TableBody data-testid="achievements-table-body">
           {achievements.length > 0 ? (
-            achievements.map((achievement) => (
+            achievements.map((achievement, index) => {
+              console.log(`[Table Content] Rendering achievement ${index + 1}/${achievements.length}: ${achievement.name} (ID: ${achievement.id})`);
+              return (
               <AchievementTableRow 
                 key={achievement.id} 
                 achievement={achievement} 
                 onClick={() => onAchievementClick(achievement)} // Pass click handler
               />
-            ))
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-compass-400" data-testid="no-achievements-message">
-                No achievements found matching your filters.
+                No achievements found matching your current filters. Try adjusting your TSR-G settings or search criteria.
               </TableCell>
             </TableRow>
           )}

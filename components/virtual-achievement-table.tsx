@@ -30,12 +30,14 @@ export function VirtualAchievementTable({
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
 
+  console.log(`[Virtual Table] Rendering with ${achievements.length} achievements, containerHeight: ${containerHeight}`);
   const { visibleItems, totalHeight, offsetY } = useVirtualScrolling(
     achievements,
     ITEM_HEIGHT,
     containerHeight
   );
 
+  console.log(`[Virtual Table] Virtual scrolling: visibleItems=${visibleItems.length}, totalHeight=${totalHeight}, offsetY=${offsetY}`);
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
   };
