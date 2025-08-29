@@ -6,21 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Compass, Target, Clock, Zap, Dice6, Users, TrendingUp, Trophy, Star, Database, Code, Palette, Rocket, ArrowLeft, Info, CheckCircle } from 'lucide-react';
 import Link from "next/link";
-import { Metadata, Viewport } from "next";
-
-export const metadata: Metadata = {
-  title: "About | Eorzean Compass",
-  description: "Learn about the TSR-G Matrix system and how Eorzean Compass helps FFXIV players track achievements",
-  robots: 'index, follow',
-};
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-  themeColor: '#f59e0b',
-  colorScheme: 'dark',
-};
 
 export default function AboutPage() {
   const tsrgVectors = [

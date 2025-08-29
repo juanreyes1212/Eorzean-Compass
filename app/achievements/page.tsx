@@ -3,21 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ClientAchievementsPage } from "@/components/client-achievements-page";
 import Loading from "./loading"; // Import the loading component
-import { Metadata, Viewport } from "next";
-
-export const metadata: Metadata = {
-  title: "Achievements | Eorzean Compass",
-  description: "View and track your FFXIV achievements with TSR-G analysis",
-  robots: 'index, follow',
-};
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-  themeColor: '#f59e0b',
-  colorScheme: 'dark',
-};
 
 interface PageProps {
   searchParams: { name?: string; server?: string };
