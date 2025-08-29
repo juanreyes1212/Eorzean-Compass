@@ -322,6 +322,8 @@ export function RecommendationsDashboard({
           )}
         </TabsContent>
 
+      </Tabs>
+
       {/* Project Detail Dialog */}
       <Dialog open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
         <DialogContent className="bg-slate-800 border-slate-700 p-6 max-w-2xl">
@@ -355,7 +357,7 @@ export function RecommendationsDashboard({
                   <div 
                     key={achievement.id}
                     className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 cursor-pointer"
-                    onClick={() => setSelectedAchievementForDetails(achievement)} // Open new details modal
+                    onClick={() => setSelectedAchievementForDetails(achievement)}
                   >
                     <AchievementIcon
                       icon={getAchievementIconUrl(achievement.icon)}
@@ -392,7 +394,6 @@ export function RecommendationsDashboard({
         isOpen={!!selectedAchievementForDetails}
         onClose={() => setSelectedAchievementForDetails(null)}
       />
-      </Tabs>
     </div>
   );
 }

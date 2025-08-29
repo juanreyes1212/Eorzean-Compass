@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AchievementTableRow } from "./achievement-table/AchievementTableRow";
 import { ArrowUp, ArrowDown } from 'lucide-react';
@@ -115,9 +115,9 @@ export function VirtualAchievementTable({
                   ))
                 ) : (
                   <TableRow>
-                    <td colSpan={7} className="text-center py-8 text-compass-400">
+                    <TableHead colSpan={7} className="text-center py-8 text-compass-400">
                       No achievements found matching your filters.
-                    </td>
+                    </TableHead>
                   </TableRow>
                 )}
               </TableBody>
