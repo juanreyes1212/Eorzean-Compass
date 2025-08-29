@@ -139,9 +139,9 @@ export function APITestPanel() {
   };
 
   return (
-    <Card className="p-6 bg-slate-800 border-slate-700">
+    <Card className="p-6 compass-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">API Connection Tests</h3>
+        <h3 className="text-lg font-semibold text-compass-100">API Connection Tests</h3>
         <Button 
           onClick={runTests} 
           disabled={isRunning}
@@ -169,11 +169,11 @@ export function APITestPanel() {
         {tests.map((test, index) => (
           <div 
             key={index}
-            className={`p-3 border rounded-lg ${getStatusColor(test.status)} bg-slate-700/50`}
+            className={`p-3 border rounded-lg ${getStatusColor(test.status)} bg-compass-700/50`}
           >
             <div className="flex items-center gap-3 mb-2">
               {getStatusIcon(test.status)}
-              <span className="font-medium text-white">{test.name}</span>
+              <span className="font-medium text-compass-100">{test.name}</span>
               <Badge 
                 variant={test.status === 'success' ? 'default' : 'destructive'}
                 className="ml-auto"
@@ -181,13 +181,13 @@ export function APITestPanel() {
                 {test.status}
               </Badge>
             </div>
-            <p className="text-sm text-slate-300 ml-7">{test.message}</p>
+            <p className="text-sm text-compass-300 ml-7">{test.message}</p>
             {test.data && (
               <details className="mt-2 ml-7">
-                <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-300">
+                <summary className="text-xs text-compass-400 cursor-pointer hover:text-compass-300">
                   Show sample data
                 </summary>
-                <pre className="text-xs text-slate-400 mt-1 p-2 bg-slate-800 rounded overflow-auto">
+                <pre className="text-xs text-compass-400 mt-1 p-2 bg-compass-800 rounded overflow-auto">
                   {JSON.stringify(test.data, null, 2)}
                 </pre>
               </details>

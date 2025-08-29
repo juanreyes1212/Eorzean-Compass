@@ -1,9 +1,9 @@
 "use client";
 
 import { CharacterProfile } from "@/components/character-profile";
+import { Button } from "@/components/ui/button";
 import { Database, HardDrive, RefreshCw, Clock } from 'lucide-react'; // Import Clock icon
 import { Character, CompletedAchievement } from "@/lib/types"; // Import CompletedAchievement
-import { Button } from "@/components/ui/button"; // Import Button
 
 interface AchievementsPageHeaderProps {
   characterData: {

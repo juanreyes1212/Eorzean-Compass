@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { SERVERS } from "@/lib/constants"; // Import SERVERS
 
@@ -36,9 +37,9 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
   const dataCenter = SERVERS[character.server as keyof typeof SERVERS] || 'Unknown Data Center';
   
   return (
-    <Card className="bg-slate-800 border-slate-700 p-6">
+    <Card className="compass-card p-6">
       <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-        <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-blue-500 flex-shrink-0 bg-slate-700">
+        <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-gold-500 flex-shrink-0 bg-compass-700">
           <Image
             src={character.avatar || "/placeholder.svg?height=96&width=96&text=Avatar"}
             alt={character.name}
@@ -52,9 +53,9 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
         </div>
         
         <div className="flex-1 text-center md:text-left w-full">
-          <h1 className="text-2xl font-bold text-white">{character.name}</h1>
-          <p className="text-slate-300 mb-4">
-            {character.server} <span className="text-slate-400">({dataCenter})</span>
+          <h1 className="text-2xl font-bold text-compass-100">{character.name}</h1>
+          <p className="text-compass-300 mb-4">
+            {character.server} <span className="text-compass-400">({dataCenter})</span>
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
@@ -76,23 +77,23 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
           </div>
           
           <div className="space-y-2">
-            <div className="flex justify-between text-sm text-slate-300">
+            <div className="flex justify-between text-sm text-compass-300">
               <span>Progress</span>
               {isLoading ? (
-                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-16 bg-compass-700" />
               ) : (
                 <span>{stats.completed} / {stats.total}</span>
               )}
             </div>
             {isLoading ? (
-              <Skeleton className="h-2 w-full" />
+              <Skeleton className="h-2 w-full bg-compass-700" />
             ) : (
               <Progress value={stats.completionRate} className="h-2" />
             )}
           </div>
 
           {actualStats && (
-            <div className="mt-3 text-xs text-slate-400">
+            <div className="mt-3 text-xs text-compass-400">
               <span>{stats.obtainable} obtainable achievements available</span>
             </div>
           )}
@@ -104,13 +105,13 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
 
 function Stat({ label, value, isLoading }: { label: string; value: string; isLoading: boolean }) {
   return (
-    <div className="bg-slate-700 rounded-lg p-3 text-center">
-      <p className="text-sm text-slate-300">{label}</p>
+    <Card className="p-3 text-center compass-card">
+      <p className="text-sm text-compass-300">{label}</p>
       {isLoading ? (
-        <Skeleton className="h-6 w-16 mx-auto mt-1" />
+        <Skeleton className="h-6 w-16 mx-auto mt-1 bg-compass-700" />
       ) : (
-        <p className="text-xl font-bold text-white">{value}</p>
+        <p className="text-xl font-bold text-compass-100">{value}</p>
       )}
-    </div>
+    </Card>
   );
 }

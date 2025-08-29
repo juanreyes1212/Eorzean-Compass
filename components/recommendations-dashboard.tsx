@@ -121,37 +121,37 @@ export function RecommendationsDashboard({
   return (
     <div className="space-y-6">
       {/* User Profile Summary */}
-      <Card className="p-6 bg-slate-800 border-slate-700">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-blue-400" />
+      <Card className="p-6 compass-card">
+        <h3 className="text-lg font-semibold text-compass-100 mb-4 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-gold-400" />
           Your Achievement Profile
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">{userProfile.preferredDifficulty}</div>
-            <div className="text-sm text-slate-300">Preferred Difficulty</div>
+            <div className="text-2xl font-bold text-compass-100">{userProfile.preferredDifficulty}</div>
+            <div className="text-sm text-compass-300">Preferred Difficulty</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">{userProfile.averageSkill}/10</div>
-            <div className="text-sm text-slate-300">Average Skill Level</div>
+            <div className="text-2xl font-bold text-compass-100">{userProfile.averageSkill}/10</div>
+            <div className="text-sm text-compass-300">Average Skill Level</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">{userProfile.averageTime}/10</div>
-            <div className="text-sm text-slate-300">Time Investment</div>
+            <div className="text-2xl font-bold text-compass-100">{userProfile.averageTime}/10</div>
+            <div className="text-sm text-compass-300">Time Investment</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">{completedAchievements.length}</div>
-            <div className="text-sm text-slate-300">Completed</div>
+            <div className="text-2xl font-bold text-compass-100">{completedAchievements.length}</div>
+            <div className="text-sm text-compass-300">Completed</div>
           </div>
         </div>
 
         {userProfile.strongestAreas.length > 0 && (
           <div>
-            <div className="text-sm text-slate-300 mb-2">Your Strengths:</div>
+            <div className="text-sm text-compass-300 mb-2">Your Strengths:</div>
             <div className="flex flex-wrap gap-2">
               {userProfile.strongestAreas.map((area) => (
-                <Badge key={area} variant="outline" className="bg-blue-900 border-blue-700 text-blue-300">
+                <Badge key={area} variant="outline" className="bg-compass-900 border-compass-700 text-compass-300">
                   {area}
                 </Badge>
               ))}
@@ -161,19 +161,19 @@ export function RecommendationsDashboard({
       </Card>
 
       <Tabs defaultValue="recommendations" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-800 border-slate-700">
-          <TabsTrigger value="recommendations" className="data-[state=active]:bg-slate-700">
+        <TabsList className="grid w-full grid-cols-2 bg-compass-800 border-compass-700">
+          <TabsTrigger value="recommendations" className="data-[state=active]:bg-compass-700 text-compass-100">
             Recommended For You
           </TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-slate-700">
+          <TabsTrigger value="projects" className="data-[state=active]:bg-compass-700 text-compass-100">
             Achievement Projects
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="recommendations" className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
-            <Lightbulb className="h-5 w-5 text-yellow-400" />
-            <h3 className="text-lg font-semibold text-white">Personalized Recommendations</h3>
+            <Lightbulb className="h-5 w-5 text-gold-400" />
+            <h3 className="text-lg font-semibold text-compass-100">Personalized Recommendations</h3>
           </div>
 
           {recommendations.length === 0 ? (
@@ -188,7 +188,7 @@ export function RecommendationsDashboard({
               {recommendations.map((rec) => (
                 <Card 
                   key={rec.achievement.id} 
-                  className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 hover:bg-slate-700/70 transition-colors cursor-pointer" // Added hover styles
+                  className="p-4 compass-card hover:border-compass-600 hover:bg-compass-700/70 transition-colors cursor-pointer"
                   onClick={() => onAchievementClick?.(rec.achievement)}
                   data-testid="recommendation-card"
                 >
@@ -200,8 +200,8 @@ export function RecommendationsDashboard({
                       className="flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-white mb-1 truncate">{rec.achievement.name}</h4>
-                      <p className="text-sm text-slate-400 line-clamp-2">{rec.achievement.description}</p>
+                      <h4 className="font-medium text-compass-100 mb-1 truncate">{rec.achievement.name}</h4>
+                      <p className="text-sm text-compass-400 line-clamp-2">{rec.achievement.description}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       <Badge className={`${getTierColor(rec.achievement.tsrg.tier)} text-white text-xs`}>
@@ -211,38 +211,38 @@ export function RecommendationsDashboard({
                         {rec.achievement.points} Points
                       </Badge>
                       <div className="text-right">
-                        <div className="text-xs text-slate-400">{rec.estimatedTimeToComplete}</div>
+                        <div className="text-xs text-compass-400">{rec.estimatedTimeToComplete}</div>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 mb-3 text-xs">
                     <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-orange-400" />
-                      <span className="text-white">{rec.achievement.tsrg.time}</span>
+                      <Clock className="h-3 w-3 text-gold-400" />
+                      <span className="text-compass-100">{rec.achievement.tsrg.time}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Zap className="h-3 w-3 text-purple-400" />
-                      <span className="text-white">{rec.achievement.tsrg.skill}</span>
+                      <Zap className="h-3 w-3 text-compass-400" />
+                      <span className="text-compass-100">{rec.achievement.tsrg.skill}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Dice6 className="h-3 w-3 text-red-400" />
-                      <span className="text-white">{rec.achievement.tsrg.rng}</span>
+                      <Dice6 className="h-3 w-3 text-earth-400" />
+                      <span className="text-compass-100">{rec.achievement.tsrg.rng}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3 text-blue-400" />
-                      <span className="text-white">{rec.achievement.tsrg.group}</span>
+                      <Users className="h-3 w-3 text-silver-400" />
+                      <span className="text-compass-100">{rec.achievement.tsrg.group}</span>
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-xs text-slate-300 mb-1">Why recommended:</div>
+                    <div className="text-xs text-compass-300 mb-1">Why recommended:</div>
                     {rec.reasons.slice(0, 2).map((reason, index) => (
                       <div key={index} className="flex items-center gap-2 text-xs" data-testid="recommendation-reason">
                         <span className={getReasonColor(reason.type)}>
                           {getReasonIcon(reason.type)}
                         </span>
-                        <span className="text-slate-300">{reason.description}</span>
+                        <span className="text-compass-300">{reason.description}</span>
                       </div>
                     ))}
                   </div>
@@ -254,8 +254,8 @@ export function RecommendationsDashboard({
 
         <TabsContent value="projects" className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
-            <Target className="h-5 w-5 text-green-400" />
-            <h3 className="text-lg font-semibold text-white">Achievement Projects</h3>
+            <Target className="h-5 w-5 text-gold-400" />
+            <h3 className="text-lg font-semibold text-compass-100">Achievement Projects</h3>
           </div>
 
           {topProjects.length === 0 ? (
@@ -270,34 +270,34 @@ export function RecommendationsDashboard({
               {topProjects.map((project) => (
                 <Card 
                   key={project.id} 
-                  className="p-4 bg-slate-800 border-slate-700 hover:border-slate-600 hover:bg-slate-700/70 transition-colors cursor-pointer" // Added hover styles
+                  className="p-4 compass-card hover:border-compass-600 hover:bg-compass-700/70 transition-colors cursor-pointer"
                   onClick={() => setSelectedProject(project)}
                   data-testid="project-card"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h4 className="font-medium text-white mb-1">{project.name}</h4>
-                      <Badge variant="outline" className="bg-slate-700 text-slate-300 border-slate-600 text-xs">
+                      <h4 className="font-medium text-compass-100 mb-1">{project.name}</h4>
+                      <Badge variant="outline" className="bg-compass-700 text-compass-300 border-compass-600 text-xs">
                         {project.category}
                       </Badge>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <ChevronRight className="h-4 w-4 text-compass-400" />
                   </div>
 
-                  <p className="text-sm text-slate-400 mb-3 line-clamp-2">{project.description}</p>
+                  <p className="text-sm text-compass-400 mb-3 line-clamp-2">{project.description}</p>
 
                   <div className="space-y-2 mb-3">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-300">Progress</span>
-                      <span className="text-white">{Math.round(project.completionRate)}%</span>
+                      <span className="text-compass-300">Progress</span>
+                      <span className="text-compass-100">{Math.round(project.completionRate)}%</span>
                     </div>
                     <Progress value={project.completionRate} className="h-2" />
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
                     <div className="flex items-center gap-4">
-                      <span className="text-slate-300">{project.achievements.length} achievements</span>
-                      <span className="text-slate-300">{project.totalPoints} points</span>
+                      <span className="text-compass-300">{project.achievements.length} achievements</span>
+                      <span className="text-compass-300">{project.totalPoints} points</span>
                     </div>
                     <TooltipProvider>
                       <Tooltip>
@@ -313,7 +313,7 @@ export function RecommendationsDashboard({
                     </TooltipProvider>
                   </div>
 
-                  <div className="text-xs text-slate-400 mt-2">
+                  <div className="text-xs text-compass-400 mt-2">
                     Est. time: {project.estimatedTime}
                   </div>
                 </Card>
@@ -326,10 +326,10 @@ export function RecommendationsDashboard({
 
       {/* Project Detail Dialog */}
       <Dialog open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 p-6 max-w-2xl">
+        <DialogContent className="bg-compass-800 border-compass-700 p-6 max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">{selectedProject?.name}</DialogTitle>
-            <DialogDescription className="text-slate-300">
+            <DialogTitle className="text-compass-100">{selectedProject?.name}</DialogTitle>
+            <DialogDescription className="text-compass-300">
               {selectedProject?.description}
             </DialogDescription>
           </DialogHeader>
@@ -338,25 +338,25 @@ export function RecommendationsDashboard({
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{Math.round(selectedProject.completionRate)}%</div>
-                  <div className="text-sm text-slate-300">Complete</div>
+                  <div className="text-2xl font-bold text-compass-100">{Math.round(selectedProject.completionRate)}%</div>
+                  <div className="text-sm text-compass-300">Complete</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{selectedProject.totalPoints}</div>
-                  <div className="text-sm text-slate-300">Total Points</div>
+                  <div className="text-2xl font-bold text-compass-100">{selectedProject.totalPoints}</div>
+                  <div className="text-sm text-compass-300">Total Points</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{selectedProject.achievements.length}</div>
-                  <div className="text-sm text-slate-300">Achievements</div>
+                  <div className="text-2xl font-bold text-compass-100">{selectedProject.achievements.length}</div>
+                  <div className="text-sm text-compass-300">Achievements</div>
                 </div>
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-                <h4 className="font-medium text-white mb-3">Achievements in this project:</h4>
+                <h4 className="font-medium text-compass-100 mb-3">Achievements in this project:</h4>
                 {selectedProject.achievements.map((achievement) => (
                   <div 
                     key={achievement.id}
-                    className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 cursor-pointer"
+                    className="flex items-center gap-3 p-3 bg-compass-700 rounded-lg hover:bg-compass-600 cursor-pointer"
                     onClick={() => setSelectedAchievementForDetails(achievement)}
                   >
                     <AchievementIcon
@@ -365,8 +365,8 @@ export function RecommendationsDashboard({
                       size="sm"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-white">{achievement.name}</div>
-                      <div className="text-sm text-slate-400">{achievement.points} points</div>
+                      <div className="font-medium text-compass-100">{achievement.name}</div>
+                      <div className="text-sm text-compass-400">{achievement.points} points</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {achievement.isCompleted ? (
@@ -383,7 +383,7 @@ export function RecommendationsDashboard({
             </>
           )}
           <DialogClose asChild>
-            <Button variant="outline" className="mt-4 w-full bg-compass-700 border-compass-600 text-compass-100 hover:bg-compass-600">Close</Button>
+            <Button variant="outline" className="mt-4 w-full border-compass-600 text-compass-100 hover:bg-compass-600">Close</Button>
           </DialogClose>
         </DialogContent>
       </Dialog>

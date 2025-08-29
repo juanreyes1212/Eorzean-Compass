@@ -4,7 +4,6 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { RecommendationsDashboardLazy } from "@/components/recommendations-dashboard-lazy";
-import { TSRGFiltersComponent } from "@/components/tsrg-filters"; // Keep import for type
 import { CategoryFilter } from "@/components/category-filter";
 import { SearchFilter } from "@/components/search-filter";
 import { AchievementTablePaginated } from "@/components/achievement-table-paginated";
