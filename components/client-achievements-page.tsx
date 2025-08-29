@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, AlertCircle, RefreshCw, HardDrive, Wifi, WifiOff } from 'lucide-react';
+import { Info, AlertCircle, RefreshCw, HardDrive, Wifi, WifiOff, Database } from 'lucide-react';
 import { ErrorBoundary } from "@/lib/error-boundary";
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
 import { 
