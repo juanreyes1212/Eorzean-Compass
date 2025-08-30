@@ -380,10 +380,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         
         const achievementId = Number(achievement.id);
         const isCompleted = completedAchievementIds.has(achievementId);
-        const isCompleted = completedAchievementIds.has(achievementId);
         
-        if (isCompleted) {
-          console.log(`[Achievements Fetch] ✓ COMPLETED: ${achievement.id} - ${achievement.name}`);
         if (isCompleted) {
           console.log(`[Achievements Fetch] ✓ COMPLETED: ${achievement.id} - ${achievement.name}`);
         }
