@@ -98,8 +98,8 @@ describe('Achievements Loading and Caching', () => {
     // Check that data is stored in localStorage
     cy.window().its('localStorage').invoke('getItem', 'eorzean_compass_characters')
       .should('not.be.null')
-      .then((stored) => {
-        const data = JSON.parse(stored as string)
+      .then((stored: unknown) => {
+        const data = JSON.parse(stored as string);
         expect(Object.keys(data)).to.have.length.greaterThan(0)
       })
   })

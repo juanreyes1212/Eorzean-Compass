@@ -9,11 +9,12 @@ describe('Service Worker and Caching', () => {
     
     cy.window().then((win) => {
       if ('serviceWorker' in win.navigator) {
-        cy.wrap(win.navigator.serviceWorker.getRegistrations()).then((registrations: ServiceWorkerRegistration[]) => {
+        cy.wrap(win.navigator.serviceWorker.getRegistrations()).then((registrations) => {
+          const regs = registrations as ServiceWorkerRegistration[];
           // In development, service worker might not be registered
           // In production, it should be
-          if (registrations.length > 0) {
-            expect(registrations[0].scope).to.include(win.location.origin)
+          if (regs.length > 0) {
+            expect(regs[0].scope).to.include(win.location.origin)
           }
         })
       }
@@ -26,10 +27,11 @@ describe('Service Worker and Caching', () => {
     // Check that caches API is available
     cy.window().then((win) => {
       if ('caches' in win) {
-        cy.wrap(win.caches.keys()).then((cacheNames: string[]) => {
+        cy.wrap(win.caches.keys()).then((cacheNames) => {
+          const names = cacheNames as string[];
           // Should have at least one cache
-          if (cacheNames.length > 0) {
-            expect(cacheNames[0]).to.include('eorzean-compass')
+          if (names.length > 0) {
+            expect(names[0]).to.include('eorzean-compass')
           }
         })
       }
