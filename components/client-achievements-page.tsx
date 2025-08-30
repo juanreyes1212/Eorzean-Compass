@@ -372,12 +372,14 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         } : null);
       }
       
-      // Store achievements without completion status for caching
-      const achievementsForCache = achievementsWithTSRG.map(a => ({
-        ...a,
-        isCompleted: false // Remove completion status for cache
-      }));
-      storeAchievements(achievementsForCache);
+      // Store achievements in cache (only if not character-specific)
+      if (!lodestoneId) {
+        const achievementsForCache = achievementsWithTSRG.map(a => ({
+          ...a,
+          isCompleted: false // Remove completion status for cache
+        }));
+        storeAchievements(achievementsForCache);
+      }
       
       setAllAchievements(achievementsWithTSRG);
       setAchievementsFetchProgress({ current: achievementsWithTSRG.length, total: achievementsWithTSRG.length, isLoading: false });
