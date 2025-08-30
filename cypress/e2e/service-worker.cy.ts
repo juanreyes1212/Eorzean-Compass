@@ -9,7 +9,7 @@ describe('Service Worker and Caching', () => {
     
     cy.window().then((win) => {
       if ('serviceWorker' in win.navigator) {
-        cy.wrap(win.navigator.serviceWorker.getRegistrations()).then((registrations) => {
+        cy.wrap(win.navigator.serviceWorker.getRegistrations()).then((registrations: ServiceWorkerRegistration[]) => {
           // In development, service worker might not be registered
           // In production, it should be
           if (registrations.length > 0) {
@@ -26,7 +26,7 @@ describe('Service Worker and Caching', () => {
     // Check that caches API is available
     cy.window().then((win) => {
       if ('caches' in win) {
-        cy.wrap(win.caches.keys()).then((cacheNames) => {
+        cy.wrap(win.caches.keys()).then((cacheNames: string[]) => {
           // Should have at least one cache
           if (cacheNames.length > 0) {
             expect(cacheNames[0]).to.include('eorzean-compass')
