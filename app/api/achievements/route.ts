@@ -201,8 +201,6 @@ async function fetchCompletionStatusFromFFXIVCollect(lodestoneId: number): Promi
         'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
         'Accept': 'application/json',
       }
-    });
-
     console.log(`[Achievements API] Missing response status: ${missingResponse.status}`);
     
     if (missingResponse.ok) {
