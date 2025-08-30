@@ -182,12 +182,13 @@ export async function GET(request: Request) {
     }
 
     characterProfile = await profileResponse.json();
-    console.log(`[Character API] Got Lodestone ID: ${characterProfile.id} for ${characterProfile.name}`);
     
     if (!characterProfile || !characterProfile.id) {
       console.error("[Character API] Invalid character data from Tomestone:", characterProfile);
       throw new Error("Invalid character data from Tomestone.gg");
     }
+
+    console.log(`[Character API] Got Lodestone ID: ${characterProfile.id} for ${characterProfile.name}`);
 
     lodestoneId = characterProfile.id;
     isRealData = true;
