@@ -7,8 +7,9 @@ const STATIC_CACHE_URLS = [
   '/placeholder-logo.png',
 ];
 
-const API_CACHE_URLS = [
-  '/api/achievements',
+// API endpoints that should be cached (with careful consideration)
+const CACHEABLE_API_PATTERNS = [
+  '/api/achievements', // Only cache when no lodestoneId parameter
 ];
 
 // Install event - cache static assets
@@ -40,24 +41,44 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle API requests with network-first strategy
+  // Handle API requests with careful caching strategy
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful API responses
-          if (response.ok && API_CACHE_URLS.some(path => url.pathname.includes(path))) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => cache.put(request, responseClone));
-          }
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache for API requests
-          return caches.match(request);
-        })
-    );
+    // Only cache achievements API when no character-specific parameters
+    const shouldCache = url.pathname === '/api/achievements' && !url.searchParams.has('lodestoneId');
+    
+    if (shouldCache) {
+      // Cache-first for general achievements
+      event.respondWith(
+        caches.match(request)
+          .then((response) => {
+            if (response) {
+              return response;
+            }
+            
+            return fetch(request)
+              .then((response) => {
+                if (response.ok) {
+                  const responseClone = response.clone();
+                  caches.open(CACHE_NAME)
+                    .then((cache) => cache.put(request, responseClone));
+                }
+                return response;
+              });
+          })
+      );
+    } else {
+      // Network-first for character-specific data (no caching)
+      event.respondWith(
+        fetch(request)
+          .catch(() => {
+            // Only fallback to cache for non-character-specific requests
+            if (!url.searchParams.has('lodestoneId') && !url.searchParams.has('name')) {
+              return caches.match(request);
+            }
+            throw new Error('Network unavailable and no cache available for character-specific data');
+          })
+      );
+    }
     return;
   }
 
@@ -89,12 +110,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Background sync for data updates
+// Background sync for data updates (disabled to prevent excessive calls)
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
     event.waitUntil(
-      // Implement background data sync logic here
-      console.log('Background sync triggered')
+      // Background sync disabled to prevent excessive API calls
+      Promise.resolve()
     );
   }
 });

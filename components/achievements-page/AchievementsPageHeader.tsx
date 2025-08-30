@@ -80,11 +80,12 @@ export function AchievementsPageHeader({
           variant="outline"
           size="sm"
           onClick={onRefreshData}
-          className="border-compass-600 text-compass-300 hover:bg-compass-700 hover:text-compass-100 ml-auto sm:ml-0"
+          className="border-compass-600 text-compass-300 hover:bg-compass-700 hover:text-compass-100 ml-auto sm:ml-0 transition-colors"
           disabled={achievementsLoading} // Disable while loading
+          title={achievementsLoading ? "Loading..." : "Refresh character and achievement data"}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${achievementsLoading ? 'animate-spin' : ''}`} />
-          Refresh Data
+          {achievementsLoading ? 'Refreshing...' : 'Refresh Data'}
         </Button>
       </div>
       
@@ -94,6 +95,16 @@ export function AchievementsPageHeader({
         actualStats={actualStats}
         isLoading={achievementsLoading}
       />
+      
+      {/* Show data freshness indicator */}
+      {!achievementsLoading && actualStats && (
+        <div className="mt-4 text-xs text-compass-400 text-center">
+          <span>Data loaded from FFXIVCollect • </span>
+          <span>{actualStats.total} total achievements • </span>
+          <span>{actualStats.completed} completed • </span>
+          <span>{actualStats.completionRate}% completion rate</span>
+        </div>
+      )}
     </>
   );
 }

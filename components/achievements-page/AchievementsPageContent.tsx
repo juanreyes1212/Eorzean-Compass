@@ -70,11 +70,14 @@ export function AchievementsPageContent({
                 </div>
               </div>
               
-              {/* TSR-G Filters Component moved to ClientAchievementsPage */}
-
               {achievementsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-compass-100">Loading achievements...</div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-compass-100">Loading achievements...</div>
+                  </div>
+                  <div className="text-center text-sm text-compass-400">
+                    Fetching achievement data from FFXIVCollect...
+                  </div>
                 </div>
               ) : (
                 <AchievementTablePaginated 
@@ -85,6 +88,13 @@ export function AchievementsPageContent({
                   setPreferences={setPreferences}
                   onAchievementClick={onAchievementClick}
                 />
+              )}
+              
+              {!achievementsLoading && allAchievements.length === 0 && (
+                <div className="text-center py-8 text-compass-400">
+                  <div className="mb-2">No achievement data available.</div>
+                  <div className="text-sm">Please try refreshing the page or check your internet connection.</div>
+                </div>
               )}
             </div>
           </React.Fragment>

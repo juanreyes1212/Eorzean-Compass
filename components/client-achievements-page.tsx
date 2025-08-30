@@ -291,11 +291,26 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       setAchievementsLoading(true);
       setAchievementsFetchProgress({ current: 0, total: 2500, isLoading: true });
       
-      const cachedAchievements = getStoredAchievements();
-      console.log(`[Achievements Fetch] Cached achievements found:`, !!cachedAchievements);
-      
-      // Always fetch fresh data to get proper completion status
+      // Only use cache for general achievements (no character-specific data)
       const lodestoneId = (characterData as any)?.lodestoneId;
+      const cachedAchievements = !lodestoneId && !forceRefresh ? getStoredAchievements() : null;
+      console.log(`[Achievements Fetch] Using cached achievements:`, !!cachedAchievements, `(lodestoneId: ${lodestoneId})`);
+      
+      if (cachedAchievements && !lodestoneId) {
+        console.log(`[Achievements Fetch] Using cached general achievements: ${cachedAchievements.length}`);
+        setAllAchievements(cachedAchievements);
+        setAchievementsFetchProgress({ current: cachedAchievements.length, total: cachedAchievements.length, isLoading: false });
+        setAchievementsLoading(false);
+        
+        toast({
+          title: "Loaded from Cache",
+          description: `Using cached achievement data (${cachedAchievements.length} achievements).`,
+          variant: "default",
+          icon: <HardDrive className="h-4 w-4" />,
+        });
+        return;
+      }
+      
       console.log(`[Achievements Fetch] Using Lodestone ID: ${lodestoneId}`);
 
       console.log("[Achievements Fetch] Starting fresh achievements fetch from API...");
@@ -379,6 +394,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
           isCompleted: false // Remove completion status for cache
         }));
         storeAchievements(achievementsForCache);
+        console.log(`[Achievements Fetch] Cached ${achievementsForCache.length} general achievements`);
       }
       
       setAllAchievements(achievementsWithTSRG);
@@ -396,6 +412,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       setAchievementsFetchProgress({ current: 0, total: 0, isLoading: false });
       
       const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+      setError(`Failed to load achievements: ${errorMessage}`);
       toast({
         title: "Error Loading Achievements",
         description: `Failed to load achievement data: ${errorMessage}. Please try refreshing.`,
@@ -477,8 +494,11 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
   const handleRefreshData = () => {
     try {
       console.log(`[Refresh] Refreshing all data...`);
+      // Clear any existing error state
+      setError(null);
+      setHasError(false);
       fetchCharacterData(true);
-      fetchAchievementsWithTSRG(true);
+      // fetchAchievementsWithTSRG will be called automatically when characterData updates
     } catch (error) {
       handleError(error as Error, "Refresh Data");
     }
@@ -571,6 +591,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
           title="No Character Data"
           message="Unable to load character information."
           type="generic"
+          onRetry={handleRefreshData}
           showHomeButton={true}
         />
       </div>
@@ -623,7 +644,9 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         )}
 
       {/* TSR-G Filters Component moved here */}
+        {!achievementsLoading && allAchievements.length > 0 && (
         <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+        )}
 
       {/* Development Debug Panel */}
         {process.env.NODE_ENV === 'development' && (

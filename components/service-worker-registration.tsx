@@ -8,24 +8,32 @@ export function ServiceWorkerRegistration() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    // Only register service worker in production to avoid development issues
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
           console.log('Service Worker registered successfully:', registration);
           
-          // Handle updates
+          // Handle updates (but don't be too aggressive)
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  toast({
-                    title: "App Updated",
-                    description: "A new version is available. Refresh to update.",
-                    variant: "default",
-                    icon: <Wifi className="h-4 w-4" />,
-                  });
+                  // Only show update notification if user hasn't seen it recently
+                  const lastUpdateNotification = localStorage.getItem('last-update-notification');
+                  const now = Date.now();
+                  
+                  if (!lastUpdateNotification || (now - parseInt(lastUpdateNotification)) > 60000) { // 1 minute cooldown
+                    localStorage.setItem('last-update-notification', now.toString());
+                    toast({
+                      title: "App Updated",
+                      description: "A new version is available. Refresh to update.",
+                      variant: "default",
+                      icon: <Wifi className="h-4 w-4" />,
+                    });
+                  }
                 }
               });
             }
@@ -37,12 +45,15 @@ export function ServiceWorkerRegistration() {
 
       // Handle online/offline status
       const handleOnline = () => {
-        toast({
-          title: "Back Online",
-          description: "Internet connection restored.",
-          variant: "default",
-          icon: <Wifi className="h-4 w-4" />,
-        });
+        // Only show if we were actually offline
+        if (!navigator.onLine) {
+          toast({
+            title: "Back Online",
+            description: "Internet connection restored.",
+            variant: "default",
+            icon: <Wifi className="h-4 w-4" />,
+          });
+        }
       };
 
       const handleOffline = () => {
