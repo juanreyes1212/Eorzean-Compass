@@ -78,7 +78,9 @@ export function AchievementTableContent({
         <TableBody data-testid="achievements-table-body">
           {achievements.length > 0 ? (
             achievements.map((achievement, index) => {
-              console.log(`[Table Content] Rendering achievement ${index + 1}/${achievements.length}: ${achievement.name} (ID: ${achievement.id})`);
+              if (index < 5) { // Only log first 5 to avoid spam
+                console.log(`[Table Content] Rendering ${index + 1}/${achievements.length}: ${achievement.name} (ID: ${achievement.id}, completed: ${achievement.isCompleted})`);
+              }
               return (
               <AchievementTableRow 
                 key={achievement.id} 
@@ -90,7 +92,10 @@ export function AchievementTableContent({
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-compass-400" data-testid="no-achievements-message">
-                No achievements found matching your current filters. Try adjusting your TSR-G settings or search criteria.
+                <div className="space-y-2">
+                  <div>No achievements found matching your current filters.</div>
+                  <div className="text-xs">Try adjusting your TSR-G settings, difficulty tiers, or search criteria.</div>
+                </div>
               </TableCell>
             </TableRow>
           )}

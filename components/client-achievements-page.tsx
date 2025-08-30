@@ -378,9 +378,15 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
           return null;
         }
         
-        const isCompleted = completedAchievementIds.has(Number(achievement.id));
+        const achievementId = Number(achievement.id);
+        const isCompleted = completedAchievementIds.has(achievementId);
+        const isCompleted = completedAchievementIds.has(achievementId);
         
-        console.log(`[Achievements Fetch] Processing fresh achievement ${achievement.id}: ${achievement.name}, isCompleted: ${isCompleted}`);
+        if (isCompleted) {
+          console.log(`[Achievements Fetch] ✓ COMPLETED: ${achievement.id} - ${achievement.name}`);
+        if (isCompleted) {
+          console.log(`[Achievements Fetch] ✓ COMPLETED: ${achievement.id} - ${achievement.name}`);
+        }
         
         return {
           ...achievement,

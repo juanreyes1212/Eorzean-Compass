@@ -3,7 +3,7 @@ import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
 import { CompletedAchievement } from '@/lib/types';
 import { validateCharacterName, validateServerName, apiRateLimiter, securityHeaders } from '@/lib/security';
 
-// Tomestone.gg API response structures
+// Tomestone.gg API response structures (for getting Lodestone ID only)
 interface TomestoneProfileCharacter {
   id: number;
   name: string;
@@ -19,36 +19,18 @@ interface TomestoneProfileCharacter {
   } | null;
 }
 
-interface TomestoneCompletedAchievement {
+// FFXIVCollect achievement structures
+interface FFXIVCollectAchievement {
   id: number;
   name: string;
   description: string;
   points: number;
-  category: string;
+  order: number;
   patch: string;
-  icon: string;
-  rarity?: number;
-  completedAt?: string;
-  progress?: any;
-}
-
-interface TomestoneCharacterAchievementsResponse {
-  results: TomestoneCompletedAchievement[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-// FFXIVCollect fallback structures
-interface FFXIVCollectCharacterAchievement {
-  id: number;
-  name: string;
-  description: string;
-  points: number;
-  category: { id: number; name: string };
-  patch: string;
-  icon: string;
   owned: string;
+  icon: string;
+  category: { id: number; name: string };
+  type: { id: number; name: string };
 }
 
 // Add timeout wrapper for fetch requests
@@ -121,119 +103,52 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
   };
 }
 
-// Fetch all completed achievements for a character from Tomestone.gg
-async function fetchAllCompletedAchievements(lodestoneId: number): Promise<CompletedAchievement[]> {
-  console.log(`[Character API] Fetching all completed achievements for character ${lodestoneId}...`);
-  
-  let allCompletedAchievements: TomestoneCompletedAchievement[] = [];
-  let page = 1;
-  const limit = 50;
-  let totalCount = 0;
-
-  while (true) {
-    const url = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/${lodestoneId}/achievements?page=${page}&limit=${limit}`;
-    
-    try {
-      console.log(`[Character API] Fetching completed achievements page ${page}...`);
-      
-      const response = await fetchWithTimeout(url, {
-        headers: {
-          'Authorization': `Bearer ${TOMESTONE_API_KEY}`,
-          'User-Agent': `Eorzean-Compass/1.0`,
-          'Accept': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        
-        if (response.status === 403 || errorBody.includes("private")) {
-          throw new Error("Character's achievements are private on Lodestone. Please make them public to view real data.");
-        }
-        
-        throw new Error(`Tomestone character achievements HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data: TomestoneCharacterAchievementsResponse = await response.json();
-
-      if (!data.results || !Array.isArray(data.results)) {
-        console.warn(`[Character API] Invalid completed achievements data structure for page ${page}`);
-        break;
-      }
-
-      if (page === 1) {
-        totalCount = data.total;
-        console.log(`[Character API] Tomestone reported ${totalCount} total completed achievements`);
-      }
-
-      allCompletedAchievements = allCompletedAchievements.concat(data.results);
-      console.log(`[Character API] Fetched completed page ${page}, total so far: ${allCompletedAchievements.length}/${totalCount}`);
-      
-      // Stop if we've fetched all available achievements
-      if (data.results.length < limit || allCompletedAchievements.length >= totalCount) {
-        console.log("[Character API] Reached end of completed achievements data.");
-        break;
-      }
-      
-      page++;
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Safety limit
-      if (page > 100) {
-        console.log("[Character API] Reached safety limit for completed achievements.");
-        break;
-      }
-    } catch (error) {
-      console.error(`[Character API] Completed achievements fetch failed for page ${page}:`, error);
-      throw error;
-    }
-  }
-
-  // Convert to our format
-  const completedAchievements: CompletedAchievement[] = allCompletedAchievements.map(item => ({
-    id: item.id,
-    completedAt: item.completedAt || new Date().toISOString(),
-    progress: item.progress
-  }));
-
-  console.log(`[Character API] Successfully processed ${completedAchievements.length} completed achievements.`);
-  return completedAchievements;
-}
-
-// Fallback to FFXIVCollect for completed achievements
-async function fetchCompletedFromFFXIVCollect(lodestoneId: number): Promise<CompletedAchievement[]> {
-  console.log(`[Character API] Falling back to FFXIVCollect for completed achievements...`);
+// Fetch completed achievements from FFXIVCollect using Lodestone ID
+async function fetchCompletedAchievementsFromFFXIVCollect(lodestoneId: number): Promise<CompletedAchievement[]> {
+  console.log(`[Character API] Fetching completed achievements from FFXIVCollect for Lodestone ID: ${lodestoneId}`);
   
   try {
-    const url = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements`;
+    const ownedUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned`;
+    console.log(`[Character API] FFXIVCollect owned URL: ${ownedUrl}`);
     
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithTimeout(ownedUrl, {
       headers: {
-        'User-Agent': `Eorzean-Compass/1.0`,
+        'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
         'Accept': 'application/json',
       }
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Character API] FFXIVCollect owned achievements failed: ${response.status} - ${errorText}`);
+      
+      if (response.status === 404) {
+        throw new Error("Character not found on FFXIVCollect. The character may not exist or achievements may be private.");
+      }
+      
       throw new Error(`FFXIVCollect HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: FFXIVCollectCharacterAchievement[] = await response.json();
+    const ownedAchievements: FFXIVCollectAchievement[] = await response.json();
+    console.log(`[Character API] FFXIVCollect returned ${ownedAchievements.length} owned achievements`);
     
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid FFXIVCollect character achievements response");
+    if (!Array.isArray(ownedAchievements)) {
+      throw new Error("Invalid response format from FFXIVCollect owned achievements");
     }
 
-    const completedAchievements: CompletedAchievement[] = data.map(item => ({
-      id: item.id,
+    // Convert to our format
+    const completedAchievements: CompletedAchievement[] = ownedAchievements.map(achievement => ({
+      id: achievement.id,
       completedAt: new Date().toISOString(), // FFXIVCollect doesn't provide completion dates
     }));
 
-    console.log(`[Character API] FFXIVCollect fallback: ${completedAchievements.length} completed achievements`);
+    console.log(`[Character API] Processed ${completedAchievements.length} completed achievements from FFXIVCollect`);
+    console.log(`[Character API] Sample completed achievement IDs:`, completedAchievements.slice(0, 10).map(a => a.id));
+    
     return completedAchievements;
     
   } catch (error) {
-    console.error("[Character API] FFXIVCollect fallback failed:", error);
+    console.error("[Character API] FFXIVCollect completed achievements fetch failed:", error);
     throw error;
   }
 }
@@ -242,7 +157,7 @@ export async function GET(request: Request) {
   // Add security headers
   const headers = new Headers(securityHeaders);
   
-  console.log("[Character API] Starting character fetch...");
+  console.log("[Character API] Starting simplified character fetch...");
   
   // Rate limiting
   const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
@@ -297,16 +212,16 @@ export async function GET(request: Request) {
   let apiErrorReason: string | undefined;
   let lodestoneId: number | null = null;
 
-  // Step 1: Fetch Character Profile from Tomestone.gg (to get Lodestone ID)
+  // Step 1: Get Lodestone ID from Tomestone.gg
   try {
     if (!TOMESTONE_API_KEY) {
       console.warn("[Character API] No Tomestone API key available");
       throw new Error("Tomestone.gg API key is missing.");
     }
 
-    const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(serverParam)}/${encodeURIComponent(nameParam)}`;
+    const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(sanitizedServer)}/${encodeURIComponent(sanitizedName)}`;
     
-    console.log(`[Character API] Fetching profile from Tomestone.gg: ${profileUrl}`);
+    console.log(`[Character API] Fetching Lodestone ID from Tomestone.gg: ${profileUrl}`);
     
     const profileResponse = await fetchWithTimeout(profileUrl, {
       headers: {
@@ -332,14 +247,7 @@ export async function GET(request: Request) {
     }
 
     const tomestoneProfileData: TomestoneProfileCharacter = await profileResponse.json();
-    console.log(`[Character API] Profile data received for character ID: ${tomestoneProfileData.id}`);
-    console.log(`[Character API] Profile data structure:`, {
-      id: tomestoneProfileData.id,
-      name: tomestoneProfileData.name,
-      server: tomestoneProfileData.server,
-      hasAvatar: !!tomestoneProfileData.avatar,
-      achievementPointsStructure: tomestoneProfileData.achievementPoints
-    });
+    console.log(`[Character API] Got Lodestone ID: ${tomestoneProfileData.id} for ${tomestoneProfileData.name}`);
     
     if (!tomestoneProfileData || !tomestoneProfileData.id) {
       console.error("[Character API] Invalid character data from Tomestone:", tomestoneProfileData);
@@ -356,25 +264,17 @@ export async function GET(request: Request) {
     isRealData = false;
   }
 
-  // Step 2: Fetch Completed Achievements using Lodestone ID
+  // Step 2: Get completed achievements from FFXIVCollect using Lodestone ID
   if (lodestoneId && isRealData) {
-    console.log(`[Character API] Fetching completed achievements for Lodestone ID: ${lodestoneId}`);
+    console.log(`[Character API] Fetching completed achievements from FFXIVCollect for Lodestone ID: ${lodestoneId}`);
     try {
-      completedAchievementsFromAPI = await fetchAllCompletedAchievements(lodestoneId);
-      console.log(`[Character API] Successfully fetched ${completedAchievementsFromAPI.length} completed achievements from Tomestone.gg`);
+      completedAchievementsFromAPI = await fetchCompletedAchievementsFromFFXIVCollect(lodestoneId);
+      console.log(`[Character API] Successfully fetched ${completedAchievementsFromAPI.length} completed achievements from FFXIVCollect`);
       
     } catch (completedError) {
-      console.error("[Character API] Tomestone completed achievements failed:", completedError);
-      
-      // Try FFXIVCollect fallback for completed achievements
-      try {
-        console.log("[Character API] Trying FFXIVCollect fallback for completed achievements...");
-        completedAchievementsFromAPI = await fetchCompletedFromFFXIVCollect(lodestoneId);
-        apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + "Using FFXIVCollect for completed achievements (no completion dates available).";
-      } catch (ffxivError) {
-        console.error("[Character API] FFXIVCollect fallback also failed:", ffxivError);
-        apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + `Completed achievements unavailable: ${completedError instanceof Error ? completedError.message : 'Unknown error'}.`;
-      }
+      console.error("[Character API] FFXIVCollect completed achievements failed:", completedError);
+      apiErrorReason = (apiErrorReason ? apiErrorReason + "; " : "") + `FFXIVCollect achievements unavailable: ${completedError instanceof Error ? completedError.message : 'Unknown error'}.`;
+      // Don't set isRealData to false here - we still have valid character data
     }
   }
 

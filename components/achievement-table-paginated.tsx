@@ -38,12 +38,17 @@ export function AchievementTablePaginated({
   
   // Apply filters and sorting to get filtered achievements
   const filteredAchievements = useMemo(() => {
-    console.log(`[Table Filter] Starting with ${allAchievements.length} total achievements`);
+    console.log(`[Table Filter] === FILTERING START ===`);
+    console.log(`[Table Filter] Total achievements: ${allAchievements.length}`);
     const completedCount = allAchievements.filter(a => a.isCompleted).length;
-    console.log(`[Table Filter] Completed achievements count: ${completedCount}`);
-    console.log(`[Table Filter] Sample completed achievements:`, allAchievements.filter(a => a.isCompleted).slice(0, 5).map(a => ({ id: a.id, name: a.name })));
+    console.log(`[Table Filter] Completed achievements: ${completedCount}`);
+    
+    if (completedCount > 0) {
+      console.log(`[Table Filter] Sample completed:`, allAchievements.filter(a => a.isCompleted).slice(0, 3).map(a => ({ id: a.id, name: a.name })));
+    }
     
     let filtered = [...allAchievements];
+    console.log(`[Table Filter] Step 1 - Initial: ${filtered.length}`);
     
     // Apply TSR-G filters using preferences
     filtered = filtered.filter(achievement => {
@@ -61,18 +66,22 @@ export function AchievementTablePaginated({
       return true;
     });
     
-    console.log(`[Table Filter] After TSR-G filters: ${filtered.length} achievements`);
+    console.log(`[Table Filter] Step 2 - After TSR-G filters: ${filtered.length}`);
     
     // Apply completion filter
     if (preferences.hideCompleted) {
       filtered = filtered.filter(achievement => !achievement.isCompleted);
-      console.log(`[Table Filter] After hiding completed: ${filtered.length} achievements`);
+      console.log(`[Table Filter] Step 3 - After hiding completed: ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 3 - Not hiding completed: ${filtered.length}`);
     }
     
     // Apply obtainable filter
     if (preferences.hideUnobtainable) {
       filtered = filtered.filter(achievement => achievement.isObtainable);
-      console.log(`[Table Filter] After hiding unobtainable: ${filtered.length} achievements`);
+      console.log(`[Table Filter] Step 4 - After hiding unobtainable: ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 4 - Not hiding unobtainable: ${filtered.length}`);
     }
     
     // Filter by category
@@ -80,7 +89,9 @@ export function AchievementTablePaginated({
       filtered = filtered.filter(
         (achievement) => achievement.category.toLowerCase().includes(categoryFilter.toLowerCase())
       );
-      console.log(`[Table Filter] After category filter (${categoryFilter}): ${filtered.length} achievements`);
+      console.log(`[Table Filter] Step 5 - After category filter (${categoryFilter}): ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 5 - No category filter: ${filtered.length}`);
     }
     
     // Filter by search query
@@ -91,7 +102,9 @@ export function AchievementTablePaginated({
           achievement.name.toLowerCase().includes(query) ||
           achievement.description.toLowerCase().includes(query)
       );
-      console.log(`[Table Filter] After search query (${searchQuery}): ${filtered.length} achievements`);
+      console.log(`[Table Filter] Step 6 - After search query (${searchQuery}): ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 6 - No search query: ${filtered.length}`);
     }
 
     // Apply sorting
@@ -127,8 +140,32 @@ export function AchievementTablePaginated({
       });
     }
     
-    console.log(`[Table Filter] Final filtered achievements: ${filtered.length}`);
-    console.log(`[Table Filter] Sample filtered achievements:`, filtered.slice(0, 3).map(a => ({ id: a.id, name: a.name, isCompleted: a.isCompleted })));
+    console.log(`[Table Filter] === FILTERING COMPLETE ===`);
+    console.log(`[Table Filter] Final count: ${filtered.length}`);
+    
+    if (filtered.length > 0) {
+      console.log(`[Table Filter] Sample results:`, filtered.slice(0, 3).map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        isCompleted: a.isCompleted,
+        category: a.category,
+        isObtainable: a.isObtainable
+      })));
+    } else {
+      console.log(`[Table Filter] ⚠️ NO ACHIEVEMENTS AFTER FILTERING!`);
+      console.log(`[Table Filter] Preferences:`, {
+        hideCompleted: preferences.hideCompleted,
+        hideUnobtainable: preferences.hideUnobtainable,
+        selectedTiers: preferences.selectedTiers,
+        maxScores: {
+          time: preferences.maxTimeScore,
+          skill: preferences.maxSkillScore,
+          rng: preferences.maxRngScore,
+          group: preferences.maxGroupScore
+        }
+      });
+    }
+    
     return filtered;
   }, [allAchievements, preferences, categoryFilter, searchQuery, sortColumn, sortDirection]);
   
