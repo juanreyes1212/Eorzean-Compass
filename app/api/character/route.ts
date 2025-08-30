@@ -209,15 +209,15 @@ export async function GET(request: Request) {
       server: characterProfile.server,
       avatar: characterProfile.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
       achievementPoints: characterProfile.achievementPoints?.points || 0,
-      achievementsCompleted: 0, // Will be updated by achievements API
-      totalAchievements: 0, // Will be updated by achievements API
+      achievementsCompleted: 0, // Will be calculated from FFXIVCollect data
+      totalAchievements: 0, // Will be calculated from FFXIVCollect data
       lastUpdated: new Date().toISOString(),
     };
 
     return NextResponse.json({
       character: finalCharacterData,
-      lodestoneId: lodestoneId, // Pass this to the achievements API
-      completedAchievements: [], // Will be fetched by achievements API
+      lodestoneId: lodestoneId,
+      completedAchievements: [], // Will be populated by achievements API using FFXIVCollect
       _isRealData: true,
       _isMockData: false,
     }, { headers });

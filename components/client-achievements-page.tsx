@@ -329,6 +329,16 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       try {
         achievements = JSON.parse(responseText);
         console.log(`[Achievements Fetch] Received ${achievements.length} achievements from API`);
+        
+        // Log completion status
+        const completedInResponse = achievements.filter((a: any) => a.isCompleted);
+        console.log(`[Achievements Fetch] Achievements marked as completed in response: ${completedInResponse.length}`);
+        
+        if (completedInResponse.length > 0) {
+          console.log(`[Achievements Fetch] Sample completed from API:`, 
+            completedInResponse.slice(0, 5).map((a: any) => ({ id: a.id, name: a.name }))
+          );
+        }
       } catch (parseError) {
         console.error(`[Achievements Fetch] JSON parse error:`, parseError);
         console.error(`[Achievements Fetch] Raw response:`, responseText.substring(0, 500));
@@ -349,6 +359,19 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       console.log(`[Achievements Fetch] Final processed achievements: ${achievementsWithTSRG.length}`);
       console.log(`[Achievements Fetch] Marked as completed: ${completedCount}`);
       
+      // Update character data with actual counts
+      if (characterData && completedCount > 0) {
+        console.log(`[Achievements Fetch] Updating character data with actual counts`);
+        setCharacterData(prev => prev ? {
+          ...prev,
+          character: {
+            ...prev.character,
+            achievementsCompleted: completedCount,
+            totalAchievements: achievementsWithTSRG.length,
+          }
+        } : null);
+      }
+      
       // Store achievements without completion status for caching
       const achievementsForCache = achievementsWithTSRG.map(a => ({
         ...a,
@@ -361,7 +384,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       
       toast({
         title: "Achievements Loaded",
-        description: `Successfully loaded ${achievementsWithTSRG.length} achievements with TSR-G analysis.`,
+        description: `Successfully loaded ${achievementsWithTSRG.length} achievements with ${completedCount} completed.`,
         variant: "default",
         icon: <Database className="h-4 w-4" />,
       });
