@@ -148,6 +148,64 @@ async function fetchAllAchievementsFromFFXIVCollect(): Promise<any[]> {
   });
 }
 
+// Fetch completion status from FFXIVCollect using Lodestone ID
+async function fetchCompletionStatusFromFFXIVCollect(lodestoneId: number): Promise<{
+  ownedIds: Set<number>;
+  missingIds: Set<number>;
+}> {
+  console.log(`[Achievements API] Fetching completion status from FFXIVCollect for Lodestone ID: ${lodestoneId}`);
+  
+  try {
+    // Fetch both owned and missing achievements
+    const [ownedResponse, missingResponse] = await Promise.all([
+      fetchWithTimeout(`${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned`, {
+        headers: {
+          'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+          'Accept': 'application/json',
+        }
+      }),
+      fetchWithTimeout(`${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/missing`, {
+        headers: {
+          'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+          'Accept': 'application/json',
+        }
+      })
+    ]);
+
+    let ownedIds = new Set<number>();
+    let missingIds = new Set<number>();
+
+    // Process owned achievements
+    if (ownedResponse.ok) {
+      const ownedData = await ownedResponse.json();
+      if (Array.isArray(ownedData)) {
+        ownedIds = new Set(ownedData.map((achievement: any) => Number(achievement.id)));
+        console.log(`[Achievements API] Found ${ownedIds.size} owned achievements`);
+      }
+    } else {
+      console.warn(`[Achievements API] Owned achievements request failed: ${ownedResponse.status}`);
+    }
+
+    // Process missing achievements
+    if (missingResponse.ok) {
+      const missingData = await missingResponse.json();
+      if (Array.isArray(missingData)) {
+        missingIds = new Set(missingData.map((achievement: any) => Number(achievement.id)));
+        console.log(`[Achievements API] Found ${missingIds.size} missing achievements`);
+      }
+    } else {
+      console.warn(`[Achievements API] Missing achievements request failed: ${missingResponse.status}`);
+    }
+
+    console.log(`[Achievements API] Completion status: ${ownedIds.size} owned, ${missingIds.size} missing`);
+    return { ownedIds, missingIds };
+
+  } catch (error) {
+    console.error("[Achievements API] FFXIVCollect completion status fetch failed:", error);
+    throw error;
+  }
+}
+
 // Generate mock achievements as fallback
 function generateMockAchievements(): any[] {
   console.log("[Achievements API] Generating mock achievements as fallback...");
@@ -177,22 +235,48 @@ function generateMockAchievements(): any[] {
   return achievements;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   // Add security headers
   const headers = new Headers(securityHeaders);
   
-  console.log("[Achievements API] Starting simplified achievements fetch...");
+  console.log("[Achievements API] Starting achievements fetch...");
+  
+  // Get lodestoneId from query params (passed from character API)
+  const { searchParams } = new URL(request.url);
+  const lodestoneIdParam = searchParams.get('lodestoneId');
+  const lodestoneId = lodestoneIdParam ? Number(lodestoneIdParam) : null;
+  
+  console.log(`[Achievements API] Lodestone ID: ${lodestoneId}`);
   
   // Check cache first
   const now = Date.now();
   if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
     console.log("[Achievements API] Returning cached achievements data.");
-    console.log(`[Achievements API] Cache contains ${achievementsCache.length} achievements`);
+    
+    // If we have a lodestone ID, apply completion status
+    if (lodestoneId) {
+      try {
+        const { ownedIds } = await fetchCompletionStatusFromFFXIVCollect(lodestoneId);
+        
+        const achievementsWithCompletion = achievementsCache.map(achievement => ({
+          ...achievement,
+          isCompleted: ownedIds.has(Number(achievement.id))
+        }));
+        
+        console.log(`[Achievements API] Applied completion status to cached data: ${ownedIds.size} completed`);
+        return NextResponse.json(achievementsWithCompletion, { headers });
+      } catch (completionError) {
+        console.warn("[Achievements API] Failed to get completion status, returning cached data without completion info");
+        return NextResponse.json(achievementsCache, { headers });
+      }
+    }
+    
     return NextResponse.json(achievementsCache, { headers });
   }
 
   let processedAchievements: any[] = [];
   let source = 'mock';
+  let completionStatus: { ownedIds: Set<number>; missingIds: Set<number> } | null = null;
 
   try {
     console.log("[Achievements API] Fetching master achievement list from FFXIVCollect...");
@@ -201,6 +285,17 @@ export async function GET() {
     source = 'ffxivcollect';
     
     console.log(`[Achievements API] FFXIVCollect returned ${processedAchievements.length} achievements`);
+    
+    // If we have a lodestone ID, get completion status
+    if (lodestoneId) {
+      try {
+        completionStatus = await fetchCompletionStatusFromFFXIVCollect(lodestoneId);
+        console.log(`[Achievements API] Got completion status: ${completionStatus.ownedIds.size} owned`);
+      } catch (completionError) {
+        console.warn("[Achievements API] Failed to get completion status:", completionError);
+        // Continue without completion status
+      }
+    }
     
   } catch (ffxivCollectError) {
     console.error("[Achievements API] FFXIVCollect failed:", ffxivCollectError);
@@ -213,18 +308,27 @@ export async function GET() {
 
   console.log(`[Achievements API] Processing ${processedAchievements.length} achievements for TSR-G scoring...`);
 
-  // Add TSR-G scores to all achievements
+  // Add TSR-G scores and completion status to all achievements
   const achievementsWithTSRG = processedAchievements
     .filter(achievement => achievement.id && achievement.name)
-    .map(achievement => ({
-      ...achievement,
-      tsrg: calculateTSRGScore(achievement),
-    }));
+    .map(achievement => {
+      const isCompleted = completionStatus ? completionStatus.ownedIds.has(Number(achievement.id)) : false;
+      
+      return {
+        ...achievement,
+        isCompleted,
+        tsrg: calculateTSRGScore(achievement),
+      };
+    });
 
-  console.log(`[Achievements API] Final achievements with TSR-G: ${achievementsWithTSRG.length}`);
+  const completedCount = achievementsWithTSRG.filter(a => a.isCompleted).length;
+  console.log(`[Achievements API] Final achievements with TSR-G: ${achievementsWithTSRG.length}, completed: ${completedCount}`);
 
-  // Cache the results
-  achievementsCache = achievementsWithTSRG;
+  // Cache the results (without completion status for reuse)
+  achievementsCache = processedAchievements.map(achievement => ({
+    ...achievement,
+    tsrg: calculateTSRGScore(achievement),
+  }));
   cacheTimestamp = now;
   
   console.log(`[Achievements API] Final result: ${achievementsWithTSRG.length} achievements from ${source} source.`);

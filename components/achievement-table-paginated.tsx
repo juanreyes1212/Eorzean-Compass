@@ -45,6 +45,14 @@ export function AchievementTablePaginated({
     
     if (completedCount > 0) {
       console.log(`[Table Filter] Sample completed:`, allAchievements.filter(a => a.isCompleted).slice(0, 3).map(a => ({ id: a.id, name: a.name })));
+    } else {
+      console.warn(`[Table Filter] ⚠️ NO COMPLETED ACHIEVEMENTS FOUND!`);
+      console.log(`[Table Filter] Sample achievements:`, allAchievements.slice(0, 5).map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        isCompleted: a.isCompleted,
+        category: a.category 
+      })));
     }
     
     let filtered = [...allAchievements];
@@ -169,8 +177,8 @@ export function AchievementTablePaginated({
     return filtered;
   }, [allAchievements, preferences, categoryFilter, searchQuery, sortColumn, sortDirection]);
   
-  // Use virtual scrolling for large datasets
-  const useVirtualScrolling = false; // Temporarily disable virtual scrolling to debug
+  // Disable virtual scrolling to fix table rendering issues
+  const useVirtualScrolling = false;
   
   console.log(`[Table Paginated] useVirtualScrolling: ${useVirtualScrolling}, filteredCount: ${filteredAchievements.length}`);
   
@@ -180,7 +188,16 @@ export function AchievementTablePaginated({
   const endIndex = startIndex + pageSize;
   const currentPageAchievements = filteredAchievements.slice(startIndex, endIndex);
 
-  console.log(`[Table Paginated] Pagination: page ${currentPage}/${totalPages}, showing ${currentPageAchievements.length} achievements (${startIndex}-${endIndex})`);
+  console.log(`[Table Paginated] Pagination: page ${currentPage}/${totalPages}, showing ${currentPageAchievements.length} achievements (${startIndex + 1}-${Math.min(endIndex, filteredAchievements.length)} of ${filteredAchievements.length})`);
+  
+  if (currentPageAchievements.length > 0) {
+    console.log(`[Table Paginated] Sample page achievements:`, currentPageAchievements.slice(0, 3).map(a => ({ 
+      id: a.id, 
+      name: a.name, 
+      isCompleted: a.isCompleted 
+    })));
+  }
+  
   // Reset to page 1 when filters or sort changes
   useEffect(() => {
     setCurrentPage(1);
@@ -192,6 +209,8 @@ export function AchievementTablePaginated({
     const completed = allAchievements.filter(a => a.isCompleted).length;
     const obtainable = allAchievements.filter(a => a.isObtainable).length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    console.log(`[Table Stats] Calculated stats: total=${total}, completed=${completed}, obtainable=${obtainable}, rate=${completionRate}%`);
     
     return {
       total,

@@ -208,7 +208,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         console.log(`[Character Fetch] Parsed character data:`, {
           characterId: data.character?.id,
           characterName: data.character?.name,
-          completedCount: data.completedAchievements?.length,
+          lodestoneId: data.lodestoneId,
           isMockData: data._isMockData,
           hasError: !!data._error
         });
@@ -225,11 +225,11 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       
       const characterToStore: StoredCharacter = {
         ...data.character,
-        completedAchievements: data.completedAchievements || [],
+        completedAchievements: [], // Will be populated by achievements API
         lastUpdated: data.character.lastUpdated || new Date().toISOString(), // Ensure lastUpdated is set for storage
       };
       
-      console.log(`[Character Fetch] Storing character with ${characterToStore.completedAchievements.length} completed achievements`);
+      console.log(`[Character Fetch] Storing character with Lodestone ID: ${data.lodestoneId}`);
       storeCharacter(characterToStore);
       addRecentSearch(name, server);
 
@@ -294,46 +294,20 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       const cachedAchievements = getStoredAchievements();
       console.log(`[Achievements Fetch] Cached achievements found:`, !!cachedAchievements);
       
-      if (cachedAchievements && characterData && !forceRefresh) {
-        const completedAchievementIds = new Set(characterData.completedAchievements?.map(comp => comp.id) || []);
-        console.log(`[Achievements Fetch] Using cached achievements. Completed IDs count: ${completedAchievementIds.size}`);
-        console.log(`[Achievements Fetch] Cached achievements count: ${cachedAchievements.length}`);
-        console.log(`[Achievements Fetch] Sample completed IDs:`, Array.from(completedAchievementIds).slice(0, 10));
-        
-        const achievementsWithStatus = cachedAchievements.map((achievement: any) => {
-          const isCompleted = completedAchievementIds.has(Number(achievement.id));
-          
-          console.log(`[Achievements Fetch] Processing achievement ${achievement.id}: ${achievement.name}, isCompleted: ${isCompleted}`);
-          
-          return {
-            ...achievement,
-            isCompleted,
-            tsrg: achievement.tsrg || calculateTSRGScore(achievement),
-          };
-        });
-        
-        console.log(`[Achievements Fetch] Final achievements with status: ${achievementsWithStatus.length}`);
-        console.log(`[Achievements Fetch] Completed achievements in final list: ${achievementsWithStatus.filter(a => a.isCompleted).length}`);
-        
-        setAllAchievements(achievementsWithStatus);
-        setAchievementsFetchProgress({ current: achievementsWithStatus.length, total: achievementsWithStatus.length, isLoading: false });
-        setAchievementsLoading(false);
-        
-        toast({
-          title: "Loaded from Cache",
-          description: `Using ${achievementsWithStatus.length} cached achievements.`,
-          variant: "default",
-          icon: <HardDrive className="h-4 w-4" />,
-        });
-        return;
-      }
+      // Always fetch fresh data to get proper completion status
+      const lodestoneId = (characterData as any)?.lodestoneId;
+      console.log(`[Achievements Fetch] Using Lodestone ID: ${lodestoneId}`);
 
       console.log("[Achievements Fetch] Starting fresh achievements fetch from API...");
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
       
-      const response = await fetch('/api/achievements', {
+      // Pass lodestone ID to achievements API for completion status
+      const apiUrl = lodestoneId ? `/api/achievements?lodestoneId=${lodestoneId}` : '/api/achievements';
+      console.log(`[Achievements Fetch] Fetching from: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
@@ -366,35 +340,21 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         throw new Error("Invalid achievements data format");
       }
       
-      storeAchievements(achievements);
-      
-      const completedAchievementIds = new Set(characterData?.completedAchievements?.map(comp => comp.id) || []);
-      console.log(`[Achievements Fetch] Processing ${achievements.length} achievements with ${completedAchievementIds.size} completed IDs`);
-      console.log(`[Achievements Fetch] Sample completed IDs:`, Array.from(completedAchievementIds).slice(0, 10));
-      
-      const achievementsWithTSRG = achievements.map((achievement: any) => {
-        if (!achievement.id || !achievement.name) {
-          console.warn(`[Achievements Fetch] Invalid achievement:`, achievement);
-          return null;
-        }
-        
-        const achievementId = Number(achievement.id);
-        const isCompleted = completedAchievementIds.has(achievementId);
-        
-        if (isCompleted) {
-          console.log(`[Achievements Fetch] ✓ COMPLETED: ${achievement.id} - ${achievement.name}`);
-        }
-        
-        return {
-          ...achievement,
-          isCompleted,
-          tsrg: achievement.tsrg || calculateTSRGScore(achievement),
-        };
-      }).filter(Boolean); // Remove any null entries
+      // Achievements already have completion status and TSR-G scores from the API
+      const achievementsWithTSRG = achievements.filter((achievement: any) => 
+        achievement.id && achievement.name
+      );
       
       const completedCount = achievementsWithTSRG.filter(a => a.isCompleted).length;
       console.log(`[Achievements Fetch] Final processed achievements: ${achievementsWithTSRG.length}`);
       console.log(`[Achievements Fetch] Marked as completed: ${completedCount}`);
+      
+      // Store achievements without completion status for caching
+      const achievementsForCache = achievementsWithTSRG.map(a => ({
+        ...a,
+        isCompleted: false // Remove completion status for cache
+      }));
+      storeAchievements(achievementsForCache);
       
       setAllAchievements(achievementsWithTSRG);
       setAchievementsFetchProgress({ current: achievementsWithTSRG.length, total: achievementsWithTSRG.length, isLoading: false });

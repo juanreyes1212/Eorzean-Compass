@@ -49,6 +49,7 @@ export interface AchievementWithTSRG extends AchievementWithStatus {
 // API Response Types
 export interface CharacterData { // Renamed from CharacterResponse to avoid confusion with Character interface
   character: Character;
+  lodestoneId?: number | null; // Add lodestone ID for FFXIVCollect API calls
   completedAchievements: CompletedAchievement[];
   _isMockData?: boolean;
   _isRealData?: boolean;
