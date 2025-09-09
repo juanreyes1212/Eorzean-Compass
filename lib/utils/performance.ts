@@ -1,107 +1,141 @@
-// Performance optimization utilities
+// Performance utilities for optimization and monitoring
 
-import { useCallback, useRef, useEffect, useState } from 'react'; // Added useState
+import { useEffect, useRef, useState } from 'react';
 
-// Debounce hook for search inputs
-export function useDebounce<T extends (...args: any[]) => any>(
-  callback: T,
-  delay: number
-): T {
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  
-  return useCallback((...args: Parameters<T>) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      callback(...args);
-    }, delay);
-  }, [callback, delay]) as T;
-}
+// Lazy image loading hook with intersection observer
+export function useLazyImage(src: string, fallbackSrc: string = "/placeholder.svg") {
+  const [imageSrc, setImageSrc] = useState<string>(fallbackSrc);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-// Throttle hook for scroll events
-export function useThrottle<T extends (...args: any[]) => any>(
-  callback: T,
-  delay: number
-): T {
-  const lastRun = useRef(Date.now());
-  
-  return useCallback((...args: Parameters<T>) => {
-    if (Date.now() - lastRun.current >= delay) {
-      callback(...args);
-      lastRun.current = Date.now();
-    }
-  }, [callback, delay]) as T;
-}
-
-// Intersection Observer hook for lazy loading
-export function useIntersectionObserver(
-  elementRef: React.RefObject<Element>,
-  options: IntersectionObserverInit = {}
-) {
-  const [isIntersecting, setIsIntersecting] = useState(false);
-  
   useEffect(() => {
-    const element = elementRef.current;
-    if (!element) return;
-    
+    if (!ref.current || !src) return;
+
     const observer = new IntersectionObserver(
-      ([entry]) => setIsIntersecting(entry.isIntersecting),
-      options
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          const img = new Image();
+          img.onload = () => {
+            setImageSrc(src);
+            setIsLoaded(true);
+            setIsError(false);
+          };
+          img.onerror = () => {
+            setImageSrc(fallbackSrc);
+            setIsLoaded(true);
+            setIsError(true);
+          };
+          img.src = src;
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
     );
-    
-    observer.observe(element);
-    
+
+    observer.observe(ref.current);
+
     return () => observer.disconnect();
-  }, [elementRef, options]);
-  
-  return isIntersecting;
+  }, [src, fallbackSrc]);
+
+  return { imageSrc, isLoaded, isError, ref };
 }
 
-// Memory usage monitoring (development only)
-export function useMemoryMonitor() {
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    
-    const logMemoryUsage = () => {
-      if ('memory' in performance) {
-        const memory = (performance as any).memory;
-        console.log('Memory Usage:', {
-          used: `${Math.round(memory.usedJSHeapSize / 1024 / 1024)} MB`,
-          total: `${Math.round(memory.totalJSHeapSize / 1024 / 1024)} MB`,
-          limit: `${Math.round(memory.jsHeapSizeLimit / 1024 / 1024)} MB`,
-        });
-      }
-    };
-    
-    const interval = setInterval(logMemoryUsage, 30000); // Every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
-}
-
-// Virtual scrolling for large lists
+// Virtual scrolling hook for large lists
 export function useVirtualScrolling<T>(
   items: T[],
   itemHeight: number,
   containerHeight: number
 ) {
   const [scrollTop, setScrollTop] = useState(0);
-  
+
+  console.log(`[Virtual Scrolling] items=${items.length}, itemHeight=${itemHeight}, containerHeight=${containerHeight}, scrollTop=${scrollTop}`);
   const startIndex = Math.floor(scrollTop / itemHeight);
   const endIndex = Math.min(
     startIndex + Math.ceil(containerHeight / itemHeight) + 1,
     items.length
   );
-  
+
   const visibleItems = items.slice(startIndex, endIndex);
   const totalHeight = items.length * itemHeight;
   const offsetY = startIndex * itemHeight;
-  
+
+  console.log(`[Virtual Scrolling] startIndex=${startIndex}, endIndex=${endIndex}, visibleItems=${visibleItems.length}`);
   return {
     visibleItems,
     totalHeight,
     offsetY,
+    startIndex,
+    endIndex,
     setScrollTop,
   };
+}
+
+// Debounce hook for performance optimization
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Performance monitoring utilities
+export function measurePerformance(name: string, fn: () => void) {
+  const start = performance.now();
+  fn();
+  const end = performance.now();
+  console.log(`${name} took ${end - start} milliseconds`);
+}
+
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  return function(this: any, ...args: Parameters<T>) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+
+// Memory usage monitoring
+export function getMemoryUsage() {
+  if (typeof window !== 'undefined' && 'memory' in performance) {
+    const memory = (performance as any).memory;
+    return {
+      used: memory.usedJSHeapSize,
+      total: memory.totalJSHeapSize,
+      limit: memory.jsHeapSizeLimit,
+      percentage: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100,
+    };
+  }
+  return null;
+}
+
+// Bundle size analysis helper
+export function analyzeBundleSize() {
+  if (typeof window !== 'undefined') {
+    const scripts = Array.from(document.querySelectorAll('script[src]'));
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    
+    return {
+      scriptCount: scripts.length,
+      styleCount: styles.length,
+      scripts: scripts.map(s => (s as HTMLScriptElement).src),
+      styles: styles.map(s => (s as HTMLLinkElement).href),
+    };
+  }
+  return null;
 }

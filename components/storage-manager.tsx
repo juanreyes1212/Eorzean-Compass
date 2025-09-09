@@ -12,7 +12,6 @@ import {
   clearAllStoredData, 
   getRecentSearches,
 } from "@/lib/storage";
-import { StoredCharacter } from "@/lib/types"; // Corrected import path for StoredCharacter
 
 export function StorageManager() {
   const [storageInfo, setStorageInfo] = useState(getStorageInfo());
@@ -53,9 +52,9 @@ export function StorageManager() {
   const storageUsedPercent = Math.min((storageInfo.used / (5 * 1024 * 1024)) * 100, 100);
 
   return (
-    <Card className="p-6 bg-slate-800 border-slate-700">
+    <Card className="p-6 compass-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-compass-100 flex items-center gap-2">
           <HardDrive className="h-5 w-5" />
           Local Storage
         </h3>
@@ -64,7 +63,7 @@ export function StorageManager() {
             variant="outline"
             size="sm"
             onClick={refreshInfo}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="border-compass-600 text-compass-300 hover:bg-compass-700"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -84,9 +83,9 @@ export function StorageManager() {
       <div className="space-y-4">
         {/* Storage Usage */}
         <div>
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-slate-300">Storage Used</span>
-            <span className="text-white">
+          <div className="flex justify-between text-sm mb-2 text-compass-300">
+            <span>Storage Used</span>
+            <span className="text-compass-100">
               {Math.round(storageInfo.used / 1024)}KB / 5MB
             </span>
           </div>
@@ -102,64 +101,64 @@ export function StorageManager() {
 
         {/* Storage Breakdown */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-700 rounded-lg p-3">
+          <Card className="p-3 compass-card">
             <div className="flex items-center gap-2 mb-1">
-              <User className="h-4 w-4 text-blue-400" />
-              <span className="text-sm text-slate-300">Characters</span>
+              <User className="h-4 w-4 text-compass-400" />
+              <span className="text-sm text-compass-300">Characters</span>
             </div>
-            <div className="text-lg font-bold text-white">{storageInfo.characters}</div>
-            <div className="text-xs text-slate-400">cached</div>
-          </div>
+            <div className="text-lg font-bold text-compass-100">{storageInfo.characters}</div>
+            <div className="text-xs text-compass-400">cached</div>
+          </Card>
 
-          <div className="bg-slate-700 rounded-lg p-3">
+          <Card className="p-3 compass-card">
             <div className="flex items-center gap-2 mb-1">
-              <Database className="h-4 w-4 text-green-400" />
-              <span className="text-sm text-slate-300">Achievements</span>
+              <Database className="h-4 w-4 text-gold-400" />
+              <span className="text-sm text-compass-300">Achievements</span>
             </div>
-            <div className="text-lg font-bold text-white">
+            <div className="text-lg font-bold text-compass-100">
               {storageInfo.hasAchievements ? 'Cached' : 'None'}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-compass-400">
               {storageInfo.hasAchievements ? 'up to date' : 'not cached'}
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-slate-700 rounded-lg p-3">
+          <Card className="p-3 compass-card">
             <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-4 w-4 text-purple-400" />
-              <span className="text-sm text-slate-300">Preferences</span>
+              <Clock className="h-4 w-4 text-earth-400" />
+              <span className="text-sm text-compass-300">Preferences</span>
             </div>
-            <div className="text-lg font-bold text-white">
+            <div className="text-lg font-bold text-compass-100">
               {storageInfo.hasPreferences ? 'Saved' : 'Default'}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-compass-400">
               {storageInfo.hasPreferences ? 'customized' : 'using defaults'}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Recent Searches */}
         {recentSearches.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-white mb-2">Recent Searches</h4>
+            <h4 className="text-sm font-medium text-compass-100 mb-2">Recent Searches</h4>
             <div className="space-y-2">
               {recentSearches.slice(0, 3).map((search, index) => (
-                <div key={index} className="flex items-center justify-between bg-slate-700 rounded p-2">
+                <Card key={index} className="flex items-center justify-between compass-card p-2">
                   <div>
-                    <span className="text-white font-medium">{search.name}</span>
-                    <span className="text-slate-400 ml-2">({search.server})</span>
+                    <span className="text-compass-100 font-medium">{search.name}</span>
+                    <span className="text-compass-400 ml-2">({search.server})</span>
                   </div>
-                  <Badge variant="outline" className="text-xs bg-slate-600 border-slate-500">
+                  <Badge variant="outline" className="text-xs bg-compass-700 border-compass-600 text-compass-300">
                     {new Date(search.timestamp).toLocaleDateString()}
                   </Badge>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
         )}
 
         {/* Benefits */}
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-compass-400">
           <p className="mb-1">
             <strong>Benefits of local storage:</strong>
           </p>

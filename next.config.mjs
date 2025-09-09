@@ -38,7 +38,7 @@ const nextConfig = {
   compiler: {
     // Set removeConsole to false to see console.log messages in production logs.
     // Remember to set this back to `process.env.NODE_ENV === 'production'` for final deployment.
-    removeConsole: false, 
+    removeConsole: process.env.NODE_ENV === 'production',
   },
   
   // ESLint and TypeScript configurations
@@ -59,7 +59,39 @@ const nextConfig = {
         tls: false,
       };
     }
+    
+    // Bundle analysis
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false,
+          reportFilename: 'bundle-analysis.html',
+        })
+      );
+    }
+    
     return config;
+  },
+  
+  // PWA configuration
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+    ];
   },
 };
 

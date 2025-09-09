@@ -34,38 +34,6 @@ describe('Character Search', () => {
   })
 
   it('should handle successful character search and show success toast', () => {
-    // Mock successful Tomestone.gg API search response
-    cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-      statusCode: 200,
-      body: {
-        characters: [{
-          id: '12345678',
-          name: 'Digs Reynar',
-          server: 'Cactuar',
-          avatar: '/placeholder.svg',
-        }]
-      }
-    }).as('tomestoneSearch');
-
-    // Mock successful Tomestone.gg API character data response
-    cy.intercept('GET', 'https://tomestone.gg/api/character/12345678?data=achievements', {
-      statusCode: 200,
-      body: {
-        character: {
-          id: '12345678',
-          name: 'Digs Reynar',
-          server: 'Cactuar',
-          avatar: '/placeholder.svg',
-          achievement_points: 1000, 
-          achievements_completed: 100,
-        },
-        achievements: [
-          { id: 1, date: '2023-01-01T00:00:00Z' },
-          { id: 2, date: '2023-01-02T00:00:00Z' }
-        ]
-      }
-    }).as('tomestoneCharacterData');
-
     // Intercept the local /api/character GET request
     cy.intercept('GET', '/api/character?name=Digs%20Reynar&server=Cactuar', {
       statusCode: 200,
@@ -85,8 +53,7 @@ describe('Character Search', () => {
         ],
         _isRealData: true
       }
-    }).as('localCharacterApi');
-
+    }).as('localCharacterApi')
 
     cy.getByTestId('character-name-input').type('Digs Reynar')
     cy.getByTestId('server-select').click()
@@ -102,15 +69,10 @@ describe('Character Search', () => {
   })
 
   it('should handle character not found error and show error toast', () => {
-    cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-      statusCode: 200,
-      body: { characters: [] }
-    }).as('tomestoneNotFound');
-
     cy.intercept('GET', '/api/character?name=NonExistent&server=Cactuar', {
       statusCode: 404,
       body: { error: 'Character not found. Please check the name and server spelling.' }
-    }).as('localCharacterApiNotFound');
+    }).as('localCharacterApiNotFound')
 
     cy.getByTestId('character-name-input').type('NonExistent')
     cy.getByTestId('server-select').click()
@@ -123,11 +85,6 @@ describe('Character Search', () => {
   })
 
   it('should show demo data toast when API returns mock data', () => {
-    cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-      statusCode: 500,
-      body: 'Internal Server Error'
-    }).as('tomestoneSearchFail');
-
     cy.intercept('GET', '/api/character?name=Demo%20User&server=Cactuar', {
       statusCode: 200,
       body: {
@@ -144,7 +101,7 @@ describe('Character Search', () => {
         _isMockData: true,
         _error: 'Tomestone.gg API unavailable: Internal Server Error. Showing demo data.'
       }
-    }).as('localCharacterApiMock');
+    }).as('localCharacterApiMock')
 
     cy.getByTestId('character-name-input').type('Demo User')
     cy.getByTestId('server-select').click()
@@ -174,37 +131,8 @@ describe('Character Search', () => {
   })
 
   it('should show loading state during search', () => {
-    cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-      delay: 2000,
-      statusCode: 200,
-      body: {
-        characters: [{
-          id: '12345678',
-          name: 'Test Character',
-          server: 'Cactuar',
-          avatar: '/placeholder.svg',
-        }]
-      }
-    }).as('slowTomestoneSearch');
-
-    cy.intercept('GET', 'https://tomestone.gg/api/character/12345678?data=achievements', {
-      delay: 2000,
-      statusCode: 200,
-      body: {
-        character: {
-          id: '12345678',
-          name: 'Test Character',
-          server: 'Cactuar',
-          avatar: '/placeholder.svg',
-          achievement_points: 1000,
-          achievements_completed: 100,
-        },
-        achievements: []
-      }
-    }).as('slowTomestoneCharacterData');
-
     cy.intercept('GET', '/api/character?name=Test%20Character&server=Cactuar', {
-      delay: 4000, // Simulate longer local API processing
+      delay: 2000,
       statusCode: 200,
       body: {
         character: {
@@ -219,7 +147,7 @@ describe('Character Search', () => {
         completedAchievements: [],
         _isRealData: true
       }
-    }).as('slowLocalCharacterApi');
+    }).as('slowLocalCharacterApi')
 
     cy.getByTestId('character-name-input').type('Test Character')
     cy.getByTestId('server-select').click()
@@ -230,6 +158,6 @@ describe('Character Search', () => {
     cy.getByTestId('search-button').should('contain', 'Searching...')
     cy.get('.animate-spin').should('be.visible')
 
-    cy.wait('@slowLocalCharacterApi')
+    cy.wait('@slowLocalCharacterApi', { timeout: 10000 })
   })
 })

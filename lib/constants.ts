@@ -116,8 +116,15 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 export const EXTERNAL_APIS = {
   TOMESTONE_BASE: 'https://tomestone.gg/api',
   FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
+  REQUEST_TIMEOUT: 15000,
+  MAX_RETRIES: 3,
+  RETRY_DELAY: 1000,
 } as const;
 
-// This will be read from process.env.TOMESTONE_API_KEY
+// Environment variables with validation
 export const TOMESTONE_API_KEY = process.env.TOMESTONE_API_KEY;
+
+if (!TOMESTONE_API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('TOMESTONE_API_KEY is not set in production environment');
+}
 // XIVAPI_API_KEY is no longer needed as FFXIVCollect will be used for character achievements.

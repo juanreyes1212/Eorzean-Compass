@@ -1,49 +1,30 @@
 import { NextResponse } from "next/server";
 import { calculateTSRGScore } from '@/lib/tsrg-matrix';
-import { EXTERNAL_APIS, TOMESTONE_API_KEY } from '@/lib/constants';
+import { EXTERNAL_APIS } from '@/lib/constants';
+import { securityHeaders } from '@/lib/security';
 
-// Tomestone.gg API response structures based on api-docs.json
-interface TomestoneAchievement {
-  id: number;
-  name: string;
-  description: string;
-  points: number;
-  category: string; // Tomestone.gg provides category as a string directly
-  patch: string;
-  icon: string; // Full URL to icon
-  rarity?: number; // Rarity is a number
-}
-
-interface TomestoneAchievementSearchResult {
-  results: TomestoneAchievement[];
-  count: number;
-}
-
-// FFXIV Collect API response structures
+// FFXIVCollect achievement structure from owned/missing endpoints
 interface FFXIVCollectAchievement {
   id: number;
   name: string;
   description: string;
   points: number;
-  category: { name: string }; // FFXIV Collect has category as an object
+  order: number;
   patch: string;
-  icon: string; // Relative path to icon
-  rarity?: number; // Rarity is a number
+  owned: string; // Rarity percentage as string
+  icon: string;
+  category: { id: number; name: string };
+  type: { id: number; name: string };
+  reward?: any;
 }
 
-interface FFXIVCollectAchievementSearchResult {
-  results: FFXIVCollectAchievement[];
-  total: number;
-}
-
-// Cache for achievements data with size limit
+// Cache for achievements data (without character-specific completion status)
 let achievementsCache: any[] | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
-const MAX_ACHIEVEMENTS_TO_FETCH = 3000; // Cap the total number of achievements to fetch
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 // Add timeout wrapper for fetch requests
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 15000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 20000): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
@@ -63,172 +44,278 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
   }
 }
 
-// Generate mock achievements data with icons
-function generateMockAchievements(): any[] {
-  const categories = ["Battle", "Character", "Items", "Crafting & Gathering", "Quests", "Exploration", "PvP", "Grand Company", "Legacy"];
-  const baseNames = [
-    "The Ultimate Hunter", "Master Crafter", "Dungeon Delver", "PvP Champion", "Explorer Extraordinaire",
-    "Quest Seeker", "Item Collector", "Beast Slayer", "Gathering Guru", "Trial Conqueror",
-    "FATE Finisher", "Levemate", "Triple Triad Master", "Mahjong Mogul", "Ocean Fisher",
-    "Deep Dungeon Diver", "Eureka Explorer", "Bozjan Battler", "Relic Reborn", "Mount Collector"
-  ];
-  const adjectives = ["Grand", "Epic", "Legendary", "Swift", "Mighty", "Hidden", "Glorious", "Unseen", "Eternal", "Valiant"];
-  const nouns = ["Journey", "Feat", "Triumph", "Conquest", "Odyssey", "Saga", "Venture", "Pursuit", "Challenge", "Legacy"];
-  const achievements = [];
+// Build master achievement list from owned + missing endpoints
+async function buildAchievementListFromOwnedMissing(lodestoneId: number): Promise<{
+  allAchievements: any[];
+  ownedCount: number;
+  missingCount: number;
+}> {
+  console.log(`[Achievements API] Building achievement list from owned/missing for Lodestone ID: ${lodestoneId}`);
   
-  for (let i = 1; i <= 2500; i++) {
-    const category = categories[Math.floor(Math.random() * categories.length)];
-    const isObtainable = category !== "Legacy" && Math.random() > 0.05; // 95% obtainable
-    
-    // Generate a more varied and unique name
-    const namePart1 = baseNames[Math.floor(Math.random() * baseNames.length)];
-    const namePart2 = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const namePart3 = nouns[Math.floor(Math.random() * nouns.length)];
-    const name = `${namePart1}: ${namePart2} ${namePart3} ${i}`; // Add unique ID to ensure uniqueness
+  const allAchievements: FFXIVCollectAchievement[] = [];
+  let ownedCount = 0;
+  let missingCount = 0;
 
-    // Generate a more varied description
-    const descriptionTemplates = [
-      `Complete the arduous task of ${namePart1.toLowerCase()} to earn this prestigious award.`,
-      `Prove your ${namePart2.toLowerCase()} skills in ${category.toLowerCase()} by achieving this remarkable ${namePart3.toLowerCase()}.`,
-      `This achievement signifies your dedication to ${category.toLowerCase()} and your mastery of ${namePart1.toLowerCase()} challenges.`,
-      `A testament to your ${namePart2.toLowerCase()} spirit and your relentless ${namePart3.toLowerCase()} across Eorzea.`,
-      `Only the most ${adjectives[Math.floor(Math.random() * adjectives.length)].toLowerCase()} adventurers can claim this ${nouns[Math.floor(Math.random() * nouns.length)].toLowerCase()}.`
-    ];
-    const description = descriptionTemplates[Math.floor(Math.random() * descriptionTemplates.length)];
-
-    // Generate a semi-realistic icon path (using FFXIV Collect pattern for mock)
-    const iconId = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0'); // Random 3-digit number
-    const iconCategory = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0'); // Random 3-digit number for category
-    const iconPath = `/images/achievements/061${iconCategory}/061${iconId}.png`; // Relative path for mock
+  try {
+    // Fetch owned achievements
+    const ownedUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned`;
+    console.log(`[Achievements API] Fetching owned from: ${ownedUrl}`);
     
-    achievements.push({
-      id: i,
-      name: name,
-      description: description,
-      category,
-      points: Math.floor(Math.random() * 15) * 5, // Points in multiples of 5, up to 70
-      patch: `${Math.floor(Math.random() * 6) + 1}.${Math.floor(Math.random() * 5)}`,
-      isObtainable,
-      icon: iconPath, // Add icon path
-      rarity: Math.random() * 100, // Mock rarity
+    const ownedResponse = await fetchWithTimeout(ownedUrl, {
+      headers: {
+        'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+        'Accept': 'application/json',
+      }
     });
+
+    if (ownedResponse.ok) {
+      const ownedData = await ownedResponse.json();
+      console.log(`[Achievements API] Owned response type:`, typeof ownedData, `Array:`, Array.isArray(ownedData));
+      
+      if (Array.isArray(ownedData)) {
+        ownedData.forEach((achievement: FFXIVCollectAchievement) => {
+          if (achievement.id && achievement.name) {
+            allAchievements.push(achievement);
+            ownedCount++;
+          }
+        });
+        console.log(`[Achievements API] Added ${ownedCount} owned achievements`);
+      } else {
+        console.warn(`[Achievements API] Owned data is not an array:`, ownedData);
+      }
+    } else {
+      const errorText = await ownedResponse.text();
+      console.error(`[Achievements API] Owned achievements failed: ${ownedResponse.status} - ${errorText}`);
+      throw new Error(`Failed to fetch owned achievements: ${ownedResponse.status}`);
+    }
+
+    // Fetch missing achievements
+    const missingUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/missing`;
+    console.log(`[Achievements API] Fetching missing from: ${missingUrl}`);
+    
+    const missingResponse = await fetchWithTimeout(missingUrl, {
+      headers: {
+        'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+        'Accept': 'application/json',
+      }
+    });
+
+    if (missingResponse.ok) {
+      const missingData = await missingResponse.json();
+      console.log(`[Achievements API] Missing response type:`, typeof missingData, `Array:`, Array.isArray(missingData));
+      
+      if (Array.isArray(missingData)) {
+        missingData.forEach((achievement: FFXIVCollectAchievement) => {
+          if (achievement.id && achievement.name) {
+            allAchievements.push(achievement);
+            missingCount++;
+          }
+        });
+        console.log(`[Achievements API] Added ${missingCount} missing achievements`);
+      } else {
+        console.warn(`[Achievements API] Missing data is not an array:`, missingData);
+      }
+    } else {
+      const errorText = await missingResponse.text();
+      console.error(`[Achievements API] Missing achievements failed: ${missingResponse.status} - ${errorText}`);
+      throw new Error(`Failed to fetch missing achievements: ${missingResponse.status}`);
+    }
+
+  } catch (error) {
+    console.error("[Achievements API] Error building achievement list:", error);
+    throw error;
   }
+
+  console.log(`[Achievements API] Built complete list: ${allAchievements.length} total (${ownedCount} owned, ${missingCount} missing)`);
   
-  return achievements;
+  return {
+    allAchievements,
+    ownedCount,
+    missingCount
+  };
 }
 
-async function fetchAchievementsFromFFXIVCollect(): Promise<any[]> {
-  console.log("Attempting to fetch achievements from FFXIV Collect API...");
+// Fallback to general achievements list if character-specific fails
+async function fetchGeneralAchievementsList(): Promise<any[]> {
+  console.log("[Achievements API] Fetching general achievements list as fallback...");
   
+  // Check cache first for general list
+  const now = Date.now();
+  if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
+    console.log("[Achievements API] Using cached general achievements list");
+    return achievementsCache;
+  }
+
   let allAchievements: FFXIVCollectAchievement[] = [];
   let page = 1;
-  const limit = 100; // FFXIV Collect default limit
-  let totalAchievementsCount = 0; // To store the total count from the first response
+  const limit = 100;
 
-  while (allAchievements.length < MAX_ACHIEVEMENTS_TO_FETCH) {
-    const offset = (page - 1) * limit;
-    const url = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/achievements?limit=${limit}&offset=${offset}`;
-    
-    try {
-      const response = await fetchWithTimeout(url);
+  try {
+    while (true) {
+      const offset = (page - 1) * limit;
+      const url = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/achievements?limit=${limit}&offset=${offset}`;
+      
+      console.log(`[Achievements API] Fetching general page ${page} (offset: ${offset})...`);
+      
+      const response = await fetchWithTimeout(url, {
+        headers: {
+          'User-Agent': `Eorzean-Compass/1.0 (${process.env.NEXT_PUBLIC_BASE_URL || 'https://eorzean-compass.netlify.app'})`,
+          'Accept': 'application/json',
+        }
+      });
+
       if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`FFXIV Collect HTTP ${response.status}: ${response.statusText} - ${errorBody}`);
+        throw new Error(`FFXIVCollect HTTP ${response.status}: ${response.statusText}`);
       }
-      const data: FFXIVCollectAchievementSearchResult = await response.json();
 
-      if (!data.results || !Array.isArray(data.results)) {
-        console.error(`Invalid data structure from FFXIV Collect for page ${page}.`);
+      const data = await response.json();
+      
+      if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
+        console.log("[Achievements API] Reached end of general achievements data");
         break;
-      }
-
-      if (page === 1) {
-        totalAchievementsCount = data.total; // Get total count from first page
-        console.log(`FFXIV Collect reported total achievements: ${totalAchievementsCount}`);
       }
 
       allAchievements = allAchievements.concat(data.results);
-      console.log(`Fetched FFXIV Collect page ${page}, total achievements so far: ${allAchievements.length}`);
+      console.log(`[Achievements API] General fetch page ${page}, total: ${allAchievements.length}`);
       
-      // Stop if we've fetched all available or reached our cap
-      if (data.results.length < limit || allAchievements.length >= totalAchievementsCount || allAchievements.length >= MAX_ACHIEVEMENTS_TO_FETCH) {
-        console.log("Reached end of FFXIV Collect data or fetched maximum allowed achievements.");
-        break;
-      }
+      if (data.results.length < limit) break;
       
       page++;
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
-    } catch (error) {
-      console.error(`FFXIV Collect fetch failed for page ${page}:`, error instanceof Error ? error.message : error);
-      break; // Stop fetching on first error
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (page > 50) break; // Safety limit
     }
+
+    // Cache the general list
+    achievementsCache = allAchievements;
+    cacheTimestamp = now;
+    
+    console.log(`[Achievements API] Cached ${allAchievements.length} general achievements`);
+    return allAchievements;
+
+  } catch (error) {
+    console.error("[Achievements API] General achievements fetch failed:", error);
+    throw error;
   }
-
-  if (allAchievements.length === 0) {
-    throw new Error("No achievements were fetched from FFXIV Collect.");
-  }
-
-  // Deduplicate achievements by ID to ensure uniqueness
-  const uniqueAchievementsMap = new Map<number, FFXIVCollectAchievement>();
-  allAchievements.forEach(ach => {
-    if (ach.id) {
-      uniqueAchievementsMap.set(ach.id, ach);
-    }
-  });
-  const uniqueAchievements = Array.from(uniqueAchievementsMap.values());
-  console.log(`Deduplicated achievements: ${uniqueAchievements.length} unique achievements.`);
-
-
-  console.log(`Successfully fetched ${uniqueAchievements.length} achievements from FFXIV Collect.`);
-  return uniqueAchievements.map(achievement => {
-    const categoryName = achievement.category?.name || 'Unknown';
-    const isObtainable = !categoryName.toLowerCase().includes('legacy') && 
-                         !categoryName.toLowerCase().includes('seasonal'); // FFXIV Collect specific logic
-    return {
-      id: achievement.id,
-      name: achievement.name || 'Unknown Achievement',
-      description: achievement.description || 'No description available',
-      category: categoryName,
-      points: Math.max(0, achievement.points || 0),
-      patch: achievement.patch || 'Unknown',
-      isObtainable,
-      icon: achievement.icon || null, // This will be a relative path
-      rarity: achievement.rarity || null,
-    };
-  });
 }
 
-export async function GET() {
-  const now = Date.now();
-  if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-    console.log("Returning cached achievements data.");
-    return NextResponse.json(achievementsCache);
-  }
+// Process FFXIVCollect achievement into our format
+function processFFXIVCollectAchievement(achievement: FFXIVCollectAchievement, isCompleted: boolean): any {
+  const categoryName = achievement.category?.name || 'Unknown';
+  const typeName = achievement.type?.name || 'Unknown';
+  
+  // Determine if obtainable based on category and type
+  const isObtainable = !categoryName.toLowerCase().includes('legacy') && 
+                       !categoryName.toLowerCase().includes('seasonal') &&
+                       !categoryName.toLowerCase().includes('discontinued') &&
+                       !typeName.toLowerCase().includes('legacy');
 
-  let processedAchievements: any[] = [];
-  let source = 'mock';
+  const processed = {
+    id: achievement.id,
+    name: achievement.name || 'Unknown Achievement',
+    description: achievement.description || 'No description available',
+    category: categoryName,
+    points: Math.max(0, achievement.points || 0),
+    patch: achievement.patch || 'Unknown',
+    isObtainable,
+    isCompleted,
+    icon: achievement.icon || null,
+    rarity: achievement.owned ? parseFloat(achievement.owned.replace('%', '')) : null,
+    order: achievement.order || 0
+  };
+
+  return {
+    ...processed,
+    tsrg: calculateTSRGScore(processed)
+  };
+}
+
+export async function GET(request: Request) {
+  const headers = new Headers(securityHeaders);
+  
+  console.log("[Achievements API] === STARTING ACHIEVEMENTS FETCH ===");
+  
+  const { searchParams } = new URL(request.url);
+  const lodestoneIdParam = searchParams.get('lodestoneId');
+  const lodestoneId = lodestoneIdParam ? Number(lodestoneIdParam) : null;
+  
+  console.log(`[Achievements API] Lodestone ID: ${lodestoneId}`);
 
   try {
-    // Directly attempt to fetch from FFXIV Collect as the primary source for all achievements
-    processedAchievements = await fetchAchievementsFromFFXIVCollect();
-    source = 'ffxivcollect';
-  } catch (ffxivCollectError) {
-    console.error("FFXIV Collect achievements API failed:", ffxivCollectError);
-    processedAchievements = generateMockAchievements();
-    source = 'mock';
+    let processedAchievements: any[] = [];
+
+    if (lodestoneId) {
+      console.log(`[Achievements API] Using character-specific approach with Lodestone ID: ${lodestoneId}`);
+      
+      try {
+        // Build list from owned + missing endpoints
+        const { allAchievements, ownedCount, missingCount } = await buildAchievementListFromOwnedMissing(lodestoneId);
+        
+        console.log(`[Achievements API] Processing ${allAchievements.length} achievements (${ownedCount} owned, ${missingCount} missing)`);
+        
+        // Process achievements with completion status
+        processedAchievements = allAchievements.map((achievement, index) => {
+          // First ownedCount achievements are completed, rest are not
+          const isCompleted = index < ownedCount;
+          return processFFXIVCollectAchievement(achievement, isCompleted);
+        });
+
+        console.log(`[Achievements API] Character-specific processing complete: ${processedAchievements.length} achievements`);
+        const completedInProcessed = processedAchievements.filter(a => a.isCompleted).length;
+        console.log(`[Achievements API] Marked as completed: ${completedInProcessed}`);
+
+      } catch (characterError) {
+        console.warn(`[Achievements API] Character-specific fetch failed, falling back to general list:`, characterError);
+        
+        // Fallback to general list without completion status
+        const generalAchievements = await fetchGeneralAchievementsList();
+        processedAchievements = generalAchievements.map(achievement => 
+          processFFXIVCollectAchievement(achievement, false)
+        );
+        
+        console.log(`[Achievements API] Fallback processing complete: ${processedAchievements.length} achievements (no completion status)`);
+      }
+
+    } else {
+      console.log(`[Achievements API] No Lodestone ID provided, using general achievements list`);
+      
+      // No character specified, get general list
+      const generalAchievements = await fetchGeneralAchievementsList();
+      processedAchievements = generalAchievements.map(achievement => 
+        processFFXIVCollectAchievement(achievement, false)
+      );
+      
+      console.log(`[Achievements API] General processing complete: ${processedAchievements.length} achievements`);
+    }
+
+    // Final validation and sorting
+    const validAchievements = processedAchievements
+      .filter(achievement => achievement.id && achievement.name)
+      .sort((a, b) => a.order - b.order); // Sort by order for consistent display
+
+    const finalCompletedCount = validAchievements.filter(a => a.isCompleted).length;
+    console.log(`[Achievements API] === FINAL RESULT ===`);
+    console.log(`[Achievements API] Total achievements: ${validAchievements.length}`);
+    console.log(`[Achievements API] Completed achievements: ${finalCompletedCount}`);
+    console.log(`[Achievements API] Completion rate: ${validAchievements.length > 0 ? Math.round((finalCompletedCount / validAchievements.length) * 100) : 0}%`);
+    
+    if (finalCompletedCount > 0) {
+      console.log(`[Achievements API] Sample completed:`, 
+        validAchievements.filter(a => a.isCompleted).slice(0, 5).map(a => ({ id: a.id, name: a.name }))
+      );
+    }
+
+    return NextResponse.json(validAchievements, { headers });
+
+  } catch (error) {
+    console.error("[Achievements API] Complete failure:", error);
+    
+    return NextResponse.json(
+      { 
+        error: `Failed to fetch achievements: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: "Unable to fetch from FFXIVCollect API"
+      },
+      { status: 500, headers }
+    );
   }
-
-  const achievementsWithTSRG = processedAchievements
-    .filter(achievement => achievement.id && achievement.name)
-    .map(achievement => ({
-      ...achievement,
-      tsrg: calculateTSRGScore(achievement),
-    }));
-
-  // Cache all fetched achievements, as the fetching logic now ensures it's a complete set
-  achievementsCache = achievementsWithTSRG;
-  cacheTimestamp = now;
-  console.log(`Achievements cached from ${source} source. Total: ${achievementsWithTSRG.length}`);
-
-  return NextResponse.json(achievementsWithTSRG);
 }

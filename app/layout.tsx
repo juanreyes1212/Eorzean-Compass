@@ -4,13 +4,39 @@ import "./globals.css";
 import Link from "next/link";
 import { Compass } from 'lucide-react';
 import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
+import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
+import { PerformanceMonitor } from "@/components/performance-monitor";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Eorzean Compass | FFXIV Achievement Tracker",
   description: "Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters",
-    generator: 'v0.dev'
+  generator: 'Next.js',
+  manifest: '/manifest.json',
+  robots: 'index, follow',
+  openGraph: {
+    title: 'Eorzean Compass | FFXIV Achievement Tracker',
+    description: 'Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Eorzean Compass',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Eorzean Compass | FFXIV Achievement Tracker',
+    description: 'Navigate your FFXIV achievement journey with the definitive companion tool for achievement hunters',
+  },
+  keywords: ['FFXIV', 'Final Fantasy XIV', 'achievements', 'tracker', 'gaming', 'MMO'],
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#f59e0b',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({
@@ -49,7 +75,11 @@ export default function RootLayout({
             </nav>
           </div>
         </header>
-        <main className="min-h-screen">{children}</main>
+        <ErrorBoundaryWrapper>
+          <main id="main-content" className="min-h-screen" tabIndex={-1}>
+            {children}
+          </main>
+        </ErrorBoundaryWrapper>
         <footer className="bg-compass-950 text-compass-100 border-t border-compass-700 py-8 mt-12">
           <div className="container mx-auto px-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -68,6 +98,8 @@ export default function RootLayout({
           </div>
         </footer>
         <Toaster /> {/* Add the Toaster component here */}
+        <PerformanceMonitor />
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

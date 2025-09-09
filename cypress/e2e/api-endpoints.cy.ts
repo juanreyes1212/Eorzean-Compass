@@ -28,38 +28,6 @@ describe('API Endpoints', () => {
     })
 
     it('should handle valid character search request and return real data', () => {
-      // Mock successful Tomestone.gg API search response
-      cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-        statusCode: 200,
-        body: {
-          characters: [{
-            id: '12345678',
-            name: 'Digs Reynar',
-            server: 'Cactuar',
-            avatar: '/placeholder.svg',
-          }]
-        }
-      }).as('tomestoneSearch');
-
-      // Mock successful Tomestone.gg API character data response
-      cy.intercept('GET', 'https://tomestone.gg/api/character/12345678?data=achievements', {
-        statusCode: 200,
-        body: {
-          character: {
-            id: '12345678',
-            name: 'Digs Reynar',
-            server: 'Cactuar',
-            avatar: '/placeholder.svg',
-            achievement_points: 1000, 
-            achievements_completed: 100,
-          },
-          achievements: [
-            { id: 1, date: '2023-01-01T00:00:00Z' },
-            { id: 2, date: '2023-01-02T00:00:00Z' }
-          ]
-        }
-      }).as('tomestoneCharacterData');
-
       cy.request({
         method: 'GET', // Changed to GET
         url: '/api/character',
@@ -78,18 +46,6 @@ describe('API Endpoints', () => {
     });
 
     it('should return mock data when Tomestone.gg API fails', () => {
-      // Intercept Tomestone.gg search to simulate failure
-      cy.intercept('GET', 'https://tomestone.gg/api/character/search*', {
-        statusCode: 500,
-        body: 'Internal Server Error'
-      }).as('tomestoneSearchFail');
-
-      // Intercept Tomestone.gg character data fetch to simulate failure
-      cy.intercept('GET', 'https://tomestone.gg/api/character/*', {
-        statusCode: 500,
-        body: 'Internal Server Error'
-      }).as('tomestoneCharacterFail');
-
       cy.request({
         method: 'GET', // Changed to GET
         url: '/api/character',
@@ -111,36 +67,6 @@ describe('API Endpoints', () => {
 
   describe('/api/achievements', () => {
     it('should return achievements data from Tomestone.gg', () => {
-      // Mock Tomestone.gg achievements API
-      cy.intercept('GET', 'https://tomestone.gg/api/achievements*', {
-        statusCode: 200,
-        body: {
-          count: 2,
-          results: [
-            {
-              id: 1,
-              name: "Mock Achievement 1",
-              description: "Description 1",
-              points: 10,
-              category: "Battle",
-              patch: "6.0",
-              icon: "https://ffxivcollect.com/images/achievements/061000/061301.png",
-              rarity: 50.0
-            },
-            {
-              id: 2,
-              name: "Mock Achievement 2",
-              description: "Description 2",
-              points: 20,
-              category: "Quests",
-              patch: "6.1",
-              icon: "https://ffxivcollect.com/images/achievements/061000/061302.png",
-              rarity: 25.0
-            }
-          ]
-        }
-      }).as('tomestoneAchievements');
-
       cy.request({
         method: 'GET',
         url: '/api/achievements',
@@ -164,11 +90,6 @@ describe('API Endpoints', () => {
     })
 
     it('should return mock data when Tomestone.gg achievements API fails', () => {
-      cy.intercept('GET', 'https://tomestone.gg/api/achievements*', {
-        statusCode: 500,
-        body: 'Internal Server Error'
-      }).as('tomestoneAchievementsFail');
-
       cy.request({
         method: 'GET',
         url: '/api/achievements',

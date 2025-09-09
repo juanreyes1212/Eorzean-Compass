@@ -6,7 +6,7 @@ import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement
 import { getTierName, getTierColor } from "@/lib/tsrg-matrix";
 import { CheckCircle, Clock, Zap, Dice6, Users } from 'lucide-react';
 import { AchievementWithTSRG } from "@/lib/types";
-import { getAriaLabel } from "@/lib/utils/accessibility";
+import { getAriaLabel, announceToScreenReader } from "@/lib/utils/accessibility";
 
 interface AchievementTableRowProps {
   achievement: AchievementWithTSRG;
@@ -14,6 +14,18 @@ interface AchievementTableRowProps {
 }
 
 export function AchievementTableRow({ achievement, onClick }: AchievementTableRowProps) {
+  const handleClick = () => {
+    onClick(achievement);
+    announceToScreenReader(`Opened details for ${achievement.name}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
     <TableRow 
       key={achievement.id} 
@@ -26,7 +38,11 @@ export function AchievementTableRow({ achievement, onClick }: AchievementTableRo
       `}
       data-testid={`achievement-row-${achievement.id}`}
       aria-label={getAriaLabel(achievement)}
-      onClick={() => onClick(achievement)} // Call onClick prop
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-describedby={`achievement-desc-${achievement.id}`}
     >
       <TableCell className="p-2">
         <div className="relative">
@@ -48,7 +64,10 @@ export function AchievementTableRow({ achievement, onClick }: AchievementTableRo
             {achievement.name}
             {/* Removed redundant CheckCircle here, as it's already next to the icon */}
           </div>
-          <div className="text-sm text-compass-400 max-w-md truncate">
+          <div 
+            id={`achievement-desc-${achievement.id}`}
+            className="text-sm text-compass-400 max-w-md truncate"
+          >
             {achievement.description}
           </div>
           {achievement.rarity && achievement.rarity < 10 && (

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AchievementStats } from "./achievement-table/AchievementStats";
 import { AchievementTableContent } from "./achievement-table/AchievementTableContent";
 import { AchievementTablePagination } from "./achievement-table/AchievementTablePagination";
-import { calculateTSRGScore } from "@/lib/tsrg-matrix";
+import { VirtualAchievementTable } from "./virtual-achievement-table";
 import { AchievementWithTSRG, UserPreferences, SortColumn, SortDirection, CompletedAchievement } from "@/lib/types"; // Import SortColumn, SortDirection, CompletedAchievement
 import { PAGINATION } from "@/lib/constants"; // Import from constants
 
@@ -38,7 +38,25 @@ export function AchievementTablePaginated({
   
   // Apply filters and sorting to get filtered achievements
   const filteredAchievements = useMemo(() => {
+    console.log(`[Table Filter] === FILTERING START ===`);
+    console.log(`[Table Filter] Total achievements: ${allAchievements.length}`);
+    const completedCount = allAchievements.filter(a => a.isCompleted).length;
+    console.log(`[Table Filter] Completed achievements: ${completedCount}`);
+    
+    if (completedCount > 0) {
+      console.log(`[Table Filter] Sample completed:`, allAchievements.filter(a => a.isCompleted).slice(0, 3).map(a => ({ id: a.id, name: a.name })));
+    } else {
+      console.warn(`[Table Filter] ⚠️ NO COMPLETED ACHIEVEMENTS FOUND!`);
+      console.log(`[Table Filter] Sample achievements:`, allAchievements.slice(0, 5).map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        isCompleted: a.isCompleted,
+        category: a.category 
+      })));
+    }
+    
     let filtered = [...allAchievements];
+    console.log(`[Table Filter] Step 1 - Initial: ${filtered.length}`);
     
     // Apply TSR-G filters using preferences
     filtered = filtered.filter(achievement => {
@@ -56,14 +74,22 @@ export function AchievementTablePaginated({
       return true;
     });
     
+    console.log(`[Table Filter] Step 2 - After TSR-G filters: ${filtered.length}`);
+    
     // Apply completion filter
     if (preferences.hideCompleted) {
       filtered = filtered.filter(achievement => !achievement.isCompleted);
+      console.log(`[Table Filter] Step 3 - After hiding completed: ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 3 - Not hiding completed: ${filtered.length}`);
     }
     
     // Apply obtainable filter
     if (preferences.hideUnobtainable) {
       filtered = filtered.filter(achievement => achievement.isObtainable);
+      console.log(`[Table Filter] Step 4 - After hiding unobtainable: ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 4 - Not hiding unobtainable: ${filtered.length}`);
     }
     
     // Filter by category
@@ -71,6 +97,9 @@ export function AchievementTablePaginated({
       filtered = filtered.filter(
         (achievement) => achievement.category.toLowerCase().includes(categoryFilter.toLowerCase())
       );
+      console.log(`[Table Filter] Step 5 - After category filter (${categoryFilter}): ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 5 - No category filter: ${filtered.length}`);
     }
     
     // Filter by search query
@@ -81,6 +110,9 @@ export function AchievementTablePaginated({
           achievement.name.toLowerCase().includes(query) ||
           achievement.description.toLowerCase().includes(query)
       );
+      console.log(`[Table Filter] Step 6 - After search query (${searchQuery}): ${filtered.length}`);
+    } else {
+      console.log(`[Table Filter] Step 6 - No search query: ${filtered.length}`);
     }
 
     // Apply sorting
@@ -116,8 +148,39 @@ export function AchievementTablePaginated({
       });
     }
     
+    console.log(`[Table Filter] === FILTERING COMPLETE ===`);
+    console.log(`[Table Filter] Final count: ${filtered.length}`);
+    
+    if (filtered.length > 0) {
+      console.log(`[Table Filter] Sample results:`, filtered.slice(0, 3).map(a => ({ 
+        id: a.id, 
+        name: a.name, 
+        isCompleted: a.isCompleted,
+        category: a.category,
+        isObtainable: a.isObtainable
+      })));
+    } else {
+      console.log(`[Table Filter] ⚠️ NO ACHIEVEMENTS AFTER FILTERING!`);
+      console.log(`[Table Filter] Preferences:`, {
+        hideCompleted: preferences.hideCompleted,
+        hideUnobtainable: preferences.hideUnobtainable,
+        selectedTiers: preferences.selectedTiers,
+        maxScores: {
+          time: preferences.maxTimeScore,
+          skill: preferences.maxSkillScore,
+          rng: preferences.maxRngScore,
+          group: preferences.maxGroupScore
+        }
+      });
+    }
+    
     return filtered;
   }, [allAchievements, preferences, categoryFilter, searchQuery, sortColumn, sortDirection]);
+  
+  // Disable virtual scrolling to fix table rendering issues
+  const useVirtualScrolling = false;
+  
+  console.log(`[Table Paginated] useVirtualScrolling: ${useVirtualScrolling}, filteredCount: ${filteredAchievements.length}`);
   
   // Calculate pagination
   const totalPages = Math.ceil(filteredAchievements.length / pageSize);
@@ -125,6 +188,16 @@ export function AchievementTablePaginated({
   const endIndex = startIndex + pageSize;
   const currentPageAchievements = filteredAchievements.slice(startIndex, endIndex);
 
+  console.log(`[Table Paginated] Pagination: page ${currentPage}/${totalPages}, showing ${currentPageAchievements.length} achievements (${startIndex + 1}-${Math.min(endIndex, filteredAchievements.length)} of ${filteredAchievements.length})`);
+  
+  if (currentPageAchievements.length > 0) {
+    console.log(`[Table Paginated] Sample page achievements:`, currentPageAchievements.slice(0, 3).map(a => ({ 
+      id: a.id, 
+      name: a.name, 
+      isCompleted: a.isCompleted 
+    })));
+  }
+  
   // Reset to page 1 when filters or sort changes
   useEffect(() => {
     setCurrentPage(1);
@@ -136,6 +209,8 @@ export function AchievementTablePaginated({
     const completed = allAchievements.filter(a => a.isCompleted).length;
     const obtainable = allAchievements.filter(a => a.isObtainable).length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    console.log(`[Table Stats] Calculated stats: total=${total}, completed=${completed}, obtainable=${obtainable}, rate=${completionRate}%`);
     
     return {
       total,
@@ -199,16 +274,27 @@ export function AchievementTablePaginated({
       />
       
       {/* Achievement Table */}
-      <AchievementTableContent
-        achievements={currentPageAchievements}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        onSort={handleSort}
-        onAchievementClick={onAchievementClick}
-      />
+      {useVirtualScrolling ? (
+        <VirtualAchievementTable
+          achievements={filteredAchievements}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onAchievementClick={onAchievementClick}
+          containerHeight={600}
+        />
+      ) : (
+        <AchievementTableContent
+          achievements={currentPageAchievements}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onAchievementClick={onAchievementClick}
+        />
+      )}
 
       {/* Pagination Controls - Bottom */}
-      {totalPages > 1 && (
+      {totalPages > 1 && !useVirtualScrolling && (
         <div className="flex justify-center">
           <AchievementTablePagination
             currentPage={currentPage}
