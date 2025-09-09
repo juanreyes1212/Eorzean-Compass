@@ -84,6 +84,22 @@ describe('Character Search', () => {
     cy.contains('Character not found. Please check the name and server spelling.').should('be.visible')
   })
 
+  it('should handle server unavailable error and show error toast', () => {
+    cy.intercept('GET', '/api/character?name=Any%20Character&server=Cactuar', {
+      statusCode: 503,
+      body: { error: 'Character search service is temporarily unavailable. Please try again later.' }
+    }).as('localCharacterApiUnavailable')
+
+    cy.getByTestId('character-name-input').type('Any Character')
+    cy.getByTestId('server-select').click()
+    cy.getByTestId('server-option-Cactuar').click()
+    cy.getByTestId('search-button').click()
+
+    cy.wait('@localCharacterApiUnavailable')
+    cy.contains('Search Failed').should('be.visible')
+    cy.contains('Character search service is temporarily unavailable. Please try again later.').should('be.visible')
+  })
+
   it('should show demo data toast when API returns mock data', () => {
     cy.intercept('GET', '/api/character?name=Demo%20User&server=Cactuar', {
       statusCode: 200,

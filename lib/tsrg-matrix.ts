@@ -1,7 +1,7 @@
 // TSR-G Difficulty Matrix Implementation
 // Time, Skill, RNG, Group Dependency scoring system
 
-import { TSRGScore, AchievementWithTSRG } from './types'; // Import types from centralized location
+import { TSRGScore, AchievementWithStatus } from './types'; // Import types from centralized location
 
 // Manual scores for key achievements based on the document
 const MANUAL_SCORES: Record<number, Omit<TSRGScore, 'composite' | 'tier'>> = {
@@ -28,7 +28,7 @@ const MANUAL_SCORES: Record<number, Omit<TSRGScore, 'composite' | 'tier'>> = {
 };
 
 // Algorithmic scoring based on achievement metadata
-function calculateAlgorithmicScore(achievement: any): Omit<TSRGScore, 'composite' | 'tier'> {
+function calculateAlgorithmicScore(achievement: AchievementWithStatus): Omit<TSRGScore, 'composite' | 'tier'> {
   let time = 1;
   let skill = 1; 
   let rng = 1;
@@ -105,7 +105,7 @@ function calculateCompositeAndTier(scores: Omit<TSRGScore, 'composite' | 'tier'>
 }
 
 // Main scoring function - hybrid approach
-export function calculateTSRGScore(achievement: any): TSRGScore {
+export function calculateTSRGScore(achievement: AchievementWithStatus): TSRGScore {
   // Check for manual score first
   const manualScore = MANUAL_SCORES[achievement.id];
   

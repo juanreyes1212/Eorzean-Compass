@@ -178,7 +178,13 @@ export async function GET(request: Request) {
           { status: 404, headers }
         );
       }
-      throw new Error(`Tomestone profile fetch failed: ${profileResponse.status}`);
+      if (profileResponse.status >= 500) {
+        return NextResponse.json(
+          { error: "The character search service (Tomestone.gg) is temporarily unavailable. Please try again later." },
+          { status: 503, headers }
+        );
+      }
+      throw new Error(`Tomestone API returned status ${profileResponse.status}`);
     }
 
     characterProfile = await profileResponse.json();
@@ -195,6 +201,13 @@ export async function GET(request: Request) {
 
   } catch (profileError) {
     console.error("[Character API] Tomestone profile failed:", profileError instanceof Error ? profileError.message : profileError);
+    if (profileError instanceof Error && (profileError.message.includes('timeout') || profileError.message.includes('fetch failed'))) {
+      return NextResponse.json(
+        { error: "The character search service could not be reached. Please check your connection or try again later." },
+        { status: 503, headers }
+      );
+    }
+    
     apiErrorReason = `Tomestone.gg profile unavailable: ${profileError instanceof Error ? profileError.message : 'Unknown error'}.`;
     isRealData = false;
   }
