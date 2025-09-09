@@ -1,6 +1,6 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    // Add any specific rules or overrides here
+    "no-explicit-any": "warn"
   }
 }

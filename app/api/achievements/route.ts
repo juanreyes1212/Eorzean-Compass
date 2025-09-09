@@ -219,8 +219,8 @@ function processFFXIVCollectAchievement(achievement: FFXIVCollectAchievement, is
     patch: achievement.patch || 'Unknown',
     isObtainable,
     isCompleted,
-    icon: achievement.icon || null,
-    rarity: achievement.owned ? parseFloat(achievement.owned.replace('%', '')) : null,
+    icon: achievement.icon || undefined,
+    rarity: achievement.owned ? parseFloat(achievement.owned.replace('%', '')) : undefined,
     order: achievement.order || 0
   };
 

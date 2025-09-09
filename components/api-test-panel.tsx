@@ -94,11 +94,7 @@ export function APITestPanel() {
 
     // Test character endpoint
     try {
-      const characterResponse = await fetch('/api/character', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Test Character', server: 'Cactuar' })
-      });
+      const characterResponse = await fetch(`/api/character?name=${encodeURIComponent('Digs Reynar')}&server=${encodeURIComponent('Cactuar')}`);
       if (characterResponse.ok) {
         const data = await characterResponse.json();
         testResults[3] = {
