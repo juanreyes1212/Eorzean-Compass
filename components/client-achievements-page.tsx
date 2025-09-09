@@ -424,7 +424,10 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     }
   };
 
-  // Initial fetch
+  // Get stable character ID to prevent re-fetching on minor updates
+  const characterId = characterData?.character.id;
+
+  // Initial fetch for character
   useEffect(() => {
     try {
       fetchCharacterData();
@@ -433,16 +436,17 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     }
   }, [name, server]);
 
+  // Fetch achievements only when character ID changes
   useEffect(() => {
     try {
-      if (characterData) {
-        console.log(`[Effect] Character data loaded, fetching achievements...`);
+      if (characterId) {
+        console.log(`[Effect] Character data loaded (ID: ${characterId}), fetching achievements...`);
         fetchAchievementsWithTSRG();
       }
     } catch (error) {
       handleError(error as Error, "Character Data Effect");
     }
-  }, [characterData]);
+  }, [characterId]);
 
   // Log data for debugging recommendations and projects
   useEffect(() => {
