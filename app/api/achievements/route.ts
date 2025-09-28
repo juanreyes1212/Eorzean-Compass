@@ -58,7 +58,7 @@ async function buildAchievementListFromOwnedMissing(lodestoneId: number): Promis
 
   try {
     // Fetch owned achievements
-    const ownedUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned`;
+    const ownedUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/owned?latest=true`;
     console.log(`[Achievements API] Fetching owned from: ${ownedUrl}`);
     
     const ownedResponse = await fetchWithTimeout(ownedUrl, {
@@ -90,7 +90,7 @@ async function buildAchievementListFromOwnedMissing(lodestoneId: number): Promis
     }
 
     // Fetch missing achievements
-    const missingUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/missing`;
+    const missingUrl = `${EXTERNAL_APIS.FFXIV_COLLECT_BASE}/characters/${lodestoneId}/achievements/missing?latest=true`;
     console.log(`[Achievements API] Fetching missing from: ${missingUrl}`);
     
     const missingResponse = await fetchWithTimeout(missingUrl, {
