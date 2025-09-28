@@ -154,7 +154,7 @@ export async function GET(request: Request) {
       throw new Error("Tomestone.gg API key is missing.");
     }
 
-    const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(sanitizedServer)}/${encodeURIComponent(sanitizedName)}`;
+    const profileUrl = `${EXTERNAL_APIS.TOMESTONE_BASE}/character/profile/${encodeURIComponent(sanitizedServer)}/${encodeURIComponent(sanitizedName)}?update=true`;
     
     console.log(`[Character API] Fetching Lodestone ID from Tomestone.gg: ${profileUrl}`);
     
