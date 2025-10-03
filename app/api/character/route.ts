@@ -221,7 +221,7 @@ export async function GET(request: Request) {
       name: characterProfile.name,
       server: characterProfile.server,
       avatar: characterProfile.avatar || "/placeholder.svg?height=96&width=96&text=Avatar",
-      achievementPoints: characterProfile.achievementPoints?.points || 0,
+      achievementPoints: characterProfile.achievementPoints?.unrankedPoints || 0,
       achievementsCompleted: 0, // Will be updated by client after achievements load
       totalAchievements: 0, // Will be updated by client after achievements load
       lastUpdated: new Date().toISOString(),
