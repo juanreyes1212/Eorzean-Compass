@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Loader2, RefreshCw, Database, User, Info, Activity } from 'lucide-react';
+import { CircleCheck as CheckCircle, Circle as XCircle, Loader as Loader2, RefreshCw, Database, User, Info, Activity } from 'lucide-react';
 
 interface DebugResult {
   endpoint: string;

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
+import { CircleCheck as CheckCircle, Circle as XCircle, Loader as Loader2, RefreshCw } from 'lucide-react';
 import { APITestResult } from "@/lib/types"; // Import APITestResult
 
 export function APITestPanel() {

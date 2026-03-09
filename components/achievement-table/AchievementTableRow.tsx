@@ -4,7 +4,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AchievementIcon, getAchievementIconUrl } from "@/components/AchievementIcon";
 import { getTierName, getTierColor } from "@/lib/tsrg-matrix";
-import { CheckCircle, Clock, Zap, Dice6, Users } from 'lucide-react';
+import { CircleCheck as CheckCircle, Clock, Zap, Dice6, Users } from 'lucide-react';
 import { AchievementWithTSRG } from "@/lib/types";
 import { getAriaLabel, announceToScreenReader } from "@/lib/utils/accessibility";
 

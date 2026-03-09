@@ -5,7 +5,7 @@ import { ErrorBoundary } from '@/lib/error-boundary';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, RefreshCw, Chrome as Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface ErrorFallbackProps {

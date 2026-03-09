@@ -8,16 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
-import {
-  CheckCircle,
-  XCircle,
-  Clock,
-  Plus,
-  RefreshCw,
-  FlaskConical,
-  BarChart3,
-  AlertTriangle,
-} from "lucide-react";
+import { CircleCheck as CheckCircle, Circle as XCircle, Clock, Plus, RefreshCw, FlaskConical, ChartBar as BarChart3, TriangleAlert as AlertTriangle } from "lucide-react";
 
 interface QATestCase {
   id: string;
