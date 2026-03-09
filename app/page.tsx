@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CharacterSearch } from "@/components/character-search";
+import { CharacterSearch } from "@/components/CharacterSearch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

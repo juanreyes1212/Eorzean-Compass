@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement-icon";
+import { AchievementIcon, getAchievementIconUrl } from "@/components/AchievementIcon";
 import { getTierName, getTierColor, getVectorName, getVectorColor } from "@/lib/tsrg-matrix";
 import { Clock, Zap, Dice6, Users, Info } from 'lucide-react';
 import { AchievementWithTSRG } from "@/lib/types";

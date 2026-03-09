@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ClientAchievementsPage } from "@/components/client-achievements-page";
+import { ClientAchievementsPage } from "@/components/ClientAchievementsPage";
 import Loading from "./loading"; // Import the loading component
 
 interface PageProps {

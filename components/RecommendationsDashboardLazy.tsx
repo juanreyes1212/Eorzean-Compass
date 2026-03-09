@@ -7,7 +7,7 @@ import { TrendingUp, Target } from 'lucide-react';
 
 // Lazy load the heavy recommendations dashboard
 const RecommendationsDashboard = lazy(() => 
-  import("./recommendations-dashboard").then(module => ({
+  import("./RecommendationsDashboard").then(module => ({
     default: module.RecommendationsDashboard
   }))
 );

@@ -16,8 +16,8 @@ import {
   analyzeUserSkillProfile,
 } from "@/lib/recommendations";
 import { getTierName, getTierColor } from "@/lib/tsrg-matrix";
-import { AchievementIcon, getAchievementIconUrl } from "@/components/achievement-icon";
-import { AchievementDetailsModal } from "./achievement-details-modal"; // Import the new modal
+import { AchievementIcon, getAchievementIconUrl } from "@/components/AchievementIcon";
+import { AchievementDetailsModal } from "./AchievementDetailsModal";
 import { 
   AchievementRecommendation, 
   AchievementProject, 

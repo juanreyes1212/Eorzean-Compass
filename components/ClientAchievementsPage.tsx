@@ -28,11 +28,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { AchievementsPageHeader } from "./achievements-page/AchievementsPageHeader";
 import { AchievementsPageContent } from "./achievements-page/AchievementsPageContent";
-import { AchievementDetailsModal } from "./achievement-details-modal"; // Import the modal
-import { TSRGFiltersComponent } from "./tsrg-filters"; // Import TSRGFiltersComponent
+import { AchievementDetailsModal } from "./AchievementDetailsModal";
+import { TSRGFiltersComponent } from "./TsrgFilters";
 import { ErrorState } from "./error-states/ErrorState";
 import { LoadingState } from "./loading-states/LoadingState";
-import { DevDebugPanel } from "./dev-debug-panel"; // Import DevDebugPanel
+import { DevDebugPanel } from "./DevDebugPanel";
 
 interface ClientAchievementsPageProps {
   name: string;
