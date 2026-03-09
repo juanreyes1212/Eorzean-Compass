@@ -62,7 +62,7 @@ export default function HomePage() {
   ];
 
   const techStack = [
-    { icon: <Code className="h-5 w-5" />, name: "Next.js 15", color: "text-compass-400" },
+    { icon: <Code className="h-5 w-5" />, name: "Next.js 14", color: "text-compass-400" },
     { icon: <Palette className="h-5 w-5" />, name: "Tailwind CSS", color: "text-earth-400" },
     { icon: <Rocket className="h-5 w-5" />, name: "TypeScript", color: "text-silver-400" }
   ];

@@ -4,7 +4,7 @@ const nextConfig = {
   
   // Optimize for Bun runtime
   experimental: {
-    serverComponentsExternalPackages: [],
+    serverComponentsExternalPackages: ['@xivapi/nodestone', 'linkedom'],
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   
@@ -19,13 +19,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'tomestone.gg',
-        port: '',
-        pathname: '/images/**', // Assuming Tomestone.gg serves avatars/images
-      },
-      {
-        protocol: 'https',
-        hostname: 'img2.finalfantasyxiv.com', // Added for character avatars
+        hostname: 'img2.finalfantasyxiv.com',
         port: '',
         pathname: '/**', 
       },

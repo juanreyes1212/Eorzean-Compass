@@ -2,7 +2,7 @@
 
 ## GET /api/character
 
-Fetches character profile data.
+Fetches character profile data by searching the Lodestone via Nodestone.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -10,7 +10,7 @@ Fetches character profile data.
 | name | string | yes | Character first and last name |
 | server | string | yes | Server name (e.g., Gilgamesh) |
 
-**Response (200):**
+**Response (200) -- Single Match:**
 ```json
 {
   "character": {
@@ -29,12 +29,31 @@ Fetches character profile data.
 }
 ```
 
+**Response (200) -- Multiple Matches:**
+```json
+{
+  "character": null,
+  "lodestoneId": null,
+  "possibleMatches": [
+    {
+      "id": "12345678",
+      "name": "Character Name",
+      "server": "Gilgamesh",
+      "avatar": "https://img2.finalfantasyxiv.com/..."
+    }
+  ],
+  "message": "Multiple characters found. Please select one."
+}
+```
+
 **Error (404):** Character not found.
 **Error (429):** Rate limited (30 requests/minute).
 
 **Notes:**
-- Falls back to mock data if the upstream API is unavailable.
-- Input is sanitized and validated before the upstream call.
+- Searches the Lodestone directly via Nodestone (no API key required).
+- Falls back to mock data if the Lodestone search is unavailable.
+- Input is sanitized and validated before the search.
+- When multiple characters match, the frontend presents a selection UI.
 
 ---
 
@@ -74,14 +93,11 @@ Fetches achievement list with TSR-G scores.
 **Notes:**
 - Without `lodestoneId`, returns the general achievement list (all `isCompleted: false`).
 - With `lodestoneId`, merges FFXIVCollect owned and missing endpoints for accurate completion status.
-- Cached server-side for 1 hour (general list only).
+- Client-side cache duration: 6 hours.
 
 ---
 
 ## Debug Endpoints (development only)
 
 ### GET /api/debug/inspect
-Returns API endpoint inspection data.
-
-### GET /api/debug/tomestone
-Tests connectivity to the Tomestone.gg API.
+Returns API endpoint inspection data. Supports endpoints: `ffxiv-collect-achievements`, `ffxiv-collect-character`, `nodestone-search`.

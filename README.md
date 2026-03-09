@@ -35,7 +35,7 @@ The composite score determines the difficulty tier:
 
 ## Data Sources
 
-- [Tomestone.gg](https://tomestone.gg) -- Character profiles and Lodestone IDs
+- [Nodestone](https://github.com/xivapi/nodestone) -- Lodestone character search and profile scraping
 - [FFXIVCollect](https://ffxivcollect.com) -- Achievement data and completion status
 
 ## Project Structure

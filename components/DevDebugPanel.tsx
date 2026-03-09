@@ -13,7 +13,6 @@ import { CircleCheck as CheckCircle, Circle as XCircle, Loader as Loader2, Refre
 interface DebugResult {
   endpoint: string;
   timestamp: string;
-  apiKey: string;
   request: any;
   results: any;
 }
@@ -33,17 +32,16 @@ export function DevDebugPanel() {
         endpoint,
         ...params
       });
-      
+
       const response = await fetch(`/api/debug/inspect?${queryParams}`);
       const result = await response.json();
-      
-      setDebugResults(prev => [result, ...prev.slice(0, 9)]); // Keep last 10 results
+
+      setDebugResults(prev => [result, ...prev.slice(0, 9)]);
     } catch (error) {
       console.error('Debug test failed:', error);
       setDebugResults(prev => [{
         endpoint,
         timestamp: new Date().toISOString(),
-        apiKey: 'Unknown',
         request: params,
         results: { error: error instanceof Error ? error.message : 'Unknown error' }
       }, ...prev.slice(0, 9)]);
@@ -55,7 +53,7 @@ export function DevDebugPanel() {
   const formatDataPreview = (data: any) => {
     if (!data) return "No data";
     if (typeof data === 'string') return data.substring(0, 300) + (data.length > 300 ? '...' : '');
-    
+
     try {
       const str = JSON.stringify(data, null, 2);
       return str.substring(0, 800) + (str.length > 800 ? '\n...' : '');
@@ -63,17 +61,16 @@ export function DevDebugPanel() {
       return "Unable to format data";
     }
   };
-  
+
   const getStatusIcon = (result: any) => {
     if (result.error) return <XCircle className="h-4 w-4 text-red-400" />;
-    
-    // Check for successful responses in any of the result types
-    const hasSuccess = Object.values(result).some((value: any) => 
+
+    const hasSuccess = Object.values(result).some((value: any) =>
       value && typeof value === 'object' && value.status === 200
     );
-    
-    return hasSuccess ? 
-      <CheckCircle className="h-4 w-4 text-green-400" /> : 
+
+    return hasSuccess ?
+      <CheckCircle className="h-4 w-4 text-green-400" /> :
       <XCircle className="h-4 w-4 text-red-400" />;
   };
 
@@ -95,7 +92,7 @@ export function DevDebugPanel() {
           </Badge>
         </div>
         <CardDescription className="text-compass-300">
-          Inspect raw API responses from Tomestone.gg and FFXIVCollect to debug data flow issues.
+          Inspect raw API responses from Nodestone and FFXIVCollect to debug data flow issues.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +107,6 @@ export function DevDebugPanel() {
           </TabsList>
 
           <TabsContent value="test" className="space-y-6">
-            {/* Test Parameters */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-compass-200">Character Name</Label>
@@ -152,43 +148,21 @@ export function DevDebugPanel() {
               </div>
             </div>
 
-            {/* Tomestone.gg Tests */}
             <div>
-              <h4 className="text-compass-100 font-medium mb-3">Tomestone.gg API Tests</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <h4 className="text-compass-100 font-medium mb-3">Nodestone Search</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button
-                  onClick={() => testEndpoint('tomestone-character-profile', { name: characterName, server })}
+                  onClick={() => testEndpoint('nodestone-search', { name: characterName, server })}
                   disabled={isLoading}
                   variant="outline"
                   className="border-compass-600 text-compass-300 hover:bg-compass-700"
                 >
                   <User className="h-4 w-4 mr-2" />
-                  Character Profile
-                </Button>
-
-                <Button
-                  onClick={() => testEndpoint('tomestone-character-achievements', { characterId, page })}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="border-compass-600 text-compass-300 hover:bg-compass-700"
-                >
-                  <Database className="h-4 w-4 mr-2" />
-                  Character Achievements (Page {page})
-                </Button>
-
-                <Button
-                  onClick={() => testEndpoint('tomestone-achievements', { page })}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="border-compass-600 text-compass-300 hover:bg-compass-700"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  All Achievements (Page {page})
+                  Search Character
                 </Button>
               </div>
             </div>
 
-            {/* FFXIVCollect Tests */}
             <div>
               <h4 className="text-compass-100 font-medium mb-3">FFXIVCollect API Tests</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -214,42 +188,31 @@ export function DevDebugPanel() {
               </div>
             </div>
 
-            {/* Quick Tests */}
             <div>
               <h4 className="text-compass-100 font-medium mb-3">Quick Tests</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button
-                  onClick={() => testEndpoint('pagination-test')}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="border-gold-600 text-gold-300 hover:bg-gold-700"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Test Pagination (Pages 1-3)
-                </Button>
-
-                <Button
                   onClick={async () => {
-                    // Test our own endpoints
                     try {
                       const [charResponse, achResponse] = await Promise.all([
                         fetch(`/api/character?name=${encodeURIComponent(characterName)}&server=${encodeURIComponent(server)}`),
                         fetch('/api/achievements')
                       ]);
-                      
+
                       const charData = await charResponse.json();
                       const achData = await achResponse.json();
-                      
+
                       setDebugResults(prev => [{
                         endpoint: 'local-endpoints-test',
                         timestamp: new Date().toISOString(),
-                        apiKey: 'N/A',
                         request: { name: characterName, server },
                         results: {
                           character: {
                             status: charResponse.status,
                             completedCount: charData.completedAchievements?.length || 0,
-                            isMockData: charData._isMockData
+                            isMockData: charData._isMockData,
+                            hasPossibleMatches: !!charData.possibleMatches,
+                            possibleMatchesCount: charData.possibleMatches?.length || 0,
                           },
                           achievements: {
                             status: achResponse.status,
@@ -306,7 +269,6 @@ export function DevDebugPanel() {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      {/* Request Parameters */}
                       {result.request && Object.keys(result.request).length > 0 && (
                         <div className="mb-4">
                           <h5 className="font-medium text-compass-200 mb-2">Request Parameters:</h5>
@@ -316,17 +278,16 @@ export function DevDebugPanel() {
                         </div>
                       )}
 
-                      {/* Results */}
                       {Object.entries(result.results).map(([key, value]: [string, any]) => (
                         <div key={key} className="mb-4">
                           <h5 className="font-medium text-compass-200 mb-2 capitalize">
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                           </h5>
-                          
+
                           {value && typeof value === 'object' && value.status ? (
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <Badge 
+                                <Badge
                                   variant={value.status === 200 ? "default" : "destructive"}
                                   className="text-xs"
                                 >
@@ -338,16 +299,14 @@ export function DevDebugPanel() {
                                   </Badge>
                                 )}
                               </div>
-                              
-                              {/* Data Structure Summary */}
+
                               {value.dataStructure && (
                                 <div className="text-xs text-compass-300 bg-compass-800 p-2 rounded">
                                   <strong>Data Structure:</strong>
                                   <pre>{JSON.stringify(value.dataStructure, null, 2)}</pre>
                                 </div>
                               )}
-                              
-                              {/* Raw Data Preview */}
+
                               {value.rawData && (
                                 <details className="mt-2">
                                   <summary className="text-xs text-compass-400 cursor-pointer hover:text-compass-300">

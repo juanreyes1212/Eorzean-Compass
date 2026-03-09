@@ -67,7 +67,7 @@ export function AchievementIcon({
 export function getAchievementIconUrl(iconPath?: string): string {
   if (!iconPath) return "";
   
-  // If it's already a full URL (e.g., from Tomestone.gg), use it directly
+  // If it's already a full URL, use it directly
   if (iconPath.startsWith('http')) {
     return iconPath;
   }

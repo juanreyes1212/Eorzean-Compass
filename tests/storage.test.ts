@@ -54,7 +54,7 @@ describe('character storage', () => {
 
   it('returns null for expired cache', () => {
     const old = makeCharacter({
-      lastUpdated: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      lastUpdated: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
     });
     storeCharacter(old);
     expect(getStoredCharacter('Test Character', 'Gilgamesh')).toBeNull();

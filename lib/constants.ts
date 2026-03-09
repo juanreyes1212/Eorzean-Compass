@@ -1,5 +1,3 @@
-// Application constants for consistency
-
 import { UserPreferences } from "./types";
 
 export const APP_CONFIG = {
@@ -15,8 +13,8 @@ export const API_ENDPOINTS = {
 } as const;
 
 export const CACHE_DURATION = {
-  ACHIEVEMENTS: 60 * 60 * 1000, // 1 hour
-  CHARACTERS: 30 * 60 * 1000,   // 30 minutes
+  ACHIEVEMENTS: 6 * 60 * 60 * 1000, // 6 hours
+  CHARACTERS: 6 * 60 * 60 * 1000,   // 6 hours
 } as const;
 
 export const PAGINATION = {
@@ -49,7 +47,7 @@ export const TSRG_CONFIG = {
 } as const;
 
 export const SERVERS: Record<string, string> = {
-  // Aether Data Center
+  // NA - Aether
   "Adamantoise": "Aether",
   "Cactuar": "Aether",
   "Faerie": "Aether",
@@ -57,19 +55,17 @@ export const SERVERS: Record<string, string> = {
   "Jenova": "Aether",
   "Midgardsormr": "Aether",
   "Sargatanas": "Aether",
-  "Siren": "Siren",
-  
-  // Crystal Data Center
+  "Siren": "Aether",
+  // NA - Crystal
   "Balmung": "Crystal",
   "Brynhildr": "Crystal",
   "Coeurl": "Crystal",
   "Diabolos": "Crystal",
   "Goblin": "Crystal",
   "Malboro": "Crystal",
-  "Mateus": "Mateus",
-  "Zalera": "Zalera",
-  
-  // Primal Data Center
+  "Mateus": "Crystal",
+  "Zalera": "Crystal",
+  // NA - Primal
   "Behemoth": "Primal",
   "Excalibur": "Primal",
   "Exodus": "Primal",
@@ -78,11 +74,76 @@ export const SERVERS: Record<string, string> = {
   "Lamia": "Primal",
   "Leviathan": "Primal",
   "Ultros": "Primal",
+  // NA - Dynamis
+  "Halicarnassus": "Dynamis",
+  "Maduin": "Dynamis",
+  "Marilith": "Dynamis",
+  "Seraph": "Dynamis",
+  // EU - Chaos
+  "Cerberus": "Chaos",
+  "Louisoix": "Chaos",
+  "Moogle": "Chaos",
+  "Omega": "Chaos",
+  "Phantom": "Chaos",
+  "Ragnarok": "Chaos",
+  "Sagittarius": "Chaos",
+  "Spriggan": "Chaos",
+  // EU - Light
+  "Alpha": "Light",
+  "Lich": "Light",
+  "Odin": "Light",
+  "Phoenix": "Light",
+  "Raiden": "Light",
+  "Shiva": "Light",
+  "Twintania": "Light",
+  "Zodiark": "Light",
+  // JP - Elemental
+  "Aegis": "Elemental",
+  "Atomos": "Elemental",
+  "Carbuncle": "Elemental",
+  "Garuda": "Elemental",
+  "Gungnir": "Elemental",
+  "Kujata": "Elemental",
+  "Tonberry": "Elemental",
+  "Typhon": "Elemental",
+  // JP - Gaia
+  "Alexander": "Gaia",
+  "Bahamut": "Gaia",
+  "Durandal": "Gaia",
+  "Fenrir": "Gaia",
+  "Ifrit": "Gaia",
+  "Ridill": "Gaia",
+  "Tiamat": "Gaia",
+  "Ultima": "Gaia",
+  // JP - Mana
+  "Anima": "Mana",
+  "Asura": "Mana",
+  "Chocobo": "Mana",
+  "Hades": "Mana",
+  "Ixion": "Mana",
+  "Masamune": "Mana",
+  "Pandaemonium": "Mana",
+  "Titan": "Mana",
+  // JP - Meteor
+  "Belias": "Meteor",
+  "Mandragora": "Meteor",
+  "Ramuh": "Meteor",
+  "Shinryu": "Meteor",
+  "Unicorn": "Meteor",
+  "Valefor": "Meteor",
+  "Yojimbo": "Meteor",
+  "Zeromus": "Meteor",
+  // OCE - Materia
+  "Bismarck": "Materia",
+  "Ravana": "Materia",
+  "Sephirot": "Materia",
+  "Sophia": "Materia",
+  "Zurvan": "Materia",
 } as const;
 
 export const ACHIEVEMENT_CATEGORIES = [
   "Battle",
-  "Character", 
+  "Character",
   "Items",
   "Crafting & Gathering",
   "Quests",
@@ -97,6 +158,7 @@ export const STORAGE_KEYS = {
   PREFERENCES: 'eorzean_compass_preferences',
   ACHIEVEMENTS: 'eorzean_compass_achievements',
   RECENT_SEARCHES: 'eorzean_compass_recent_searches',
+  CHARACTER_ACHIEVEMENTS: 'eorzean_compass_character_achievements',
 } as const;
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -114,17 +176,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 } as const;
 
 export const EXTERNAL_APIS = {
-  TOMESTONE_BASE: 'https://tomestone.gg/api',
   FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
   REQUEST_TIMEOUT: 15000,
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
 } as const;
-
-// Environment variables with validation
-export const TOMESTONE_API_KEY = process.env.TOMESTONE_API_KEY;
-
-if (!TOMESTONE_API_KEY && process.env.NODE_ENV === 'production') {
-  console.warn('TOMESTONE_API_KEY is not set in production environment');
-}
-// XIVAPI_API_KEY is no longer needed as FFXIVCollect will be used for character achievements.

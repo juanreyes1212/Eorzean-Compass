@@ -1,20 +1,3 @@
-// Enhanced API type definitions for better type safety
-
-export interface TomestoneCharacterProfile {
-  id: number;
-  name: string;
-  server: string;
-  avatar: string;
-  achievementPoints: {
-    id: number;
-    points: number;
-    unrankedPoints: number;
-    rankPosition: number;
-    rankPercent: number;
-    cssRankClassName: string;
-  } | null;
-}
-
 export interface FFXIVCollectAchievement {
   id: number;
   name: string;
@@ -22,22 +5,18 @@ export interface FFXIVCollectAchievement {
   points: number;
   order: number;
   patch: string;
-  owned: string; // Rarity percentage
+  owned: string;
   icon: string;
   category: { id: number; name: string };
   type: { id: number; name: string };
   reward?: any;
 }
 
-export interface TomestoneAchievement {
-  id: number;
-  name: string;
-  description: string;
-  points: number;
-  category: string;
-  patch: string;
-  icon: string;
-  rarity?: number;
+export interface NodestoneSearchResult {
+  ID: string;
+  Name: string;
+  Server: string;
+  Avatar: string;
 }
 
 export interface APIResponse<T> {

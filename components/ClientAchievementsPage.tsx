@@ -6,13 +6,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, CircleAlert as AlertCircle, RefreshCw, HardDrive, Wifi, WifiOff, Database } from 'lucide-react';
 import { ErrorBoundary } from "@/lib/error-boundary";
 import { calculateTSRGScore } from "@/lib/tsrg-matrix";
-import { 
-  getStoredCharacter, 
-  storeCharacter, 
-  getStoredPreferences, 
+import {
+  getStoredCharacter,
+  storeCharacter,
+  getStoredPreferences,
   storePreferences,
   getStoredAchievements,
   storeAchievements,
+  getStoredCharacterAchievements,
+  storeCharacterAchievements,
+  getCharacterAchievementsCacheAge,
   addRecentSearch,
   getStorageInfo,
 } from "@/lib/storage";
@@ -239,7 +242,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       if (data._isMockData) {
         toast({
           title: "Using Demo Data",
-          description: data._error || 'Tomestone.gg API may be temporarily unavailable. Showing demo data.', // Corrected reference
+          description: data._error || 'Lodestone search is temporarily unavailable. Showing demo data.',
           variant: "default",
           icon: <WifiOff className="h-4 w-4" />,
         });
@@ -291,24 +294,57 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       setAchievementsLoading(true);
       setAchievementsFetchProgress({ current: 0, total: 2500, isLoading: true });
       
-      // Only use cache for general achievements (no character-specific data)
       const lodestoneId = (characterData as any)?.lodestoneId;
-      const cachedAchievements = !lodestoneId && !forceRefresh ? getStoredAchievements() : null;
-      console.log(`[Achievements Fetch] Using cached achievements:`, !!cachedAchievements, `(lodestoneId: ${lodestoneId})`);
-      
-      if (cachedAchievements && !lodestoneId) {
-        console.log(`[Achievements Fetch] Using cached general achievements: ${cachedAchievements.length}`);
-        setAllAchievements(cachedAchievements);
-        setAchievementsFetchProgress({ current: cachedAchievements.length, total: cachedAchievements.length, isLoading: false });
-        setAchievementsLoading(false);
-        
-        toast({
-          title: "Loaded from Cache",
-          description: `Using cached achievement data (${cachedAchievements.length} achievements).`,
-          variant: "default",
-          icon: <HardDrive className="h-4 w-4" />,
-        });
-        return;
+
+      if (!forceRefresh) {
+        if (lodestoneId) {
+          const cachedCharAchievements = getStoredCharacterAchievements(String(lodestoneId));
+          if (cachedCharAchievements) {
+            const cacheAge = getCharacterAchievementsCacheAge(String(lodestoneId));
+            const hoursRemaining = cacheAge ? Math.max(0, Math.ceil((6 * 60 * 60 * 1000 - cacheAge) / (60 * 60 * 1000))) : 0;
+
+            console.log(`[Achievements Fetch] Using cached character achievements: ${cachedCharAchievements.length}`);
+            setAllAchievements(cachedCharAchievements);
+            setAchievementsFetchProgress({ current: cachedCharAchievements.length, total: cachedCharAchievements.length, isLoading: false });
+            setAchievementsLoading(false);
+
+            const completedCount = cachedCharAchievements.filter((a: any) => a.isCompleted).length;
+            if (characterData && completedCount > 0) {
+              setCharacterData(prev => prev ? {
+                ...prev,
+                character: {
+                  ...prev.character,
+                  achievementsCompleted: completedCount,
+                  totalAchievements: cachedCharAchievements.length,
+                }
+              } : null);
+            }
+
+            toast({
+              title: "Loaded from Cache",
+              description: `Using cached data (${cachedCharAchievements.length} achievements, refreshes in ${hoursRemaining}h).`,
+              variant: "default",
+              icon: <HardDrive className="h-4 w-4" />,
+            });
+            return;
+          }
+        } else {
+          const cachedAchievements = getStoredAchievements();
+          if (cachedAchievements) {
+            console.log(`[Achievements Fetch] Using cached general achievements: ${cachedAchievements.length}`);
+            setAllAchievements(cachedAchievements);
+            setAchievementsFetchProgress({ current: cachedAchievements.length, total: cachedAchievements.length, isLoading: false });
+            setAchievementsLoading(false);
+
+            toast({
+              title: "Loaded from Cache",
+              description: `Using cached achievement data (${cachedAchievements.length} achievements).`,
+              variant: "default",
+              icon: <HardDrive className="h-4 w-4" />,
+            });
+            return;
+          }
+        }
       }
       
       console.log(`[Achievements Fetch] Using Lodestone ID: ${lodestoneId}`);
@@ -387,11 +423,13 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         } : null);
       }
       
-      // Store achievements in cache (only if not character-specific)
-      if (!lodestoneId) {
+      if (lodestoneId) {
+        storeCharacterAchievements(String(lodestoneId), achievementsWithTSRG);
+        console.log(`[Achievements Fetch] Cached ${achievementsWithTSRG.length} character-specific achievements`);
+      } else {
         const achievementsForCache = achievementsWithTSRG.map(a => ({
           ...a,
-          isCompleted: false // Remove completion status for cache
+          isCompleted: false,
         }));
         storeAchievements(achievementsForCache);
         console.log(`[Achievements Fetch] Cached ${achievementsForCache.length} general achievements`);
@@ -542,7 +580,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
           <LoadingState 
             type="dashboard" 
             title="Loading Character Data" 
-            message="Fetching character information from Tomestone.gg..."
+            message="Fetching character information..."
           />
           {achievementsFetchProgress.isLoading && (
             <Card className="p-6 compass-card">
@@ -562,7 +600,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
                   ></div>
                 </div>
                 <p className="text-sm text-compass-400">
-                  Fetching achievements from FFXIVCollect and Tomestone.gg...
+                  Fetching achievements from FFXIVCollect...
                 </p>
               </div>
             </Card>

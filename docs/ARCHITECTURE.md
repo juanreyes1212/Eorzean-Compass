@@ -11,8 +11,9 @@ User enters character name + server
   |
   v
 /api/character (Next.js API route)
-  |-- Calls Tomestone.gg for character profile and Lodestone ID
-  |-- Returns character data to client
+  |-- Searches Lodestone via Nodestone for character profile and Lodestone ID
+  |-- If multiple matches: returns possibleMatches array for user selection
+  |-- If single match: returns character data to client
   v
 /api/achievements (Next.js API route)
   |-- Calls FFXIVCollect /owned and /missing endpoints
@@ -21,7 +22,7 @@ User enters character name + server
   |-- Returns scored achievement list to client
   v
 Client-side processing
-  |-- Stores in LocalStorage cache (30 min characters, 1 hour achievements)
+  |-- Stores in LocalStorage cache (6 hours for both characters and achievements)
   |-- Writes through to Supabase achievement_cache table
   |-- Applies user filters (TSR-G vectors, category, search, completion)
   |-- Generates recommendations via lib/recommendations.ts
@@ -49,7 +50,7 @@ Analyzes completed achievements to build a user skill profile, then scores incom
 
 ### Storage
 
-**LocalStorage** (`lib/storage.ts`): Client-side caching for characters (30 min TTL), achievements (1 hour TTL), preferences (persistent), and recent searches (last 5).
+**LocalStorage** (`lib/storage.ts`): Client-side caching for characters (6 hour TTL), achievements (6 hour TTL), per-character achievement completions (6 hour TTL), preferences (persistent), and recent searches (last 5).
 
 **Supabase** (`lib/storage-supabase.ts`): Server-side caching for achievement data. Write-through from client when achievements are fetched. Reduces external API load.
 
