@@ -147,10 +147,7 @@ export type SortColumn = 'name' | 'category' | 'points' | 'tsrgComposite' | null
 export type SortDirection = 'asc' | 'desc';
 
 // Utility Types
-export type ServerName = 
-  | "Adamantoise" | "Cactuar" | "Faerie" | "Gilgamesh" | "Jenova" | "Midgardsormr" | "Sargatanas" | "Siren"
-  | "Balmung" | "Brynhildr" | "Coeurl" | "Diabolos" | "Goblin" | "Malboro" | "Mateus" | "Zalera"
-  | "Behemoth" | "Excalibur" | "Exodus" | "Famfrit" | "Hyperion" | "Lamia" | "Leviathan" | "Ultros";
+export type ServerName = string;
 
 export type AchievementCategory = 
   | "Battle" | "Character" | "Items" | "Crafting & Gathering" 

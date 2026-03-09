@@ -1,6 +1,6 @@
 // Local storage utilities for caching and preferences
 
-import { STORAGE_KEYS, CACHE_DURATION, DEFAULT_PREFERENCES } from './constants';
+import { STORAGE_KEYS, CACHE_DURATION } from './constants';
 import { StoredCharacter, UserPreferences } from './types'; // Import types from centralized location
 
 // Safe localStorage operations with error handling
@@ -143,6 +143,68 @@ export function storeAchievements(achievements: any[]): boolean {
   };
   
   return safeSetItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(data));
+}
+
+// Per-character achievement completion cache (keyed by lodestone ID)
+export function getStoredCharacterAchievements(lodestoneId: string): any[] | null {
+  const stored = safeGetItem(STORAGE_KEYS.CHARACTER_ACHIEVEMENTS);
+  if (!stored) return null;
+
+  try {
+    const allData: Record<string, { data: any[]; timestamp: number }> = JSON.parse(stored);
+    const entry = allData[lodestoneId];
+    if (!entry) return null;
+
+    const now = Date.now();
+    if (now - entry.timestamp > CACHE_DURATION.ACHIEVEMENTS) {
+      return null;
+    }
+
+    return entry.data;
+  } catch (error) {
+    console.warn('Failed to parse stored character achievements', error);
+    return null;
+  }
+}
+
+export function storeCharacterAchievements(lodestoneId: string, achievements: any[]): boolean {
+  const stored = safeGetItem(STORAGE_KEYS.CHARACTER_ACHIEVEMENTS);
+  let allData: Record<string, { data: any[]; timestamp: number }> = {};
+
+  if (stored) {
+    try {
+      allData = JSON.parse(stored);
+    } catch (error) {
+      console.warn('Failed to parse existing character achievements, starting fresh', error);
+    }
+  }
+
+  allData[lodestoneId] = {
+    data: achievements,
+    timestamp: Date.now(),
+  };
+
+  const entries = Object.entries(allData);
+  if (entries.length > 5) {
+    const sorted = entries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+    allData = Object.fromEntries(sorted.slice(0, 5));
+  }
+
+  return safeSetItem(STORAGE_KEYS.CHARACTER_ACHIEVEMENTS, JSON.stringify(allData));
+}
+
+export function getCharacterAchievementsCacheAge(lodestoneId: string): number | null {
+  const stored = safeGetItem(STORAGE_KEYS.CHARACTER_ACHIEVEMENTS);
+  if (!stored) return null;
+
+  try {
+    const allData: Record<string, { data: any[]; timestamp: number }> = JSON.parse(stored);
+    const entry = allData[lodestoneId];
+    if (!entry) return null;
+    return Date.now() - entry.timestamp;
+  } catch {
+    return null;
+  }
 }
 
 // Recent searches

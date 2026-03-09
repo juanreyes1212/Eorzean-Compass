@@ -3,10 +3,10 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { RecommendationsDashboardLazy } from "@/components/recommendations-dashboard-lazy";
-import { CategoryFilter } from "@/components/category-filter";
-import { SearchFilter } from "@/components/search-filter";
-import { AchievementTablePaginated } from "@/components/achievement-table-paginated";
+import { RecommendationsDashboardLazy } from "@/components/RecommendationsDashboardLazy";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { SearchFilter } from "@/components/SearchFilter";
+import { AchievementTablePaginated } from "@/components/AchievementTablePaginated";
 import { AchievementWithTSRG, UserPreferences, CompletedAchievement } from "@/lib/types"; // Import CompletedAchievement
 
 interface AchievementsPageContentProps {

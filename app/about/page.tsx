@@ -100,7 +100,7 @@ export default function AboutPage() {
   const techStack = [
     {
       icon: <Code className="h-6 w-6 text-compass-400" />,
-      name: "Next.js 15",
+      name: "Next.js 14",
       description: "React framework with App Router for optimal performance"
     },
     {
@@ -312,7 +312,7 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-compass-300">
-                    We fetch your character data from XIVAPI, including completed achievements, character statistics, and progression markers. This data is cached locally for faster subsequent visits.
+                    We search for your character on the Lodestone using Nodestone, then match it with achievement data from FFXIVCollect. This data is cached locally for faster subsequent visits.
                   </p>
                 </CardContent>
               </Card>

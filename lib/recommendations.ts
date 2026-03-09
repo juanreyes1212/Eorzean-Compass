@@ -1,13 +1,11 @@
-import { 
-  AchievementWithTSRG, 
-  TSRGScore, 
+import {
+  AchievementWithTSRG,
   UserPreferences,
-  RecommendationReason, // Imported from centralized types
-  AchievementRecommendation, // Imported from centralized types
-  UserProgress, // Imported from centralized types
-  AchievementProject, // Imported from centralized types
-  CompletedAchievement // Import CompletedAchievement
-} from './types'; // Import types from centralized location
+  RecommendationReason,
+  AchievementRecommendation,
+  AchievementProject,
+  CompletedAchievement
+} from './types';
 
 // Calculate user's skill profile based on completed achievements
 export function analyzeUserSkillProfile(completedAchievements: AchievementWithTSRG[]): {
@@ -185,10 +183,12 @@ export function generateRecommendations(
       });
     }
 
-    // Similar achievements bonus (if user has completed similar ones)
-    const similarCompleted = completedAchievementsWithTSRG.filter(completed => 
+    const similarCompleted = completedAchievementsWithTSRG.filter(completed =>
       completed.category === achievement.category &&
-      Math.abs(completed.tsrg.composite - achievement.tsrg.composite) <= 5
+      Math.abs(completed.tsrg.time - achievement.tsrg.time) <= 2 &&
+      Math.abs(completed.tsrg.skill - achievement.tsrg.skill) <= 2 &&
+      Math.abs(completed.tsrg.rng - achievement.tsrg.rng) <= 2 &&
+      Math.abs(completed.tsrg.group - achievement.tsrg.group) <= 2
     );
     
     if (similarCompleted.length > 0) {

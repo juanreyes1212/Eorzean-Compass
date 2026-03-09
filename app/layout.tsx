@@ -4,9 +4,9 @@ import "./globals.css";
 import Link from "next/link";
 import { Compass } from 'lucide-react';
 import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
-import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
-import { PerformanceMonitor } from "@/components/performance-monitor";
-import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const inter = Inter({ subsets: ["latin"] });
 
