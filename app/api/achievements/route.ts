@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { calculateTSRGScore } from '@/lib/tsrg-matrix';
-import { EXTERNAL_APIS } from '@/lib/constants';
+import { EXTERNAL_APIS, CACHE_DURATION } from '@/lib/constants';
 import { securityHeaders } from '@/lib/security';
 
-// FFXIVCollect achievement structure from owned/missing endpoints
 interface FFXIVCollectAchievement {
   id: number;
   name: string;
@@ -11,17 +10,16 @@ interface FFXIVCollectAchievement {
   points: number;
   order: number;
   patch: string;
-  owned: string; // Rarity percentage as string
+  owned: string;
   icon: string;
   category: { id: number; name: string };
   type: { id: number; name: string };
   reward?: any;
 }
 
-// Cache for achievements data (without character-specific completion status)
 let achievementsCache: any[] | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const SERVER_CACHE_DURATION = CACHE_DURATION.ACHIEVEMENTS;
 
 // Add timeout wrapper for fetch requests
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 20000): Promise<Response> {
@@ -141,7 +139,7 @@ async function fetchGeneralAchievementsList(): Promise<any[]> {
   
   // Check cache first for general list
   const now = Date.now();
-  if (achievementsCache && (now - cacheTimestamp) < CACHE_DURATION) {
+  if (achievementsCache && (now - cacheTimestamp) < SERVER_CACHE_DURATION) {
     console.log("[Achievements API] Using cached general achievements list");
     return achievementsCache;
   }

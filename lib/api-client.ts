@@ -91,13 +91,4 @@ class APIClient {
   }
 }
 
-export const ffxivCollectAPI = new APIClient({
-  baseURL: 'https://ffxivcollect.com/api',
-  timeout: 15000,
-  retries: 3,
-});
-
-export const localAPI = new APIClient({
-  timeout: 30000,
-  retries: 1,
-});
+export { APIClient };

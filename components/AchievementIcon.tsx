@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Trophy } from 'lucide-react';
 import { EXTERNAL_APIS } from '@/lib/constants';
 import { useLazyImage } from '@/lib/utils/performance';

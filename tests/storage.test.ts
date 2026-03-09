@@ -10,6 +10,9 @@ import {
   addRecentSearch,
   clearAllStoredData,
   getStorageInfo,
+  getStoredCharacterAchievements,
+  storeCharacterAchievements,
+  getCharacterAchievementsCacheAge,
 } from '@/lib/storage';
 import { StoredCharacter, UserPreferences } from '@/lib/types';
 import { DEFAULT_PREFERENCES } from '@/lib/constants';
@@ -143,5 +146,79 @@ describe('getStorageInfo', () => {
     expect(typeof info.characters).toBe('number');
     expect(typeof info.hasAchievements).toBe('boolean');
     expect(typeof info.hasPreferences).toBe('boolean');
+  });
+});
+
+describe('per-character achievement cache', () => {
+  const lodestoneId = '12345678';
+  const sampleAchievements = [
+    { id: 1, name: 'First Achievement', isCompleted: true },
+    { id: 2, name: 'Second Achievement', isCompleted: false },
+  ];
+
+  it('stores and retrieves character achievements', () => {
+    storeCharacterAchievements(lodestoneId, sampleAchievements);
+    const stored = getStoredCharacterAchievements(lodestoneId);
+    expect(stored).toHaveLength(2);
+    expect(stored?.[0].name).toBe('First Achievement');
+  });
+
+  it('returns null for non-existent lodestone ID', () => {
+    expect(getStoredCharacterAchievements('99999')).toBeNull();
+  });
+
+  it('returns null for expired cache', () => {
+    storeCharacterAchievements(lodestoneId, sampleAchievements);
+    const key = 'eorzean_compass_character_achievements';
+    const raw = JSON.parse(localStorage.getItem(key)!);
+    raw[lodestoneId].timestamp = Date.now() - 7 * 60 * 60 * 1000;
+    localStorage.setItem(key, JSON.stringify(raw));
+    expect(getStoredCharacterAchievements(lodestoneId)).toBeNull();
+  });
+
+  it('limits to 5 cached characters', () => {
+    for (let i = 0; i < 7; i++) {
+      storeCharacterAchievements(String(i), [{ id: i }]);
+    }
+    const key = 'eorzean_compass_character_achievements';
+    const raw = JSON.parse(localStorage.getItem(key)!);
+    expect(Object.keys(raw).length).toBeLessThanOrEqual(5);
+  });
+
+  it('keeps most recent entries when pruning', () => {
+    for (let i = 0; i < 7; i++) {
+      storeCharacterAchievements(String(i), [{ id: i }]);
+    }
+    const key = 'eorzean_compass_character_achievements';
+    const raw = JSON.parse(localStorage.getItem(key)!);
+    const ids = Object.keys(raw);
+    expect(ids.length).toBeLessThanOrEqual(5);
+  });
+
+  it('returns cache age for existing entry', () => {
+    storeCharacterAchievements(lodestoneId, sampleAchievements);
+    const age = getCharacterAchievementsCacheAge(lodestoneId);
+    expect(age).not.toBeNull();
+    expect(age).toBeGreaterThanOrEqual(0);
+    expect(age).toBeLessThan(1000);
+  });
+
+  it('returns null cache age for non-existent entry', () => {
+    expect(getCharacterAchievementsCacheAge('nonexistent')).toBeNull();
+  });
+
+  it('isolates different lodestone IDs', () => {
+    storeCharacterAchievements('aaa', [{ id: 1, name: 'A' }]);
+    storeCharacterAchievements('bbb', [{ id: 2, name: 'B' }]);
+    const a = getStoredCharacterAchievements('aaa');
+    const b = getStoredCharacterAchievements('bbb');
+    expect(a?.[0].name).toBe('A');
+    expect(b?.[0].name).toBe('B');
+  });
+
+  it('is cleared by clearAllStoredData', () => {
+    storeCharacterAchievements(lodestoneId, sampleAchievements);
+    clearAllStoredData();
+    expect(getStoredCharacterAchievements(lodestoneId)).toBeNull();
   });
 });

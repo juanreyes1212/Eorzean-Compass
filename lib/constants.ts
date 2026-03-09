@@ -177,7 +177,4 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 
 export const EXTERNAL_APIS = {
   FFXIV_COLLECT_BASE: 'https://ffxivcollect.com/api',
-  REQUEST_TIMEOUT: 15000,
-  MAX_RETRIES: 3,
-  RETRY_DELAY: 1000,
 } as const;

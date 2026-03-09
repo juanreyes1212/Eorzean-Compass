@@ -1,6 +1,6 @@
 // Local storage utilities for caching and preferences
 
-import { STORAGE_KEYS, CACHE_DURATION, DEFAULT_PREFERENCES } from './constants';
+import { STORAGE_KEYS, CACHE_DURATION } from './constants';
 import { StoredCharacter, UserPreferences } from './types'; // Import types from centralized location
 
 // Safe localStorage operations with error handling

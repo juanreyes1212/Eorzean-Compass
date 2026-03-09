@@ -54,10 +54,31 @@ describe('validateCharacterName', () => {
 });
 
 describe('validateServerName', () => {
-  it('accepts valid server names', () => {
+  it('accepts NA servers', () => {
     expect(validateServerName('Adamantoise').isValid).toBe(true);
     expect(validateServerName('Gilgamesh').isValid).toBe(true);
     expect(validateServerName('Balmung').isValid).toBe(true);
+    expect(validateServerName('Halicarnassus').isValid).toBe(true);
+  });
+
+  it('accepts EU servers', () => {
+    expect(validateServerName('Cerberus').isValid).toBe(true);
+    expect(validateServerName('Moogle').isValid).toBe(true);
+    expect(validateServerName('Phoenix').isValid).toBe(true);
+    expect(validateServerName('Twintania').isValid).toBe(true);
+  });
+
+  it('accepts JP servers', () => {
+    expect(validateServerName('Tonberry').isValid).toBe(true);
+    expect(validateServerName('Bahamut').isValid).toBe(true);
+    expect(validateServerName('Chocobo').isValid).toBe(true);
+    expect(validateServerName('Shinryu').isValid).toBe(true);
+  });
+
+  it('accepts OCE servers', () => {
+    expect(validateServerName('Bismarck').isValid).toBe(true);
+    expect(validateServerName('Ravana').isValid).toBe(true);
+    expect(validateServerName('Sophia').isValid).toBe(true);
   });
 
   it('rejects invalid server names', () => {
@@ -68,5 +89,9 @@ describe('validateServerName', () => {
 
   it('is case-sensitive', () => {
     expect(validateServerName('adamantoise').isValid).toBe(false);
+  });
+
+  it('rejects empty string', () => {
+    expect(validateServerName('').isValid).toBe(false);
   });
 });
