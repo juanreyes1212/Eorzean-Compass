@@ -31,8 +31,6 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
     });
   });
 
-  console.log(`[Character API] Generated mock data for ${name}: ${completedAchievements.length} completed achievements`);
-
   return {
     character: {
       id: characterId,
@@ -50,14 +48,21 @@ function generateMockCharacterData(name: string, server: string, errorReason?: s
   };
 }
 
+function isNetworkError(error: Error): boolean {
+  const networkPatterns = [
+    'timeout', 'ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET',
+    'EHOSTUNREACH', 'ERR_TLS', 'fetch failed', 'network',
+    'ETIMEDOUT', 'EPIPE', 'socket hang up'
+  ];
+  const msg = error.message.toLowerCase();
+  return networkPatterns.some(p => msg.includes(p.toLowerCase()));
+}
+
 export async function GET(request: Request) {
   const headers = new Headers(securityHeaders);
 
-  console.log("[Character API] Starting character search...");
-
   const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
   if (!apiRateLimiter.isAllowed(clientIP)) {
-    console.warn(`[Character API] Rate limit exceeded for IP: ${clientIP}`);
     return NextResponse.json(
       { error: "Too many requests. Please wait before trying again." },
       { status: 429, headers }
@@ -66,8 +71,6 @@ export async function GET(request: Request) {
 
   const nameParam = new URL(request.url).searchParams.get('name');
   const serverParam = new URL(request.url).searchParams.get('server');
-
-  console.log(`[Character API] Received request for ${nameParam} on ${serverParam}`);
 
   if (!nameParam || !serverParam || typeof nameParam !== 'string' || typeof serverParam !== 'string') {
     return NextResponse.json(
@@ -100,15 +103,12 @@ export async function GET(request: Request) {
   try {
     const parser = new CharacterSearch();
 
-    console.log(`[Character API] Searching Lodestone for "${sanitizedName}" on ${sanitizedServer}`);
-
     const searchResult: any = await parser.parse({
       params: {},
       query: { name: sanitizedName, server: sanitizedServer }
     } as any);
 
     const entries: any[] = searchResult?.List || [];
-    console.log(`[Character API] Lodestone search returned ${entries.length} results`);
 
     if (!entries || entries.length === 0) {
       return NextResponse.json(
@@ -134,8 +134,6 @@ export async function GET(request: Request) {
     const char = entries[0];
     const lodestoneId = parseInt(char.ID, 10);
 
-    console.log(`[Character API] Single match found: ${char.Name} (ID: ${lodestoneId})`);
-
     return NextResponse.json({
       character: {
         id: lodestoneId.toString(),
@@ -154,9 +152,9 @@ export async function GET(request: Request) {
     }, { headers });
 
   } catch (searchError) {
-    console.error("[Character API] Lodestone search failed:", searchError instanceof Error ? searchError.message : searchError);
+    console.error("[Character API]", searchError instanceof Error ? searchError.message : searchError);
 
-    if (searchError instanceof Error && (searchError.message.includes('timeout') || searchError.message.includes('ECONNREFUSED'))) {
+    if (searchError instanceof Error && isNetworkError(searchError)) {
       return NextResponse.json(
         { error: "The character search service could not be reached. Please check your connection or try again later." },
         { status: 503, headers }
@@ -166,7 +164,6 @@ export async function GET(request: Request) {
     apiErrorReason = "Lodestone search is temporarily unavailable.";
   }
 
-  console.log("[Character API] Generating mock character data...");
   const mock = generateMockCharacterData(nameParam, serverParam, apiErrorReason);
 
   return NextResponse.json({

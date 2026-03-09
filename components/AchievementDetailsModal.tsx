@@ -83,16 +83,14 @@ export function AchievementDetailsModal({ achievement, isOpen, onClose }: Achiev
             </div>
           </div>
 
-          {/* How to Get */}
+          {/* Resources */}
           <div>
             <h4 className="font-medium text-compass-200 mb-2 flex items-center gap-2">
               <Info className="h-4 w-4 text-gold-400" />
-              How to Get This Achievement:
+              Resources
             </h4>
             <p className="text-sm text-compass-300">
-              {achievement.description}
-              <br/><br/>
-              For detailed guides, please refer to community resources like FFXIV Collect, XIVAPI, or your favorite FFXIV content creators.
+              For detailed guides on obtaining this achievement, refer to community resources like FFXIV Collect, XIVAPI, or your favorite FFXIV content creators.
             </p>
           </div>
         </div>

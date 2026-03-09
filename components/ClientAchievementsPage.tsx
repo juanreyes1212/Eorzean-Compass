@@ -318,13 +318,16 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       }
 
       const responseText = await response.text();
-      let achievements;
+      let parsed;
 
       try {
-        achievements = JSON.parse(responseText);
+        parsed = JSON.parse(responseText);
       } catch {
         throw new Error("Invalid JSON response from achievements API");
       }
+
+      const achievements = parsed.achievements ?? parsed;
+      const metadata = parsed.metadata ?? null;
 
       if (!Array.isArray(achievements)) {
         throw new Error("Invalid achievements data format");
@@ -334,7 +337,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         achievement.id && achievement.name
       );
 
-      const completedCount = achievementsWithTSRG.filter(a => a.isCompleted).length;
+      const completedCount = achievementsWithTSRG.filter((a: any) => a.isCompleted).length;
 
       if (characterData && completedCount > 0) {
         setCharacterData(prev => prev ? {
@@ -350,7 +353,7 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       if (lodestoneId) {
         storeCharacterAchievements(String(lodestoneId), achievementsWithTSRG);
       } else {
-        const achievementsForCache = achievementsWithTSRG.map(a => ({
+        const achievementsForCache = achievementsWithTSRG.map((a: any) => ({
           ...a,
           isCompleted: false,
         }));
@@ -360,12 +363,21 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
       setAllAchievements(achievementsWithTSRG);
       setAchievementsFetchProgress({ current: achievementsWithTSRG.length, total: achievementsWithTSRG.length, isLoading: false });
 
-      toast({
-        title: "Achievements Loaded",
-        description: `Successfully loaded ${achievementsWithTSRG.length} achievements with ${completedCount} completed.`,
-        variant: "default",
-        icon: <Database className="h-4 w-4" />,
-      });
+      if (metadata?.usedFallback) {
+        toast({
+          title: "Completion Data Unavailable",
+          description: `Loaded ${achievementsWithTSRG.length} achievements, but character-specific completion data could not be retrieved. Try refreshing later.`,
+          variant: "default",
+          icon: <Info className="h-4 w-4" />,
+        });
+      } else {
+        toast({
+          title: "Achievements Loaded",
+          description: `Successfully loaded ${achievementsWithTSRG.length} achievements with ${completedCount} completed.`,
+          variant: "default",
+          icon: <Database className="h-4 w-4" />,
+        });
+      }
     } catch (fetchError) {
       console.error("Achievements fetch error:", fetchError);
       setAllAchievements([]);

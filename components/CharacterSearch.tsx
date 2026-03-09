@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader as Loader2, CircleAlert as AlertCircle, Info, Compass, UserCircle } from 'lucide-react';
+import { Loader as Loader2, CircleAlert as AlertCircle, Info, Compass, CircleUser as UserCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { announceToScreenReader } from "@/lib/utils/accessibility";
 import { SERVERS } from "@/lib/constants";
@@ -155,7 +155,7 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
         announceToScreenReader(`Character ${data.character.name} found successfully`);
       }
 
-      navigateToAchievements(characterName.trim(), server);
+      navigateToAchievements(data.character.name, data.character.server);
     } catch (error) {
       console.error("Error searching for character:", error);
 
