@@ -1,70 +1,15 @@
 # Eorzean Compass
 
-FFXIV achievement tracker with difficulty analysis.
+An achievement tracker for Final Fantasy XIV that helps players discover what to pursue next.
 
-## What It Does
+Search for any character by name and server to see their full achievement history pulled directly from the Lodestone. Every achievement is rated on four difficulty axes -- Time, Skill, RNG, and Group coordination -- so you can filter by what matters to you: quick wins, solo-friendly goals, or the hardest challenges in the game.
 
-Eorzean Compass lets Final Fantasy XIV players look up any character and see their achievement progress. Each achievement is scored using the TSR-G Matrix -- a four-axis difficulty rating covering Time investment, Skill required, RNG dependence, and Group coordination. The app generates personalized recommendations based on what a player has already completed and groups related achievements into trackable projects.
+The TSR-G difficulty tiers range from Foundational (basic story milestones) up through Apex (the rarest and most demanding accomplishments). Adjust the sliders to hide anything too grindy, too RNG-heavy, or requiring a full party, and the list updates instantly.
 
-## TSR-G Matrix
-
-Every achievement gets a score from 1-10 on four vectors:
-
-| Vector | Measures |
-|--------|----------|
-| Time | Grinding and time commitment |
-| Skill | Mechanical execution required |
-| RNG | Dependence on random chance |
-| Group | Coordination with other players |
-
-The composite score determines the difficulty tier:
-
-- **Tier 1 -- Foundational** (4-8): Story progress and basic milestones
-- **Tier 2 -- Systematic** (9-16): Regular engagement, moderate effort
-- **Tier 3 -- Dedicated** (17-24): Significant investment and focus
-- **Tier 4 -- Apex** (25+): Extreme difficulty or time commitment
-
-## Tech Stack
-
-- Next.js 14 (App Router)
-- TypeScript
-- Tailwind CSS
-- shadcn/ui (Radix primitives)
-- Supabase (database, analytics, caching)
-- Vitest (unit testing)
-
-## Data Sources
-
-- [Nodestone](https://github.com/xivapi/nodestone) -- Lodestone character search and profile scraping
-- [FFXIVCollect](https://ffxivcollect.com) -- Achievement data and completion status
-
-## Project Structure
-
-```
-app/                    Route handlers and pages
-  api/                  Server-side API routes
-  achievements/         Achievement tracking page
-  dev/tests/            QA test dashboard (dev only)
-components/             React components (PascalCase)
-  ui/                   shadcn/ui primitives (kebab-case)
-  achievement-table/    Table sub-components
-  achievements-page/    Page section components
-lib/                    Business logic and utilities
-  tsrg-matrix.ts        Scoring algorithm
-  recommendations.ts    Recommendation engine
-  storage.ts            LocalStorage caching
-  storage-supabase.ts   Supabase caching layer
-  analytics.ts          Event tracking (Supabase-backed)
-  api-client.ts         HTTP client with retry logic
-  security.ts           Input validation and rate limiting
-  supabase.ts           Database client singleton
-tests/                  Vitest unit tests
-```
+Personalized recommendations surface achievements you're close to completing based on your progress, and related achievements are grouped into trackable projects so you can plan your next session with purpose.
 
 ## License
 
 Mozilla Public License Version 2.0
 
-## Disclaimer
-
-Not affiliated with Square Enix. FINAL FANTASY XIV (c) SQUARE ENIX CO., LTD. All Rights Reserved.
+FINAL FANTASY XIV is a registered trademark of Square Enix Co., Ltd.

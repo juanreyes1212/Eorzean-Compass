@@ -29,21 +29,17 @@ export function CharacterProfile({ character, actualStats, isLoading = false }: 
   // Use actual stats if available, otherwise fall back to character data
   const stats = useMemo(() => {
     if (actualStats) {
-      console.log(`[Character Profile] Using actual stats:`, actualStats);
       return actualStats;
     }
-    
-    const fallbackStats = {
+
+    return {
       completed: character.achievementsCompleted,
       total: character.totalAchievements,
       obtainable: character.totalAchievements,
-      completionRate: character.totalAchievements > 0 
-        ? Math.round((character.achievementsCompleted / character.totalAchievements) * 100) 
+      completionRate: character.totalAchievements > 0
+        ? Math.round((character.achievementsCompleted / character.totalAchievements) * 100)
         : 0
     };
-    
-    console.log(`[Character Profile] Using fallback stats:`, fallbackStats);
-    return fallbackStats;
   }, [actualStats, character]);
 
   // Get data center from server name

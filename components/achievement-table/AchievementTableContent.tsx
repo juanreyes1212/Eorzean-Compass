@@ -77,18 +77,13 @@ export function AchievementTableContent({
         </TableHeader>
         <TableBody data-testid="achievements-table-body">
           {achievements.length > 0 ? (
-            achievements.map((achievement, index) => {
-              if (index < 5) { // Only log first 5 to avoid spam
-                console.log(`[Table Content] Rendering ${index + 1}/${achievements.length}: ${achievement.name} (ID: ${achievement.id}, completed: ${achievement.isCompleted})`);
-              }
-              return (
-              <AchievementTableRow 
-                key={achievement.id} 
-                achievement={achievement} 
-                onClick={() => onAchievementClick(achievement)} // Pass click handler
+            achievements.map((achievement) => (
+              <AchievementTableRow
+                key={achievement.id}
+                achievement={achievement}
+                onClick={() => onAchievementClick(achievement)}
               />
-              );
-            })
+            ))
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-compass-400" data-testid="no-achievements-message">
