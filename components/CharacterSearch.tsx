@@ -234,12 +234,12 @@ export function CharacterSearch({ onSearchStart }: CharacterSearchProps) {
             value={server}
             onValueChange={handleServerChange}
             disabled={isLoading}
-            aria-describedby={validationErrors.server ? "server-error" : undefined}
-            aria-invalid={!!validationErrors.server}
           >
             <SelectTrigger
               className="bg-compass-800 border-compass-600 text-compass-100 focus:border-gold-500 focus:ring-gold-500/20"
               data-testid="server-select"
+              aria-describedby={validationErrors.server ? "server-error" : undefined}
+              aria-invalid={!!validationErrors.server}
             >
               <SelectValue placeholder="Select your server" className="text-compass-400" />
             </SelectTrigger>
