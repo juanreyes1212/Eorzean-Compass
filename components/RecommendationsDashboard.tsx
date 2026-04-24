@@ -76,9 +76,9 @@ export function RecommendationsDashboard({
   if (allAchievements.length === 0) {
     return (
       <div className="space-y-6">
-        <Card className="p-6 bg-slate-800 border-slate-700">
+        <Card className="p-6 compass-card">
           <div className="flex items-center justify-center py-8">
-            <div className="text-white">Loading recommendations...</div>
+            <div className="text-compass-300">Loading recommendations...</div>
           </div>
         </Card>
       </div>
@@ -99,12 +99,12 @@ export function RecommendationsDashboard({
 
   const getReasonColor = (type: string) => {
     switch (type) {
-      case 'skill_match': return 'text-purple-400';
-      case 'time_efficient': return 'text-green-400';
-      case 'category_preference': return 'text-blue-400';
-      case 'rarity': return 'text-yellow-400';
-      case 'points_efficient': return 'text-orange-400';
-      default: return 'text-slate-400';
+      case 'skill_match': return 'text-compass-400';
+      case 'time_efficient': return 'text-earth-400';
+      case 'category_preference': return 'text-silver-300';
+      case 'rarity': return 'text-gold-400';
+      case 'points_efficient': return 'text-gold-300';
+      default: return 'text-compass-500';
     }
   };
 
@@ -303,7 +303,7 @@ export function RecommendationsDashboard({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Badge className={`${getTierColor(project.difficulty)} text-white text-xs cursor-help`}>
-                            Tier {project.difficulty}
+                            {getTierName(project.difficulty)}
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs bg-compass-800 border-compass-600 text-compass-100 z-tooltip">
@@ -352,7 +352,7 @@ export function RecommendationsDashboard({
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-                <h4 className="font-medium text-compass-100 mb-3">Achievements in this project:</h4>
+                <h4 className="font-medium text-compass-100 mb-3">Included Achievements</h4>
                 {selectedProject.achievements.map((achievement) => (
                   <div 
                     key={achievement.id}
@@ -383,7 +383,7 @@ export function RecommendationsDashboard({
             </>
           )}
           <DialogClose asChild>
-            <Button variant="outline" className="mt-4 w-full border-compass-600 text-compass-100 hover:bg-compass-600">Close</Button>
+            <Button variant="outline" className="mt-4 w-full border-compass-600 text-compass-100 hover:bg-compass-600">Done</Button>
           </DialogClose>
         </DialogContent>
       </Dialog>
