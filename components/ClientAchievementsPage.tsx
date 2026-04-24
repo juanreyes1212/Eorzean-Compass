@@ -97,6 +97,21 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
     return { total, completed, obtainable, completionRate };
   }, [allAchievements, characterData]);
 
+  const filteredCount = useMemo(() => {
+    if (allAchievements.length === 0) return 0;
+    return allAchievements.filter(a => {
+      const { tsrg } = a;
+      if (tsrg.time > preferences.maxTimeScore) return false;
+      if (tsrg.skill > preferences.maxSkillScore) return false;
+      if (tsrg.rng > preferences.maxRngScore) return false;
+      if (tsrg.group > preferences.maxGroupScore) return false;
+      if (preferences.selectedTiers && !preferences.selectedTiers.includes(tsrg.tier)) return false;
+      if (preferences.hideCompleted && a.isCompleted) return false;
+      if (preferences.hideUnobtainable && !a.isObtainable) return false;
+      return true;
+    }).length;
+  }, [allAchievements, preferences]);
+
   useEffect(() => {
     try {
       const storedPrefs = getStoredPreferences();
@@ -581,7 +596,12 @@ export function ClientAchievementsPage({ name, server }: ClientAchievementsPageP
         )}
 
         {!achievementsLoading && allAchievements.length > 0 && (
-          <TSRGFiltersComponent filters={preferences} onFiltersChange={setPreferences} />
+          <TSRGFiltersComponent
+            filters={preferences}
+            onFiltersChange={setPreferences}
+            filteredCount={filteredCount}
+            totalCount={allAchievements.length}
+          />
         )}
 
         <AchievementsPageContent

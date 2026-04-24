@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, Database, CheckCircle, Target } from 'lucide-react';
+import { TrendingUp, Database, CircleCheck as CheckCircle, Target } from 'lucide-react';
 
 interface AchievementStatsProps {
   total: number;
@@ -39,13 +39,13 @@ export function AchievementStats({
       <Card className="compass-card p-4">
         <div className="text-sm text-compass-300 mb-2">Obtainable</div>
         <div className="text-2xl font-bold text-compass-100">{obtainable}</div>
-        <div className="text-xs text-compass-400">achievements available</div>
+        <div className="text-xs text-compass-400">currently available</div>
       </Card>
-      
+
       <Card className="compass-card p-4">
         <div className="text-sm text-compass-300 mb-2">Filtered Results</div>
         <div className="text-2xl font-bold text-compass-100">{filtered}</div>
-        <div className="text-xs text-compass-400">matching criteria</div>
+        <div className="text-xs text-compass-400">shown with current filters</div>
       </Card>
     </div>
   );

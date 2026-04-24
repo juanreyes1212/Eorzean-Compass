@@ -71,8 +71,8 @@ export function AchievementTableRow({ achievement, onClick }: AchievementTableRo
             {achievement.description}
           </div>
           {achievement.rarity && achievement.rarity < 10 && (
-            <Badge variant="outline" className="mt-1 text-xs bg-purple-900/50 border-purple-700 text-purple-300">
-              Rare ({achievement.rarity.toFixed(1)}%)
+            <Badge variant="outline" className="mt-1 text-xs bg-earth-900/50 border-earth-600 text-earth-300">
+              Rare — {achievement.rarity.toFixed(1)}%
             </Badge>
           )}
         </div>
@@ -101,8 +101,16 @@ export function AchievementTableRow({ achievement, onClick }: AchievementTableRo
             <span className="text-xs text-compass-100">{achievement.tsrg.group}</span>
           </div>
         </div>
-        <div className="text-xs text-compass-400 mt-1">
-          Total: {achievement.tsrg.composite}
+        <div className="mt-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 h-1 bg-compass-700/40 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-earth-600 via-gold-500 to-gold-400"
+                style={{ width: `${(achievement.tsrg.composite / 40) * 100}%` }}
+              />
+            </div>
+            <span className="text-xs text-compass-500 font-mono tabular-nums">{achievement.tsrg.composite}</span>
+          </div>
         </div>
       </TableCell>
       <TableCell>
@@ -113,8 +121,8 @@ export function AchievementTableRow({ achievement, onClick }: AchievementTableRo
       <TableCell className="text-compass-100">{achievement.points}</TableCell>
       <TableCell>
         {!achievement.isObtainable ? (
-          <Badge variant="outline" className="bg-compass-600/50 text-compass-300">
-            Unobtainable
+          <Badge variant="outline" className="bg-compass-800/60 border-compass-600/50 text-compass-500">
+            Unavailable
           </Badge>
         ) : achievement.isCompleted ? (
           <Badge className="bg-gold-600 hover:bg-gold-700 text-compass-900">

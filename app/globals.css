@@ -89,22 +89,22 @@
   }
 }
 
-/* Eorzean Compass Theme Colors */
+/* Eorzean Compass Theme Colors — Ocean Palette */
 :root {
-  /* Deep compass blues - primary navigation and backgrounds */
-  --compass-50: #f0f4f8;
-  --compass-100: #d9e2ec;
-  --compass-200: #bcccdc;
-  --compass-300: #9fb3c8;
-  --compass-400: #829ab1;
-  --compass-500: #627d98;
-  --compass-600: #486581;
-  --compass-700: #334e68;
-  --compass-800: #243b53;
-  --compass-900: #102a43;
-  --compass-950: #0a1929;
+  /* Deep ocean teal-navy */
+  --compass-50: #edfafe;
+  --compass-100: #d0f3fb;
+  --compass-200: #a5e8f7;
+  --compass-300: #67d6f0;
+  --compass-400: #22bce0;
+  --compass-500: #0d9fc5;
+  --compass-600: #0d7ea0;
+  --compass-700: #0a5f7a;
+  --compass-800: #084358;
+  --compass-900: #062d3d;
+  --compass-950: #031b26;
 
-  /* Warm gold - accents and highlights */
+  /* Warm bioluminescent gold */
   --gold-50: #fffbeb;
   --gold-100: #fef3c7;
   --gold-200: #fde68a;
@@ -117,31 +117,31 @@
   --gold-900: #78350f;
   --gold-950: #451a03;
 
-  /* Earth tones - secondary elements */
-  --earth-50: #fafaf9;
-  --earth-100: #f5f5f4;
-  --earth-200: #e7e5e4;
-  --earth-300: #d6d3d1;
-  --earth-400: #a8a29e;
-  --earth-500: #78716c;
-  --earth-600: #57534e;
-  --earth-700: #44403c;
-  --earth-800: #292524;
-  --earth-900: #1c1917;
-  --earth-950: #0c0a09;
+  /* Seafoam / coral tones */
+  --earth-50: #f0fdf9;
+  --earth-100: #ccfbef;
+  --earth-200: #99f5e0;
+  --earth-300: #5ee8ca;
+  --earth-400: #2dd0af;
+  --earth-500: #14b49a;
+  --earth-600: #0e9280;
+  --earth-700: #107265;
+  --earth-800: #125b52;
+  --earth-900: #124a44;
+  --earth-950: #062c29;
 
-  /* Silver - neutral highlights */
-  --silver-50: #f8fafc;
-  --silver-100: #f1f5f9;
-  --silver-200: #e2e8f0;
-  --silver-300: #cbd5e1;
-  --silver-400: #94a3b8;
-  --silver-500: #64748b;
-  --silver-600: #475569;
-  --silver-700: #334155;
-  --silver-800: #1e293b;
-  --silver-900: #0f172a;
-  --silver-950: #020617;
+  /* Pearl seafoam neutrals */
+  --silver-50: #f0fafa;
+  --silver-100: #ddf3f4;
+  --silver-200: #bce8ea;
+  --silver-300: #8dd6d9;
+  --silver-400: #57bcc1;
+  --silver-500: #3aa0a6;
+  --silver-600: #2e7e84;
+  --silver-700: #29666b;
+  --silver-800: #275358;
+  --silver-900: #244549;
+  --silver-950: #132b2e;
 }
 
 /* Z-Index Management */
@@ -182,9 +182,16 @@
   z-index: 1100 !important;
 }
 
-/* Compass Card Component */
+/* Compass Card Component — ocean glass effect */
 .compass-card {
-  @apply bg-compass-800/50 border border-compass-700 rounded-lg backdrop-blur-sm;
+  @apply bg-compass-800/50 border border-compass-700/60 rounded-xl backdrop-blur-md;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 24px rgba(3, 27, 38, 0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+.compass-card:hover {
+  border-color: rgba(13, 126, 160, 0.5);
+  box-shadow: 0 6px 32px rgba(3, 27, 38, 0.5), 0 0 0 1px rgba(13, 159, 197, 0.1), inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
 /* Custom Scrollbar */
@@ -221,6 +228,7 @@
 
 .achievement-completed:hover {
   @apply from-gold-800/30 to-compass-800/30;
+  box-shadow: inset 0 0 20px rgba(251, 191, 36, 0.06);
 }
 
 /* Smooth transitions for non-performance critical elements */
@@ -265,13 +273,13 @@
   }
 }
 
-/* TSR-G Tier Colors */
+/* TSR-G Tier Colors — ocean themed */
 .tier-foundational {
-  @apply bg-earth-600 hover:bg-earth-700 border-earth-500;
+  @apply bg-earth-700 hover:bg-earth-600 border-earth-500;
 }
 
 .tier-systematic {
-  @apply bg-compass-600 hover:bg-compass-700 border-compass-500;
+  @apply bg-compass-700 hover:bg-compass-600 border-compass-500;
 }
 
 .tier-dedicated {
@@ -279,5 +287,22 @@
 }
 
 .tier-apex {
-  @apply bg-gradient-to-r from-gold-500 to-compass-600 hover:from-gold-600 hover:to-compass-700 border-gold-500;
+  background: linear-gradient(135deg, #f59e0b 0%, #0d9fc5 100%);
+  border-color: #f59e0b;
+}
+.tier-apex:hover {
+  background: linear-gradient(135deg, #d97706 0%, #0d7ea0 100%);
+}
+
+/* Ocean wave background utility */
+.ocean-hero-bg {
+  background: linear-gradient(180deg, #062d3d 0%, #031b26 60%, #020d15 100%);
+}
+
+/* Subtle bioluminescent glow for interactive elements */
+.glow-teal {
+  box-shadow: 0 0 12px rgba(13, 159, 197, 0.3);
+}
+.glow-gold {
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
 }

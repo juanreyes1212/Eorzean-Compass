@@ -5,6 +5,10 @@ const config = {
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}", "*.{js,ts,jsx,tsx,mdx}"],
   prefix: "",
   theme: {
+    fontFamily: {
+      sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      display: ['var(--font-cinzel)', 'Georgia', 'serif'],
+    },
     container: {
       center: true,
       padding: "2rem",
@@ -16,35 +20,35 @@ const config = {
       colors: {
         // Eorzean Compass Theme Colors
         compass: {
-          // Deep ocean blues for primary navigation
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9', // Primary compass blue
-          600: '#0284c7',
-          700: '#0369a1', // Deep sea blue
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          // Deep ocean teal-navy for primary navigation
+          50: '#edfafe',
+          100: '#d0f3fb',
+          200: '#a5e8f7',
+          300: '#67d6f0',
+          400: '#22bce0',
+          500: '#0d9fc5', // Ocean teal
+          600: '#0d7ea0', // Deep teal
+          700: '#0a5f7a', // Abyss teal
+          800: '#084358', // Deep ocean
+          900: '#062d3d', // Abyssal
+          950: '#031b26', // Midnight ocean
         },
         earth: {
-          // Earthy browns for land/terrain
-          50: '#fdf8f6',
-          100: '#f2e8e5',
-          200: '#eaddd7',
-          300: '#e0cec7',
-          400: '#d2bab0',
-          500: '#bfa094', // Warm earth tone
-          600: '#a18072',
-          700: '#977669', // Rich earth brown
-          800: '#846358',
-          900: '#43302b',
-          950: '#362117',
+          // Seafoam / coral tones for RNG vector
+          50: '#f0fdf9',
+          100: '#ccfbef',
+          200: '#99f5e0',
+          300: '#5ee8ca',
+          400: '#2dd0af',
+          500: '#14b49a', // Seafoam
+          600: '#0e9280',
+          700: '#107265',
+          800: '#125b52',
+          900: '#124a44',
+          950: '#062c29',
         },
         gold: {
-          // Compass gold accents
+          // Warm bioluminescent gold accents
           50: '#fffbeb',
           100: '#fef3c7',
           200: '#fde68a',
@@ -58,18 +62,18 @@ const config = {
           950: '#451a03',
         },
         silver: {
-          // Silver compass accents
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b', // Compass silver
-          600: '#475569',
-          700: '#334155', // Deep silver
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617',
+          // Pearl seafoam neutrals
+          50: '#f0fafa',
+          100: '#ddf3f4',
+          200: '#bce8ea',
+          300: '#8dd6d9',
+          400: '#57bcc1',
+          500: '#3aa0a6', // Seafoam pearl
+          600: '#2e7e84',
+          700: '#29666b',
+          800: '#275358',
+          900: '#244549',
+          950: '#132b2e',
         },
         // Override default shadcn colors with compass theme
         border: "hsl(var(--border))",
@@ -78,32 +82,32 @@ const config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#0369a1", // Deep compass blue
-          foreground: "#f0f9ff",
+          DEFAULT: "#0d7ea0", // Deep ocean teal
+          foreground: "#edfafe",
         },
         secondary: {
-          DEFAULT: "#977669", // Rich earth brown
-          foreground: "#fdf8f6",
+          DEFAULT: "#14b49a", // Seafoam
+          foreground: "#f0fdf9",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "#334155", // Deep silver
-          foreground: "#cbd5e1",
+          DEFAULT: "#275358", // Deep silver-teal
+          foreground: "#bce8ea",
         },
         accent: {
           DEFAULT: "#f59e0b", // Compass gold
           foreground: "#451a03",
         },
         popover: {
-          DEFAULT: "#0c4a6e", // Deep ocean blue
-          foreground: "#e0f2fe",
+          DEFAULT: "#062d3d", // Abyssal ocean
+          foreground: "#d0f3fb",
         },
         card: {
-          DEFAULT: "#075985", // Deep sea blue
-          foreground: "#bae6fd",
+          DEFAULT: "#084358", // Deep ocean
+          foreground: "#a5e8f7",
         },
       },
       borderRadius: {
@@ -124,16 +128,28 @@ const config = {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
         },
+        "wave-drift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "compass-spin": "compass-spin 2s linear infinite",
+        "wave-drift": "wave-drift 8s ease-in-out infinite",
+        "float": "float 4s ease-in-out infinite",
       },
       backgroundImage: {
-        'compass-gradient': 'linear-gradient(135deg, #0369a1 0%, #075985 50%, #0c4a6e 100%)',
-        'earth-gradient': 'linear-gradient(135deg, #977669 0%, #846358 50%, #43302b 100%)',
+        'compass-gradient': 'linear-gradient(135deg, #0d7ea0 0%, #0a5f7a 50%, #062d3d 100%)',
+        'ocean-gradient': 'linear-gradient(180deg, #062d3d 0%, #031b26 100%)',
+        'earth-gradient': 'linear-gradient(135deg, #14b49a 0%, #0e9280 50%, #124a44 100%)',
         'gold-gradient': 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
+        'abyss-gradient': 'linear-gradient(180deg, #031b26 0%, #020d15 100%)',
       },
     },
   },

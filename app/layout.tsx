@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from 'next/font/google';
+import { Inter, Cinzel } from 'next/font/google';
 import "./globals.css";
 import Link from "next/link";
 import { Compass } from 'lucide-react';
-import { Toaster } from "@/components/ui/toaster"; // Import the Toaster component
+import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-cinzel", weight: ["400", "600", "700"] });
 
 export const metadata: Metadata = {
   title: "Eorzean Compass | FFXIV Achievement Tracker",
@@ -46,7 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${cinzel.variable} font-sans`}>
         <header className="bg-compass-950 text-compass-100 border-b border-compass-700">
           <div className="container mx-auto px-4 py-4 flex justify-between items-center">
             <Link href="/" className="text-xl font-bold text-white flex items-center gap-3 group">
@@ -93,7 +94,7 @@ export default function RootLayout({
               Eorzean Compass is not affiliated with Square Enix.
             </p>
             <p className="text-compass-500 text-xs mt-1">
-              FINAL FANTASY XIV © 2010 - 2023 SQUARE ENIX CO., LTD. All Rights Reserved.
+              FINAL FANTASY XIV © 2010 - 2024 SQUARE ENIX CO., LTD. All Rights Reserved.
             </p>
           </div>
         </footer>
